@@ -1,6 +1,6 @@
 # Box
 
-![Build](https://shields.io/github/actions/workflow/status/cnvca/Box/test.yml?branch=master&logo=github&label=Build)
+![Build](https://shields.io/github/actions/workflow/status/cnvca/Box/test.yml?branch=main&logo=github&label=Build)
 [![Channel](https://img.shields.io/badge/Follow-Telegram-blue.svg?logo=telegram)](https://t.me/Box)
 [![Download](https://img.shields.io/github/v/release/cnvca/Box?color=orange&logoColor=orange&label=Download&logo=DocuSign)](https://github.com/cnvca/Box/releases/latest) 
 [![Total](https://shields.io/github/downloads/cnvca/Box/total?logo=Bookmeter&label=Counts&logoColor=yellow&color=yellow)](https://github.com/cnvca/Box/releases)
