@@ -103,11 +103,7 @@ jobs:
           path: |
             ${{ github.workspace }}/apk/*
      
-      - name: Whether Or Not to Publish
-        if: ${{ inputs.donotpublish && env.commit }}
-        run: |
-          echo "commit=" >> $GITHUB_ENV
-     
+
       - name: Release and Upload Assets
         uses: ncipollo/release-action@v1
         if: ${{ env.commit }}
@@ -120,15 +116,9 @@ jobs:
           artifacts: |
             ${{ github.workspace }}/apk/*.apk
             
-      - name: Download Telegram Bot API Binary
-        if: ${{ env.commit }}
-        uses: actions/download-artifact@v4
-        with:
-          name: telegram-bot-api-binary
-          path: Box
+
       - name: Post To Telegram
-        if: ${{ env.commit }}
-        working-directory: Box
+        if: ${{ env.commit }} 
         env:
           CHAT_ID: -1001734684817
           TELEGRAM_TOKEN: ${{ secrets.BOT_TOKEN }}
