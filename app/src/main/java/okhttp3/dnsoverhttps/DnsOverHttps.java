@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2018 Square, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package okhttp3.dnsoverhttps;
 
 import androidx.annotation.Nullable;
@@ -30,9 +45,20 @@ import okhttp3.internal.publicsuffix.PublicSuffixDatabase;
 import okio.ByteString;
 
 /**
- * DNS over HTTPS implementation with custom HOSTS support.
+ * DNS over HTTPS implementation.
  * <p>
  * Implementation of https://tools.ietf.org/html/draft-ietf-doh-dns-over-https-13
+ *
+ * <blockquote>A DNS API client encodes a single DNS query into an HTTP request
+ * using either the HTTP GET or POST method and the other requirements
+ * of this section.  The DNS API server defines the URI used by the
+ * request through the use of a URI Template.</blockquote>
+ *
+ * <h3>Warning: This is a non-final API.</h3>
+ *
+ * <p><strong>As of OkHttp 3.11, this feature is an unstable preview: the API is subject to change,
+ * and the implementation is incomplete. We expect that OkHttp 3.12 or 3.13 will finalize this API.
+ * Until then, expect API and behavior changes when you update your OkHttp dependency.</strong>
  */
 public class DnsOverHttps implements Dns {
     public static final MediaType DNS_MESSAGE = MediaType.get("application/dns-message");
