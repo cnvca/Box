@@ -13,6 +13,8 @@ import com.google.common.net.HttpHeaders;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+
 
 import okhttp3.Cache;
 import okhttp3.Call;
@@ -25,6 +27,30 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.dnsoverhttps.DnsOverHttps;
 
+public class OkDns implements Dns {
+
+    private final Pattern IP = Pattern.compile("\\b(?:(?:[0-9]{1,3}\\.){3}[0-9]{1,3}|[0-9a-fA-F:]{2,39})\\b");
+    private final HashMap<String, String> map;
+    private DnsOverHttps doh;
+
+@@ -31,10 +33,19 @@ public void addAll(List<String> hosts) {
+        }
+    }
+
+    private boolean isAddress(String input) {
+        try {
+            return IP.matcher(input).find();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @NonNull
+    @Override
+    public List<InetAddress> lookup(@NonNull String hostname) throws UnknownHostException {
+    String target = map.containsKey(hostname) ? map.get(hostname) : hostname;
+    return isAddress(target) ? List.of(InetAddress.getByName(target)) : (doh != null ? doh : Dns.SYSTEM).lookup(target);
+    }        
 public class OkHttp {
 
     private static final int TIMEOUT = 30 * 1000;
@@ -44,6 +70,7 @@ public class OkHttp {
 
     public static Dns dns() {
 //        return get().dns != null ? get().dns : Dns.SYSTEM; // 由于 setDoh(Doh doh)没有被调用导致这里选择的是 Dns.SYSTEM
+  
         return get().dns != null ? get().dns : OkGoHelper.dnsOverHttps;
     }
 
