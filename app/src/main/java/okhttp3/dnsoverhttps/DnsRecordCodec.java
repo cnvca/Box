@@ -44,38 +44,46 @@ class DnsRecordCodec {
         Buffer buf = new Buffer();
         buf.write(byteString);
 
-        buf.readShort(); // query id
-        int flags = buf.readShort() & 0xffff;
-        if ((flags >> 15) == 0) {
-            throw new IllegalArgumentException("not a response");
-        }
-
-        byte responseCode = (byte) (flags & 0xf);
-        if (responseCode == 3) { // NXDOMAIN
-            throw new UnknownHostException(hostname + ": NXDOMAIN");
-        } else if (responseCode == 2) { // SERVFAIL
-            throw new UnknownHostException(hostname + ": SERVFAIL");
-        }
-
-        buf.readShort(); // question count
-        int answerCount = buf.readShort() & 0xffff;
-        buf.readShort(); // authority record count
-        buf.readShort(); // additional record count
-
-        for (int i = 0; i < answerCount; i++) {
-            skipName(buf); // name
-            int type = buf.readShort() & 0xffff;
-            buf.readShort(); // class
-            buf.readInt(); // ttl
-            int length = buf.readShort() & 0xffff;
-
-            if (type == TYPE_A || type == TYPE_AAAA) {
-                byte[] bytes = new byte[length];
-                buf.read(bytes);
-                result.add(InetAddress.getByAddress(bytes));
-            } else {
-                buf.skip(length);
+        try {
+            buf.readShort(); // query id
+            int flags = buf.readShort() & 0xffff;
+            if ((flags >> 15) == 0) {
+                throw new IllegalArgumentException("not a response");
             }
+
+            byte responseCode = (byte) (flags & 0xf);
+            if (responseCode == 3) { // NXDOMAIN
+                throw new UnknownHostException(hostname + ": NXDOMAIN");
+            } else if (responseCode == 2) { // SERVFAIL
+                throw new UnknownHostException(hostname + ": SERVFAIL");
+            }
+
+            buf.readShort(); // question count
+            int answerCount = buf.readShort() & 0xffff;
+            buf.readShort(); // authority record count
+            buf.readShort(); // additional record count
+
+            for (int i = 0; i < answerCount; i++) {
+                skipName(buf); // name
+                int type = buf.readShort() & 0xffff;
+                buf.readShort(); // class
+                buf.readInt(); // ttl
+                int length = buf.readShort() & 0xffff;
+
+                if (type == TYPE_A || type == TYPE_AAAA) {
+                    byte[] bytes = new byte[length];
+                    buf.read(bytes);
+                    result.add(InetAddress.getByAddress(bytes));
+                } else {
+                    buf.skip(length);
+                }
+            }
+        } catch (EOFException e) {
+            throw new UnknownHostException("Malformed DNS response: " + e.getMessage());
+        }
+
+        if (result.isEmpty()) {
+            throw new UnknownHostException("No valid addresses found for " + hostname);
         }
 
         return result;
