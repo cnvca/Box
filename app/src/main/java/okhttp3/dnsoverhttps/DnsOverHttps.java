@@ -17,11 +17,13 @@ public class DnsOverHttps implements Dns {
     private HttpUrl url;
     private final OkHttpClient client;
     private final ConcurrentHashMap<String, String> customHostsMap; // 自定义 HOSTS 映射
+    private final List<InetAddress> bootstrapDnsHosts; // 初始 DNS 服务器列表
 
     public DnsOverHttps(Builder builder) {
         this.url = builder.url;
         this.client = builder.client;
         this.customHostsMap = new ConcurrentHashMap<>();
+        this.bootstrapDnsHosts = builder.bootstrapDnsHosts;
     }
 
     /**
@@ -94,6 +96,7 @@ public class DnsOverHttps implements Dns {
     public static final class Builder {
         private HttpUrl url;
         private OkHttpClient client;
+        private List<InetAddress> bootstrapDnsHosts;
 
         public Builder client(OkHttpClient client) {
             this.client = client;
@@ -102,6 +105,11 @@ public class DnsOverHttps implements Dns {
 
         public Builder url(HttpUrl url) {
             this.url = url;
+            return this;
+        }
+
+        public Builder bootstrapDnsHosts(List<InetAddress> bootstrapDnsHosts) {
+            this.bootstrapDnsHosts = bootstrapDnsHosts;
             return this;
         }
 
