@@ -24,6 +24,8 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 import okhttp3.CacheControl;
@@ -43,20 +45,9 @@ import okhttp3.internal.publicsuffix.PublicSuffixDatabase;
 import okio.ByteString;
 
 /**
- * DNS over HTTPS implementation.
+ * DNS over HTTPS implementation with custom HOSTS support.
  * <p>
  * Implementation of https://tools.ietf.org/html/draft-ietf-doh-dns-over-https-13
- *
- * <blockquote>A DNS API client encodes a single DNS query into an HTTP request
- * using either the HTTP GET or POST method and the other requirements
- * of this section.  The DNS API server defines the URI used by the
- * request through the use of a URI Template.</blockquote>
- *
- * <h3>Warning: This is a non-final API.</h3>
- *
- * <p><strong>As of OkHttp 3.11, this feature is an unstable preview: the API is subject to change,
- * and the implementation is incomplete. We expect that OkHttp 3.12 or 3.13 will finalize this API.
- * Until then, expect API and behavior changes when you update your OkHttp dependency.</strong>
  */
 public class DnsOverHttps implements Dns {
     public static final MediaType DNS_MESSAGE = MediaType.get("application/dns-message");
@@ -67,6 +58,7 @@ public class DnsOverHttps implements Dns {
     private final boolean post;
     private final boolean resolvePrivateAddresses;
     private final boolean resolvePublicAddresses;
+    private final ConcurrentHashMap<String, String> customHostsMap; // 自定义 HOSTS 映射
 
     DnsOverHttps(Builder builder) {
         if (builder.client == null) {
@@ -81,11 +73,30 @@ public class DnsOverHttps implements Dns {
         this.post = builder.post;
         this.resolvePrivateAddresses = builder.resolvePrivateAddresses;
         this.resolvePublicAddresses = builder.resolvePublicAddresses;
+        this.customHostsMap = new ConcurrentHashMap<>(); // 初始化自定义 HOSTS 映射
         this.client = builder.client.newBuilder().dns(buildBootstrapClient(builder)).build();
     }
 
-    public void setUrl(HttpUrl newUrl) {
-        this.url = newUrl;
+    /**
+     * Add custom HOSTS mappings.
+     *
+     * @param hosts A list of strings in the format "originalHost=newHost".
+     */
+    public synchronized void addCustomHosts(List<String> hosts) {
+        for (String host : hosts) {
+            if (!host.contains("=")) continue;
+            String[] splits = host.split("=");
+            String originalHost = splits[0];
+            String newHost = splits[1];
+            customHostsMap.put(originalHost, newHost);
+        }
+    }
+
+    /**
+     * Clear all custom HOSTS mappings.
+     */
+    public void clearCustomHosts() {
+        customHostsMap.clear();
     }
 
     private static Dns buildBootstrapClient(Builder builder) {
@@ -98,32 +109,15 @@ public class DnsOverHttps implements Dns {
         }
     }
 
-    public HttpUrl url() {
-        return url;
-    }
-
-    public boolean post() {
-        return post;
-    }
-
-    public boolean includeIPv6() {
-        return includeIPv6;
-    }
-
-    public OkHttpClient client() {
-        return client;
-    }
-
-    public boolean resolvePrivateAddresses() {
-        return resolvePrivateAddresses;
-    }
-
-    public boolean resolvePublicAddresses() {
-        return resolvePublicAddresses;
-    }
-
     @Override
     public List<InetAddress> lookup(String hostname) throws UnknownHostException {
+        // 检查自定义 HOSTS 映射
+        if (customHostsMap.containsKey(hostname)) {
+            String mappedHost = customHostsMap.get(hostname);
+            return Dns.SYSTEM.lookup(mappedHost);
+        }
+
+        // 如果没有自定义映射，继续原有的逻辑
         if (this.url == null)
             return Dns.SYSTEM.lookup(hostname);
         if (!resolvePrivateAddresses || !resolvePublicAddresses) {
@@ -138,13 +132,6 @@ public class DnsOverHttps implements Dns {
             }
         }
         return lookupHttps(hostname);
-    }
-
-    public byte[] lookupHttpsForwardSync(String hostname) throws Throwable {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        byteArrayOutputStream.write(executeRequestsSync(hostname, DnsRecordCodec.TYPE_A));
-        byteArrayOutputStream.write(executeRequestsSync(hostname, DnsRecordCodec.TYPE_AAAA));
-        return byteArrayOutputStream.toByteArray();
     }
 
     private List<InetAddress> lookupHttps(String hostname) throws UnknownHostException {
@@ -164,7 +151,6 @@ public class DnsOverHttps implements Dns {
             return results;
         }
         return Dns.SYSTEM.lookup(hostname);
-        // return throwBestFailure(hostname, failures);
     }
 
     private void buildRequest(String hostname, List<Call> networkRequests, List<InetAddress> results,
