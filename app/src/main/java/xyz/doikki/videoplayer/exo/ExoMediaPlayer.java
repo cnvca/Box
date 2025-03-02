@@ -62,6 +62,19 @@ public class ExoMediaPlayer extends AbstractPlayer implements Player.Listener {
         mAppContext = context.getApplicationContext();
         mMediaSourceHelper = ExoMediaSourceHelper.getInstance(context);
     }
+@Override
+    public void setDataSource(String path, Map<String, String> headers) {
+        this.path = path;
+        this.headers = headers;
+
+        // 设置自定义 DNS 解析器
+        if (ApiConfig.get().getDnsOverHttps() != null) {
+            mMediaSourceHelper.setDns(ApiConfig.get().getDnsOverHttps());
+        }
+
+        mMediaSource = mMediaSourceHelper.getMediaSource(path, headers);
+        errorCode = -1;
+    }
 
     @SuppressLint("UnsafeOptInUsageError")
     @Override
