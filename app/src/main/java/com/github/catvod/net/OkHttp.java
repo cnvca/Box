@@ -33,7 +33,31 @@ public class OkHttp {
     private DnsOverHttps dns;
     private OkHttpClient client;
     private ProxySelector selector;
+private DnsOverHttps dns;
 
+    public static Dns dns() {
+        return get().dns != null ? get().dns : OkGoHelper.dnsOverHttps;
+    }
+
+    public void setDoh(Doh doh) {
+        OkHttpClient dohClient = new OkHttpClient.Builder()
+                .cache(new Cache(Path.doh(), CACHE))
+                .hostnameVerifier(SSLCompat.VERIFIER)
+                .sslSocketFactory(new SSLCompat(), SSLCompat.TM)
+                .build();
+
+        dns = doh.getUrl().isEmpty() ? null : new DnsOverHttps.Builder()
+                .client(dohClient)
+                .url(HttpUrl.get(doh.getUrl()))
+                .bootstrapDnsHosts(doh.getHosts())
+                .build();
+
+        // 将 dns 设置到 ApiConfig 中
+        ApiConfig.get().setDnsOverHttps(dns);
+
+        client = null;
+    }
+    
     private static class Loader {
         static volatile OkHttp INSTANCE = new OkHttp();
     }
