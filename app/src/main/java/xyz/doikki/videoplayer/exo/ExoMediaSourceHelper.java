@@ -51,6 +51,24 @@ public final class ExoMediaSourceHelper {
     private OkHttpClient mOkClient = null;
     private Cache mCache;
 
+    private DnsOverHttps dns;
+
+    public void setDns(DnsOverHttps dns) {
+        this.dns = dns;
+    }
+
+    public MediaSource getMediaSource(String path, Map<String, String> headers) {
+        // 使用自定义 DNS 解析器
+        if (dns != null) {
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .dns(dns)
+                    .build();
+            return buildMediaSource(path, headers, client);
+        } else {
+            return buildMediaSource(path, headers, null);
+        }
+    }
+    
     @SuppressLint("UnsafeOptInUsageError")
     private ExoMediaSourceHelper(Context context) {
         mAppContext = context.getApplicationContext();
