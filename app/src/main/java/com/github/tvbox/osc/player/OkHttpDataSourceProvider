@@ -1,8 +1,6 @@
-package xyz.doikki.videoplayer.ijk;
+package com.github.tvbox.osc.player; // 或者 xyz.doikki.videoplayer.ijk
 
 import android.net.Uri;
-
-import com.github.catvod.net.OkHttp;
 
 import java.io.IOException;
 import java.util.Map;
@@ -66,3 +64,4 @@ public class OkHttpDataSourceProvider implements IMediaDataSource {
         return uri;
     }
 }
+
