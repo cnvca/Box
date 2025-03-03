@@ -32,6 +32,7 @@ import com.lzy.okgo.OkGo;
 import com.lzy.okgo.callback.AbsCallback;
 import com.lzy.okgo.model.Response;
 import com.orhanobut.hawk.Hawk;
+import com.github.catvod.net.OkHttp;
 
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
