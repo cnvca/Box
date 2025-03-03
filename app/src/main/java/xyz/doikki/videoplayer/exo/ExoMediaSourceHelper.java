@@ -39,6 +39,7 @@ import java.net.Proxy;
 import java.util.Map;
 
 import okhttp3.OkHttpClient;
+import okhttp3.dnsoverhttps.DnsOverHttps;
 
 public final class ExoMediaSourceHelper {
 
