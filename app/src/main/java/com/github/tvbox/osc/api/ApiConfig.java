@@ -305,7 +305,6 @@ public class ApiConfig {
     }
 
     private void parseJson(String apiUrl, String jsonStr) {
-
         JsonObject infoJson = new Gson().fromJson(jsonStr, JsonObject.class);
         // spider
         spider = DefaultConfig.safeJsonString(infoJson, "spider", "");
@@ -313,14 +312,16 @@ public class ApiConfig {
         wallpaper = DefaultConfig.safeJsonString(infoJson, "wallpaper", "");
         // 直播播放请求头
         livePlayHeaders = infoJson.getAsJsonArray("livePlayHeaders");
+
+        // 解析并设置 DNS 映射
         if (infoJson.has("hosts")) {
-        JsonArray hostsArray = infoJson.getAsJsonArray("hosts");
-        List<String> hosts = new ArrayList<>();
-        for (JsonElement host : hostsArray) {
-        hosts.add(host.getAsString());
-        }
-       // 将 hosts 添加到 OkDns
-        OkHttp.dns().addAll(hosts);
+            JsonArray hostsArray = infoJson.getAsJsonArray("hosts");
+            List<String> hosts = new ArrayList<>();
+            for (JsonElement host : hostsArray) {
+                hosts.add(host.getAsString());
+            }
+            Log.d("ApiConfig", "Loaded hosts: " + hosts); // 打印日志
+            OkHttp.dns().addAll(hosts); // 注入到 OkDns
         }
         
         // 远端站点源
