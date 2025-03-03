@@ -58,18 +58,39 @@ public final class ExoMediaSourceHelper {
         this.dns = dns;
     }
 
-    public MediaSource getMediaSource(String path, Map<String, String> headers) {
-        // 使用自定义 DNS 解析器
-        if (dns != null) {
-            OkHttpClient client = new OkHttpClient.Builder()
-                    .dns(dns)
-                    .build();
-            return buildMediaSource(path, headers, client);
+    @SuppressLint("UnsafeOptInUsageError")
+    private MediaSource buildMediaSource(String path, Map<String, String> headers, OkHttpClient client) {
+        Uri contentUri = Uri.parse(path);
+        if ("rtmp".equals(contentUri.getScheme())) {
+            return new ProgressiveMediaSource.Factory(new RtmpDataSource.Factory())
+                    .createMediaSource(MediaItem.fromUri(contentUri));
+        } else if ("rtsp".equals(contentUri.getScheme())) {
+            return new RtspMediaSource.Factory().createMediaSource(MediaItem.fromUri(contentUri));
+        }
+        int contentType = inferContentType(path);
+        DataSource.Factory factory;
+        if (client != null) {
+            factory = new OkHttpDataSource.Factory(client).setUserAgent(mUserAgent);
         } else {
-            return buildMediaSource(path, headers, null);
+            factory = getDataSourceFactory();
+        }
+        if (headers != null) {
+            setHeaders(headers);
+        }
+        switch (contentType) {
+            case C.TYPE_DASH:
+                return new DashMediaSource.Factory(factory).createMediaSource(MediaItem.fromUri(contentUri));
+            case C.TYPE_HLS:
+                return new HlsMediaSource.Factory(factory)
+                        .setAllowChunklessPreparation(true)
+                        .setExtractorFactory(new MyHlsExtractorFactory())
+                        .createMediaSource(MediaItem.fromUri(contentUri));
+            default:
+            case C.TYPE_OTHER:
+                return new ProgressiveMediaSource.Factory(factory).createMediaSource(MediaItem.fromUri(contentUri));
         }
     }
-    
+
     @SuppressLint("UnsafeOptInUsageError")
     private ExoMediaSourceHelper(Context context) {
         mAppContext = context.getApplicationContext();
@@ -97,7 +118,6 @@ public final class ExoMediaSourceHelper {
     @SuppressLint("UnsafeOptInUsageError")
     private static synchronized ExtractorsFactory getExtractorsFactory() {
         return new DefaultExtractorsFactory().setTsExtractorFlags(DefaultTsPayloadReaderFactory.FLAG_ENABLE_HDMV_DTS_AUDIO_STREAMS).setTsExtractorTimestampSearchBytes(TsExtractor.DEFAULT_TIMESTAMP_SEARCH_BYTES * 3);
-
     }
 
     public void setOkClient(OkHttpClient client) {
@@ -152,7 +172,6 @@ public final class ExoMediaSourceHelper {
                         .setAllowChunklessPreparation(true)
                         .setExtractorFactory(new MyHlsExtractorFactory())
                         .createMediaSource(MediaItem.fromUri(contentUri));
-            //return new HlsMediaSource.Factory(factory).createMediaSource(MediaItem.fromUri(contentUri));
             default:
             case C.TYPE_OTHER:
                 return new ProgressiveMediaSource.Factory(factory).createMediaSource(MediaItem.fromUri(contentUri));
@@ -249,6 +268,7 @@ public final class ExoMediaSourceHelper {
         mHttpDataSourceFactory = new OkHttpDataSource.Factory(mOkClient.newBuilder().proxy(proxy).build())
                 .setUserAgent(mUserAgent);
     }
+
     public void clearSocksProxy() {
         mHttpDataSourceFactory = mHttpDataSourceFactoryNoProxy;
     }
