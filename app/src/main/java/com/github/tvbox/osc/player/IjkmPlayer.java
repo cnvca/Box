@@ -35,48 +35,7 @@ public class IjkmPlayer extends IjkPlayer {
         super(context);
         this.codec = codec;
     }
-	
-    @Override
-    public void setDataSource(String path, Map<String, String> headers) {
-        try {
-            if (path != null && !TextUtils.isEmpty(path)) {
-                if (path.startsWith("rtsp")) {
-                    mMediaPlayer.setOption(1, "infbuf", 1);
-                    mMediaPlayer.setOption(1, "rtsp_transport", "tcp");
-                    mMediaPlayer.setOption(1, "rtsp_flags", "prefer_tcp");
-                } else if (!path.contains(".m3u8") && (path.contains(".mp4") || path.contains(".mkv") || path.contains(".avi"))) {
-                    if (Hawk.get(HawkConfig.IJK_CACHE_PLAY, false)) {
-                        String cachePath = FileUtils.getExternalCachePath() + "/ijkcaches/";
-                        String cacheMapPath = cachePath;
-                        File cacheFile = new File(cachePath);
-                        if (!cacheFile.exists()) cacheFile.mkdirs();
-                        String tmpMd5 = MD5.string2MD5(path);
-                        cachePath += tmpMd5 + ".file";
-                        cacheMapPath += tmpMd5 + ".map";
-                        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "cache_file_path", cachePath);
-                        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "cache_map_path", cacheMapPath);
-                        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "parse_cache_map", 1);
-                        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "auto_save_map", 1);
-                        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "cache_max_capacity", 60 * 1024 * 1024);
-                        path = "ijkio:cache:ffio:" + path;
-                    }
-                }
-            }
 
-            // 设置自定义 DNS 解析器
-            if (ApiConfig.get().getDnsOverHttps() != null) {
-                mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_resolver", ApiConfig.get().getDnsOverHttps());
-            }
-
-            setDataSourceHeader(headers);
-        } catch (Exception e) {
-            mPlayerEventListener.onError(-1, PlayerHelper.getRootCauseMessage(e));
-        }
-
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "protocol_whitelist", "ijkio,ffio,async,cache,crypto,file,http,https,ijkhttphook,ijkinject,ijklivehook,ijklongurl,ijksegment,ijktcphook,pipe,rtp,tcp,tls,udp,ijkurlhook,data,concat,subfile,ffconcat");
-        super.setDataSource(path, headers);
-    }
-	
     @Override
     public void setOptions() {
         IJKCode codecTmp = this.codec == null ? ApiConfig.get().getCurrentIJKCode() : this.codec;
