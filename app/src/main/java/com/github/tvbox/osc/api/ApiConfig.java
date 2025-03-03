@@ -312,12 +312,15 @@ public class ApiConfig {
         wallpaper = DefaultConfig.safeJsonString(infoJson, "wallpaper", "");
         // 直播播放请求头
         livePlayHeaders = infoJson.getAsJsonArray("livePlayHeaders");
-        hosts = infoJson.getAsJsonArray("hosts");
-        headers = infoJson.getAsJsonArray("headers");
-
-        public void setHosts(List<String> hosts) {
+        if (infoJson.has("hosts")) {
+        JsonArray hostsArray = infoJson.getAsJsonArray("hosts");
+        List<String> hosts = new ArrayList<>();
+        for (JsonElement host : hostsArray) {
+        hosts.add(host.getAsString());
+        }
+       // 将 hosts 添加到 OkDns
         OkHttp.dns().addAll(hosts);
-    }
+        }
         
         // 远端站点源
         SourceBean firstSite = null;
