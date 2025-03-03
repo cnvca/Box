@@ -1,98 +1,49 @@
 package com.aminography.redirectglide
 
-import android.util.Log
-import com.aminography.redirectglide.OkHttpStreamFetcher
 import com.bumptech.glide.Priority
 import com.bumptech.glide.load.DataSource
-import com.bumptech.glide.load.HttpException
 import com.bumptech.glide.load.data.DataFetcher
-import com.bumptech.glide.load.data.DataFetcher.DataCallback
-import com.bumptech.glide.load.model.GlideUrl
-import com.bumptech.glide.util.ContentLengthInputStream
-import com.bumptech.glide.util.Preconditions
-import okhttp3.*
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import okhttp3.ResponseBody
 import java.io.IOException
 import java.io.InputStream
 
-/**
- * Fetches an [InputStream] using the okhttp library.
- */
-class OkHttpStreamFetcher // Public API.
-(private val client: Call.Factory, private val url: GlideUrl) : DataFetcher<InputStream>, Callback {
-    private var okHttpUrlFetcher: OkHttpRedirectUrlFetcher? = null
-    private var stream: InputStream? = null
-    private var responseBody: ResponseBody? = null
-    private var callback: DataCallback<in InputStream>? = null
+class OkHttpStreamFetcher(
+    private val client: OkHttpClient,
+    private val request: Request
+) : DataFetcher<InputStream> {
 
-    // call may be accessed on the main thread while the object is in use on other threads. All other
-    // accesses to variables may occur on different threads, but only one at a time.
-    @Volatile
     private var call: Call? = null
-    override fun loadData(priority: Priority, callback: DataCallback<in InputStream>) {
-        okHttpUrlFetcher = if (url is BaseApiCallGlideUrl) {
-            OkHttpApiCallUrlFetcher(client, url)
-        } else {
-            OkHttpRedirectUrlFetcher(client, url)
-        }
-        okHttpUrlFetcher!!.loadData(object : DataCallback<GlideUrl?> {
-            override fun onDataReady(data: GlideUrl?) {
-                val requestBuilder = Request.Builder().url(data!!.toStringUrl())
-                for ((key, value) in data.headers) {
-                    requestBuilder.addHeader(key, value!!)
-                }
-                val request = requestBuilder.build()
-                this@OkHttpStreamFetcher.callback = callback
-                call = client.newCall(request)
-                call!!.enqueue(this@OkHttpStreamFetcher)
+    private var stream: InputStream? = null
+
+    override fun loadData(priority: Priority, callback: DataFetcher.DataCallback<in InputStream>) {
+        call = client.newCall(request)
+        call?.enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                callback.onLoadFailed(e)
             }
 
-            override fun onLoadFailed(e: Exception) {
-                callback.onLoadFailed(e)
+            override fun onResponse(call: Call, response: Response) {
+                if (response.isSuccessful) {
+                    stream = response.body?.byteStream()
+                    callback.onDataReady(stream)
+                } else {
+                    callback.onLoadFailed(IOException("Request failed with code: ${response.code}, message: ${response.message}"))
+                }
             }
         })
     }
 
-    override fun onFailure(call: Call, e: IOException) {
-        if (Log.isLoggable(TAG, Log.DEBUG)) {
-            Log.d(TAG, "OkHttp failed to obtain result", e)
-        }
-        callback!!.onLoadFailed(e)
-    }
-
-    override fun onResponse(call: Call, response: Response) {
-        responseBody = response.body()
-        if (response.isSuccessful) {
-            val contentLength = Preconditions.checkNotNull(responseBody).contentLength()
-            stream = ContentLengthInputStream.obtain(responseBody!!.byteStream(), contentLength)
-            callback!!.onDataReady(stream)
-        } else {
-            callback!!.onLoadFailed(HttpException(response.message(), response.code()))
-        }
-    }
-
     override fun cleanup() {
-        if (okHttpUrlFetcher != null) {
-            okHttpUrlFetcher!!.cleanup()
-        }
-        try {
-            if (stream != null) {
-                stream!!.close()
-            }
-        } catch (e: IOException) {
-            // Ignored
-        }
-        if (responseBody != null) {
-            responseBody!!.close()
-        }
-        callback = null
+        stream?.close()
     }
 
     override fun cancel() {
-        if (okHttpUrlFetcher != null) {
-            okHttpUrlFetcher!!.cancel()
-        }
-        val local = call
-        local?.cancel()
+        call?.cancel()
     }
 
     override fun getDataClass(): Class<InputStream> {
@@ -102,9 +53,4 @@ class OkHttpStreamFetcher // Public API.
     override fun getDataSource(): DataSource {
         return DataSource.REMOTE
     }
-
-    companion object {
-        private const val TAG = "OkHttpFetcher"
-    }
-
 }
