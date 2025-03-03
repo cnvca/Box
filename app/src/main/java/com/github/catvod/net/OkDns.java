@@ -25,3 +25,25 @@ public class OkDns implements Dns {
     public void setDoh(DnsOverHttps doh) {
         this.doh = doh;
     }
+
+    public void clear() {
+        map.clear();
+    }
+
+    public synchronized void addAll(List<String> hosts) {
+        for (String host : hosts) {
+            if (!host.contains("=")) continue;
+            String[] splits = host.split("=");
+            String oldHost = splits[0];
+            String newHost = splits[1];
+            map.put(oldHost, newHost);
+        }
+    }
+
+    @NonNull
+    @Override
+    public List<InetAddress> lookup(@NonNull String hostname) throws UnknownHostException {
+        for (Map.Entry<String, String> entry : map.entrySet()) if (Util.containOrMatch(hostname, entry.getKey())) hostname = entry.getValue();
+        return (doh != null ? doh : Dns.SYSTEM).lookup(hostname);
+    }
+}
