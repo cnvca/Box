@@ -16,7 +16,6 @@ import java.util.concurrent.TimeUnit;
 
 import okhttp3.Cache;
 import okhttp3.Call;
-import okhttp3.Dns;
 import okhttp3.FormBody;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
@@ -25,15 +24,18 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.dnsoverhttps.DnsOverHttps;
 
+
 public class OkHttp {
 
     private static final int TIMEOUT = 30 * 1000;
     private static final int CACHE = 100 * 1024 * 1024;
 
-    private DnsOverHttps dns;
-    private OkHttpClient client;
     private ProxySelector selector;
+    private OkHttpClient client;
+    private OkDns dns;
 
+    private boolean proxy;
+    
     private static class Loader {
         static volatile OkHttp INSTANCE = new OkHttp();
     }
@@ -42,17 +44,25 @@ public class OkHttp {
         return Loader.INSTANCE;
     }
 
-    public static Dns dns() {
+ //   public static Dns dns() {
 //        return get().dns != null ? get().dns : Dns.SYSTEM; // 由于 setDoh(Doh doh)没有被调用导致这里选择的是 Dns.SYSTEM
-        return get().dns != null ? get().dns : OkGoHelper.dnsOverHttps;
-    }
+//        return get().dns != null ? get().dns : OkGoHelper.dnsOverHttps;
+//    }
 
     public void setDoh(Doh doh) {
-        OkHttpClient dohClient = new OkHttpClient.Builder().cache(new Cache(Path.doh(), CACHE)).hostnameVerifier(SSLCompat.VERIFIER).sslSocketFactory(new SSLCompat(), SSLCompat.TM).build();
-        dns = doh.getUrl().isEmpty() ? null : new DnsOverHttps.Builder().client(dohClient).url(HttpUrl.get(doh.getUrl())).bootstrapDnsHosts(doh.getHosts()).build();
+//        OkHttpClient dohClient = new OkHttpClient.Builder().cache(new Cache(Path.doh(), CACHE)).hostnameVerifier(SSLCompat.VERIFIER).sslSocketFactory(new SSLCompat(), SSLCompat.TM).build();
+//        dns = doh.getUrl().isEmpty() ? null : new DnsOverHttps.Builder().client(dohClient).url(HttpUrl.get(doh.getUrl())).bootstrapDnsHosts(doh.getHosts()).build();
+//        client = null;
+        OkHttpClient c = new OkHttpClient.Builder().cache(new Cache(Path.doh(), CACHE)).build();
+        dns().setDoh(doh.getUrl().isEmpty() ? null : new DnsOverHttps.Builder().client(c).url(HttpUrl.get(doh.getUrl())).bootstrapDnsHosts(doh.getHosts()).build());
         client = null;
     }
 
+    public static OkDns dns() {
+        if (get().dns != null) return get().dns;
+        return get().dns = new OkDns();
+    }
+    
     public void setProxy(String proxy) {
         ProxySelector.setDefault(selector());
         selector().setProxy(proxy);
