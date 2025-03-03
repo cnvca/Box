@@ -312,6 +312,13 @@ public class ApiConfig {
         wallpaper = DefaultConfig.safeJsonString(infoJson, "wallpaper", "");
         // 直播播放请求头
         livePlayHeaders = infoJson.getAsJsonArray("livePlayHeaders");
+        hosts = infoJson.getAsJsonArray("hosts");
+        headers = infoJson.getAsJsonArray("headers");
+
+        public void setHosts(List<String> hosts) {
+        OkHttp.dns().addAll(hosts);
+    }
+        
         // 远端站点源
         SourceBean firstSite = null;
         JsonArray sites = infoJson.has("video") ? infoJson.getAsJsonObject("video").getAsJsonArray("sites") : infoJson.get("sites").getAsJsonArray();
