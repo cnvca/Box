@@ -1,0 +1,68 @@
+package xyz.doikki.videoplayer.ijk;
+
+import android.net.Uri;
+
+import com.github.catvod.net.OkHttp;
+
+import java.io.IOException;
+import java.util.Map;
+
+import okhttp3.Call;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import tv.danmaku.ijk.media.player.misc.IMediaDataSource;
+
+public class OkHttpDataSourceProvider implements IMediaDataSource {
+
+    private final OkHttpClient client;
+    private final Map<String, String> headers;
+    private final Uri uri;
+
+    public OkHttpDataSourceProvider(OkHttpClient client, Map<String, String> headers, String url) {
+        this.client = client;
+        this.headers = headers;
+        this.uri = Uri.parse(url);
+    }
+
+    @Override
+    public int readAt(long position, byte[] buffer, int offset, int size) throws IOException {
+        Request request = new Request.Builder()
+                .url(uri.toString())
+                .headers(okhttp3.Headers.of(headers))
+                .addHeader("Range", "bytes=" + position + "-" + (position + size - 1))
+                .build();
+        Call call = client.newCall(request);
+        Response response = call.execute();
+        if (response.isSuccessful()) {
+            byte[] data = response.body().bytes();
+            System.arraycopy(data, 0, buffer, offset, data.length);
+            return data.length;
+        }
+        return -1;
+    }
+
+    @Override
+    public long getSize() throws IOException {
+        Request request = new Request.Builder()
+                .url(uri.toString())
+                .headers(okhttp3.Headers.of(headers))
+                .head()
+                .build();
+        Call call = client.newCall(request);
+        Response response = call.execute();
+        if (response.isSuccessful()) {
+            return Long.parseLong(response.header("Content-Length", "0"));
+        }
+        return 0;
+    }
+
+    @Override
+    public void close() throws IOException {
+        // 关闭资源
+    }
+
+    public Uri getUri() {
+        return uri;
+    }
+}
