@@ -320,7 +320,7 @@ public class ApiConfig {
             for (JsonElement host : hostsArray) {
                 hosts.add(host.getAsString());
             }
-            Log.d("ApiConfig", "Loaded hosts: " + hosts); // 打印日志
+            
             OkHttp.dns().addAll(hosts); // 注入到 OkDns
         }
         
