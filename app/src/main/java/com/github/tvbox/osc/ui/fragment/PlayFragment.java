@@ -173,6 +173,7 @@ public class PlayFragment extends BaseLazyFragment {
         initViewModel();
         initData();
         initDanmuView();
+	Hawk.put(HawkConfig.PLAYER_IS_LIVE,false);    
     }
     private void initDanmuView() {
         mDanmuView  = findViewById(R.id.danmaku);
