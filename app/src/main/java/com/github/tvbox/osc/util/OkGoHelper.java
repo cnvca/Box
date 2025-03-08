@@ -220,7 +220,7 @@ public class OkGoHelper {
         builder = builder.addInterceptor(loggingInterceptor)
                 .readTimeout(DEFAULT_MILLISECONDS, TimeUnit.MILLISECONDS)
                 .writeTimeout(DEFAULT_MILLISECONDS, TimeUnit.MILLISECONDS)
-                .connectTimeout(DEFAULT_MILLISECONDS, TimeUnit.MILLISECONDS)
+                .connectTimeout(DEFAULT_MILLISECONDS, TimeUnit.MILLISECONDS);
 //                .dns(dnsOverHttps);
         if(dnsOverHttps!=null)builder.dns(dnsOverHttps);
         
