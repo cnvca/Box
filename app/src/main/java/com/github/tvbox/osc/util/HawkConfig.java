@@ -40,7 +40,8 @@ public class HawkConfig {
     public static final String PIC_IN_PIC = "pic_in_pic";   // true = on, false = off
     public static final String VIDEO_PURIFY = "video_purify";
     public static final String IJK_CACHE_PLAY = "ijk_cache_play";
-
+    public static final String PLAYER_IS_LIVE = "player_is_live";
+	
     public static final String EXO_RENDERER = "exo_renderer";
     public static final String EXO_RENDERER_MODE = "exo_renderer_mode";
     public static final String VOD_PLAYER_PREFERRED = "vod_player_preferred";
