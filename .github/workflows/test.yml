@@ -6,11 +6,11 @@ on:
   workflow_dispatch:
     inputs:
       rebuild:
-        description: '蹇界暐鏋勫缓璁板綍浠ラ噸鏂版瀯寤?
+        description: '忽略构建记录以重新构建'
         required: false
         type: boolean
       donotpublish:
-        description: '鏋勫缓鍚庝笉鎻愪氦鍙戝竷鏂扮増'
+        description: '构建后不提交发布新版'
         required: false
         type: boolean
 
@@ -51,10 +51,10 @@ jobs:
         if: ${{ env.commit }}
         working-directory: Box
         run: |
-          echo '淇敼VersionName'
+          echo '修改VersionName'
           sed -i "/versionName/s#[0-9a-zA-Z_\.\'\"-]\+\$#\'HGTV-${{ env.tag }}\'#" ${{ github.workspace }}/app/build.gradle
           sed -i "/android:text=/s#=\"#=\"HGTV-${{ env.tag }}\\\\n\\\\n#" ${{ github.workspace }}/app/src/main/res/layout/dialog_about.xml
-          echo 'crosswalk婧愶紝闃叉寕'
+          echo 'crosswalk源，防挂'
      
       - uses: actions/setup-java@v4
         if: ${{ matrix.java_ver }}
