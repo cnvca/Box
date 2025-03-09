@@ -53,6 +53,7 @@ android {
 
         generic  {
             //通用版本
+            applicationId 'com.hgys.tv'
             dimension = "brand"
         }
 
