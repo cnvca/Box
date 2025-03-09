@@ -37,7 +37,13 @@ android {
         }
     }
     flavorDimensions +=[ "abi","brand" ]
-    productFlavors {
+     productFlavors {
+        armeabi {
+            dimension = "abi"
+            ndk {
+                abiFilters 'armeabi-v7a'
+            }
+        }
         arm64 {
             dimension = "abi"
             ndk {
@@ -45,9 +51,14 @@ android {
             }
         }
 
+        generic  {
+            //通用版本
+            dimension = "brand"
+        }
+
         hisense {
             //海信的
-            applicationId 'com.hgys.tv'
+            applicationId 'com.github.hisense.osc.tk'
             dimension = "brand"
         }
     }
