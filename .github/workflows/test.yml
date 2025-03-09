@@ -47,36 +47,19 @@ jobs:
           chmod +x gradlew
           ./gradlew assemblerelease --build-cache --parallel --daemon --warning-mode all
       
-      - name: Prepare App
-       
-        run: |
-          rm -rf apk/
-          mkdir -p apk/
-          for file in `find ~ -name "*release*.apk" -print`; do
-            mv "$file" apk/HGTV_${{ env.tag }}.apk
-          done
-     
-      
-      - name: Upload App To Artifact
-        uses: actions/upload-artifact@v4
-        
-        with:
-          name: ${{ matrix.userName }}-${{ matrix.repoName }}
-          path: |
-            ${{ github.workspace }}/apk/*
-     
 
-      - name: Release and Upload Assets
-        uses: ncipollo/release-action@v1
-       
+
+      - name: Prepare App
+        run: |
+          mkdir -p ${{ github.workspace }}/apk/
+          for file in `find ~ -name "*.apk" -print`; do
+            mv "$file" ${{ github.workspace }}/apk/
+          done
+      - name: Upload App To Artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.tag }}
-          tag: ${{ env.tag }}
-          bodyFile: ${{ github.workspace }}/apk/${{ matrix.userName }}-Release.log
-          allowUpdates: true
-          removeArtifacts: true
-          artifacts: |
-            ${{ github.workspace }}/apk/*.apk
+          name: com.hgys.tv
+          path: ${{ github.workspace }}/apk/*
             
 
    
