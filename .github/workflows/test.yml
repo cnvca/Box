@@ -47,7 +47,7 @@ jobs:
           git clone ${{ env.upStream }} Box
           cd Box
           git checkout ${{ env.commit }}
-          echo "tag=$(git log --date=format:'%Y%m%d' --pretty=format:%cd ${{ env.commitS }} -1)" >> $GITHUB_ENV
+          echo "tag=$(git log --date=format:'%Y%m%d-%H%M' --pretty=format:%cd ${{ env.commitS }} -1)" >> $GITHUB_ENV
           
       - name: Extra Modify
         if: ${{ env.commit }}
