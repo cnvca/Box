@@ -201,10 +201,10 @@ public class LivePlayActivity extends BaseActivity {
                 }
             }
             if (!matchTo) {
-                header.put("User-Agent", "AptvPlayer/9.3.7");
+                header.put("User-Agent", "okhttp/3.12.13");
             }
         } catch (Exception e) {
-            header.put("User-Agent", "okhttp/3.12.13");
+            header.put("User-Agent", "AptvPlayer/9.3.7");
         }
         return header;
     }
