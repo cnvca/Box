@@ -4,7 +4,7 @@ apply plugin: 'kotlin-kapt'
 apply plugin: 'com.yanzhenjie.andserver'
 
 def static buildTime() {
-    return new Date().format("yyyyMMdd_HHmm", TimeZone.getTimeZone("GMT+08:00"))
+    return new Date().format("yyyyMMdd", TimeZone.getTimeZone("GMT+08:00"))
 }
 
 android {
