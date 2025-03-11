@@ -86,6 +86,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TimeZone;
 
+import java.util.Map;
+import java.util.Map.Entry;
+
 import kotlin.Pair;
 import xyz.doikki.videoplayer.player.VideoView;
 import xyz.doikki.videoplayer.util.PlayerUtils;
@@ -211,8 +214,12 @@ public class LivePlayActivity extends BaseActivity {
                 break;
             }
         }
+            
+        } catch (Exception e) {
+            header.put("User-Agent", "AptvPlayer/9.3.7");
+        }
 
-        // 如果 JSON 中没有设置 User-Agent，则根据 URL 设置默认的 User-Agent
+         // 如果 JSON 中没有设置 User-Agent，则根据 URL 设置默认的 User-Agent
         if (!header.containsKey("User-Agent")) {
             if (url.contains("ABC.COM") || url.contains("148.135.93.213")) {
                 header.put("User-Agent", "AptvPlayer/9.3.7");
@@ -220,10 +227,7 @@ public class LivePlayActivity extends BaseActivity {
                 header.put("User-Agent", "okhttp/3.12.13");
             }
         }
-            
-        } catch (Exception e) {
-            header.put("User-Agent", "AptvPlayer/9.3.7");
-        }
+        
         return header;
     }
 
