@@ -200,11 +200,17 @@ public class LivePlayActivity extends BaseActivity {
                     break;
                 }
             }
-            if (!matchTo) {
-                header.put("User-Agent", "okhttp/3.12.13");
-            }
-        } catch (Exception e) {
+//            if (!matchTo) {
+//                header.put("User-Agent", "okhttp/3.12.13");
+//            }
+            if (url.contains("ABC.COM") || url.contains("148.135.93.213")) {
             header.put("User-Agent", "AptvPlayer/9.3.7");
+        } else {
+            header.put("User-Agent", "okhttp/3.12.13");
+        }
+            
+        } catch (Exception e) {
+            header.put("User-Agent", "okhttp/3.12.13");
         }
         return header;
     }
