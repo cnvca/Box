@@ -3,8 +3,14 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'com.yanzhenjie.andserver'
 
+// 定义一个函数来获取当前日期（yyyyMMdd）
 def static buildTime() {
     return new Date().format("yyyyMMdd", TimeZone.getTimeZone("GMT+08:00"))
+}
+
+// 定义一个函数来获取当前时间的小时和分钟（HHmm）
+def static buildTimeHourMinute() {
+    return new Date().format("HHmm", TimeZone.getTimeZone("GMT+08:00"))
 }
 
 android {
@@ -14,7 +20,7 @@ android {
         applicationId 'com.github.tvbox.osc.tk'
         minSdkVersion 21
         targetSdkVersion 28
-        versionCode 1
+        versionCode buildTimeHourMinute().toInteger() // 将小时和分钟转换为整数并赋值给 versionCode
         versionName "1.0.".concat(buildTime())
         multiDexEnabled true
         //设置room的Schema的位置
