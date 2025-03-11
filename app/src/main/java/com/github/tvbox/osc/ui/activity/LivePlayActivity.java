@@ -203,15 +203,28 @@ public class LivePlayActivity extends BaseActivity {
 //            if (!matchTo) {
 //                header.put("User-Agent", "okhttp/3.12.13");
 //            }
+           // 根据 URL 动态设置请求头（优先使用 JSON 中的 headers）
+        Map<String, Map<String, String>> headersMap = ApiConfig.get().getHeadersMap();
+        for (Map.Entry<String, Map<String, String>> entry : headersMap.entrySet()) {
+            if (url.contains(entry.getKey())) { // 如果 URL 包含 host
+                header.putAll(entry.getValue()); // 添加对应的 header
+                break;
+            }
+        }
+
+        // 如果 JSON 中没有设置 User-Agent，则根据 URL 设置默认的 User-Agent
+        if (!header.containsKey("User-Agent")) {
             if (url.contains("ABC.COM") || url.contains("148.135.93.213")) {
-            header.put("User-Agent", "AptvPlayer/9.3.7");
-        } else {
-            header.put("User-Agent", "okhttp/3.12.13");
+                header.put("User-Agent", "AptvPlayer/9.3.7");
+            } else {
+                header.put("User-Agent", "okhttp/3.12.13");
+            }
         }
             
-        } catch (Exception e) {
-            header.put("User-Agent", "okhttp/3.12.13");
-        }
+        } 
+//        catch (Exception e) {
+//            header.put("User-Agent", "okhttp/3.12.13");
+//        }
         return header;
     }
 
