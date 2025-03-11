@@ -74,7 +74,9 @@ public class ApiConfig {
     private final JsLoader jsLoader = new JsLoader();
 
     private final String userAgent = "okhttp/3.15";
-
+    
+    private final Map<String, Map<String, String>> headersMap = new HashMap<>(); // 存储 headers 配置
+    
     private final String requestAccept = "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9";
 
     private ApiConfig() {
@@ -304,7 +306,11 @@ public class ApiConfig {
         bReader.close();
         parseJson(apiUrl, sb.toString());
     }
-
+  
+    public Map<String, Map<String, String>> getHeadersMap() {
+        return headersMap;
+    }
+    
     private void parseJson(String apiUrl, String jsonStr) {
 
         JsonObject infoJson = new Gson().fromJson(jsonStr, JsonObject.class);
@@ -312,6 +318,20 @@ public class ApiConfig {
         spider = DefaultConfig.safeJsonString(infoJson, "spider", "");
         // wallpaper
         wallpaper = DefaultConfig.safeJsonString(infoJson, "wallpaper", "");
+       // 解析 headers
+        if (infoJson.has("headers")) {
+            JsonArray headersArray = infoJson.getAsJsonArray("headers");
+            for (JsonElement headerElement : headersArray) {
+                JsonObject headerObj = headerElement.getAsJsonObject();
+                String host = headerObj.get("host").getAsString(); // 获取 host
+                JsonObject headerData = headerObj.getAsJsonObject("header"); // 获取 header 数据
+                Map<String, String> header = new HashMap<>();
+                for (Map.Entry<String, JsonElement> entry : headerData.entrySet()) {
+                    header.put(entry.getKey(), entry.getValue().getAsString()); // 将 header 数据存入 Map
+                }
+                headersMap.put(host, header); // 将 host 和 header 存入全局 headersMap
+            }
+        }
         // 直播播放请求头
         livePlayHeaders = infoJson.getAsJsonArray("livePlayHeaders");
         // 远端站点源
