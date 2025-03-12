@@ -175,40 +175,36 @@ public class LivePlayActivity extends BaseActivity {
     private static String shiyi_time;//时移时间
 
     private HashMap<String, String> setPlayHeaders(String url) {
-        HashMap<String, String> header = new HashMap();
-        try {
-            boolean matchTo = false;
-            JSONArray livePlayHeaders = new JSONArray(ApiConfig.get().getLivePlayHeaders().toString());
-            for (int i = 0; i < livePlayHeaders.length(); i++) {
-                JSONObject headerObj = livePlayHeaders.getJSONObject(i);
-                JSONArray flags = headerObj.getJSONArray("flag");
-                JSONObject headerData = headerObj.getJSONObject("header");
-                for (int j = 0; j < flags.length(); j++) {
-                    String flag = flags.getString(j);
-                    if (url.contains(flag)) {
-                        matchTo = true;
-                        break;
-                    }
+    HashMap<String, String> header = new HashMap<>();
+    try {
+        boolean matchTo = false;
+        JsonArray livePlayHeaders = ApiConfig.get().getLivePlayHeaders();
+
+        for (JsonElement element : livePlayHeaders) {
+            JsonObject headerObj = element.getAsJsonObject();
+            String host = headerObj.get("host").getAsString(); // 获取 host 字段
+            JsonObject headerData = headerObj.getAsJsonObject("header"); // 获取 header 字段
+
+            if (url.contains(host)) { // 检查 URL 是否包含 host
+                matchTo = true;
+                for (Map.Entry<String, JsonElement> entry : headerData.entrySet()) {
+                    String key = entry.getKey();
+                    String value = entry.getValue().getAsString();
+                    header.put(key, value);
                 }
-                if (matchTo) {
-                    Iterator<String> keys = headerData.keys();
-                    while (keys.hasNext()) {
-                        String key = keys.next();
-                        String value = headerData.getString(key);
-                        header.put(key, value);
-                    }
-                    break;
-                }
+                break;
             }
-            if (!matchTo) {
-                header.put("User-Agent", "okhttp/3.12.13");
-            }
-            
-        } catch (Exception e) {
-            header.put("User-Agent", "AptvPlayer/9.3.7");
-        }        
-        return header;
+        }
+
+        if (!matchTo) {
+            header.put("User-Agent", "okhttp/3.12.13"); // 默认 User-Agent
+        }
+
+    } catch (Exception e) {
+        header.put("User-Agent", "AptvPlayer/9.3.7"); // 异常处理
     }
+    return header;
+}
 
     @Override
     protected int getLayoutResID() {
