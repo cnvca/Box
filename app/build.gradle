@@ -8,10 +8,9 @@ def static buildTime() {
     return new Date().format("yyyyMMdd", TimeZone.getTimeZone("GMT+08:00"))
 }
 
-// 定义一个函数来获取当前时间的小时和分钟（HHmm）
-def static buildTimeHourMinute() {
-    return new Date().format("HHmm", TimeZone.getTimeZone("GMT+08:00"))
-}
+
+// 初始化 versionCode
+project.ext.versionCode = 1000 // 初始版本号
 
 android {
     compileSdk 34
@@ -20,16 +19,26 @@ android {
         applicationId 'com.github.tvbox.osc.tk'
         minSdkVersion 21
         targetSdkVersion 28
-        versionCode buildTimeHourMinute().toInteger() // 将小时和分钟转换为整数并赋值给 versionCode
+        versionCode project.ext.versionCode // 使用 project.ext.versionCode
         versionName "1.0.".concat(buildTime())
         multiDexEnabled true
-        //设置room的Schema的位置
+
+        // 设置 room 的 Schema 的位置
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = ["room.schemaLocation": "$projectDir/schemas".toString()]
             }
         }
     }
+
+    // 在 preBuild 阶段递增 versionCode
+    preBuild {
+        doFirst {
+            project.ext.versionCode += 1
+            println "Incremented versionCode to: ${project.ext.versionCode}"
+        }
+    }
+}
 
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
