@@ -305,18 +305,6 @@ public class ApiConfig {
         parseJson(apiUrl, sb.toString());
     }
     
-    public class ApiConfig {
-        private JsonArray livePlayHeaders;
-
-        public void parseConfig(JsonObject infoJson) {
-        // 直播播放请求头
-        livePlayHeaders = infoJson.getAsJsonArray("headers"); // 修改为 "headers"
-    }
-
-    public JsonArray getLivePlayHeaders() {
-        return livePlayHeaders;
-      }
-    }
 
     private void parseJson(String apiUrl, String jsonStr) {
 
@@ -327,6 +315,7 @@ public class ApiConfig {
         wallpaper = DefaultConfig.safeJsonString(infoJson, "wallpaper", "");
         // 直播播放请求头
 //        livePlayHeaders = infoJson.getAsJsonArray("livePlayHeaders");
+        livePlayHeaders = infoJson.getAsJsonArray("headers"); // 修改为 "headers"
         // 远端站点源
         SourceBean firstSite = null;
         JsonArray sites = infoJson.has("video") ? infoJson.getAsJsonObject("video").getAsJsonArray("sites") : infoJson.get("sites").getAsJsonArray();
