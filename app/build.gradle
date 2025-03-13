@@ -11,6 +11,13 @@ def static buildTime() {
 
 // 初始化 versionCode
 project.ext.versionCode = 1000 // 初始版本号
+// 在 preBuild 阶段递增 versionCode
+    preBuild {
+        doFirst {
+            project.ext.versionCode += 1
+            println "Incremented versionCode to: ${project.ext.versionCode}"
+        }
+    }
 
 android {
     compileSdk 34
@@ -31,13 +38,6 @@ android {
         }
     }
 
-    // 在 preBuild 阶段递增 versionCode
-    preBuild {
-        doFirst {
-            project.ext.versionCode += 1
-            println "Incremented versionCode to: ${project.ext.versionCode}"
-        }
-    }
 
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
