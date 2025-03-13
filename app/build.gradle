@@ -8,16 +8,15 @@ def static buildTime() {
     return new Date().format("yyyyMMdd", TimeZone.getTimeZone("GMT+08:00"))
 }
 
-
-// 初始化 versionCode
-project.ext.versionCode = 1000 // 初始版本号
-// 在 preBuild 阶段递增 versionCode
-    preBuild {
-        doFirst {
-            project.ext.versionCode += 1
-            println "Incremented versionCode to: ${project.ext.versionCode}"
-        }
+def generateVersionCode() {
+    def versionCodeFile = file('versionCode.txt')
+    def versionCode = 1000
+    if (versionCodeFile.exists()) {
+        versionCode = versionCodeFile.text.toInteger() + 1
     }
+    versionCodeFile.write(versionCode.toString())
+    return versionCode
+}
 
 android {
     compileSdk 34
@@ -26,7 +25,7 @@ android {
         applicationId 'com.github.tvbox.osc.tk'
         minSdkVersion 21
         targetSdkVersion 28
-        versionCode project.ext.versionCode // 使用 project.ext.versionCode
+        versionCode generateVersionCode()
         versionName "1.0.".concat(buildTime())
         multiDexEnabled true
 
