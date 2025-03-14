@@ -1483,7 +1483,7 @@ private void updateEpgInfoDisplay(int position) {
     String channelName = currentChannel.getChannelName();
 
     // 获取当前频道的节目名称
-    String currentProgramName = EpgUtil.getCurrentProgramName(channelName);
+    String currentProgramName = EpgUtil.getEpgInfo(channelName); // 修改为 getEpgInfo
     if (currentProgramName != null) {
         epgInfoLayout.setVisibility(View.VISIBLE);
         tvEpgCurrentName.setText(currentProgramName); // 显示当前节目名称
