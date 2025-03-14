@@ -1476,7 +1476,7 @@ public class LivePlayActivity extends BaseActivity {
     }
     
 // 新增方法：更新EPG信息显示区域
-public void updateEpgInfoDisplay(int position) {
+private void updateEpgInfoDisplay(int position) {
     LinearLayout epgInfoLayout = findViewById(R.id.epgInfoLayout);
     TextView tvEpgCurrentName = findViewById(R.id.tv_epg_current_name);
 
@@ -1485,9 +1485,9 @@ public void updateEpgInfoDisplay(int position) {
 
     // 获取当前频道的节目名称
     String[] epgInfo = EpgUtil.getEpgInfo(channelName); // 修改为 getEpgInfo
-    if (currentProgramName != null) {
+    if (epgInfo != null && epgInfo.length > 0) {
         epgInfoLayout.setVisibility(View.VISIBLE);
-        tvEpgCurrentName.setText(currentProgramName); // 显示当前节目名称
+        tvEpgCurrentName.setText(epgInfo[0]); // 显示当前节目名称
     } else {
         epgInfoLayout.setVisibility(View.GONE); // 如果没有节目信息，隐藏 EPG 区域
     }
