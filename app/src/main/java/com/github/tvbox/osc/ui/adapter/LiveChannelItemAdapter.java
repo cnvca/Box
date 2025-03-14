@@ -4,6 +4,7 @@ import android.graphics.Color;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
+import com.github.tvbox.osc.ui.activity.LivePlayActivity;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
@@ -21,10 +22,15 @@ import java.util.ArrayList;
 public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, BaseViewHolder> {
     private int selectedChannelIndex = -1;
     private int focusedChannelIndex = -1;
-
-    public LiveChannelItemAdapter() {
+    
+    private Context context; // 添加 context 变量
+    public LiveChannelItemAdapter(Context context) { // 修改构造函数
         super(R.layout.item_live_channel, new ArrayList<>());
+        this.context = context; // 初始化 context
     }
+//    public LiveChannelItemAdapter() {
+//        super(R.layout.item_live_channel, new ArrayList<>())
+//   }
 
     @Override
     protected void convert(BaseViewHolder holder, LiveChannelItem item) {
