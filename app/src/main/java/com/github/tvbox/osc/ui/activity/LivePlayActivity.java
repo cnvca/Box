@@ -1476,7 +1476,7 @@ public class LivePlayActivity extends BaseActivity {
     }
     
 // 新增方法：更新EPG信息显示区域
-private void updateEpgInfoDisplay(int position) {
+public void updateEpgInfoDisplay(int position) {
     LinearLayout epgInfoLayout = findViewById(R.id.epgInfoLayout);
     TextView tvEpgCurrentName = findViewById(R.id.tv_epg_current_name);
 
