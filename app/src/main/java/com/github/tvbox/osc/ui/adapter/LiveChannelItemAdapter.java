@@ -3,6 +3,7 @@ package com.github.tvbox.osc.ui.adapter;
 import android.graphics.Color;
 import android.widget.TextView;
 
+import android.content.Context;
 import androidx.recyclerview.widget.RecyclerView;
 import com.github.tvbox.osc.ui.activity.LivePlayActivity;
 
