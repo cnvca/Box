@@ -55,8 +55,9 @@ public class EpgUtil {
         try {
             if (epgHashMap.containsKey(channelName)) {
                 JsonObject obj = epgHashMap.get(channelName);
-                return obj.get("current_name").getAsString(); // 只返回当前节目名称
+      
                 return new String[]{
+                        obj.get("current_name").getAsString(); // 只返回当前节目名称
                         obj.get("logo").getAsString(),
                         obj.get("epgid").getAsString()
                        
