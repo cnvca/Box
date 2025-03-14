@@ -1468,8 +1468,36 @@ public class LivePlayActivity extends BaseActivity {
 //            mHandler.postDelayed(mHideChannelListRun, 500);
         }
         playChannel(liveChannelGroupAdapter.getSelectedGroupIndex(), position, false);
-    }
+       
+        // 更新EPG信息显示区域
+        updateEpgInfoDisplay(position);
 
+    }
+    
+// 新增方法：更新EPG信息显示区域
+private void updateEpgInfoDisplay(int position) {
+    LinearLayout epgInfoLayout = findViewById(R.id.epgInfoLayout);
+    TextView tvEpgCurrentTime = findViewById(R.id.tv_epg_current_time);
+    TextView tvEpgCurrentName = findViewById(R.id.tv_epg_current_name);
+    TextView tvEpgNextTime = findViewById(R.id.tv_epg_next_time);
+    TextView tvEpgNextName = findViewById(R.id.tv_epg_next_name);
+
+    LiveChannelItem currentChannel = liveChannelItemAdapter.getItem(position);
+    String channelName = currentChannel.getChannelName();
+
+    // 获取当前频道的EPG信息
+    String[] epgInfo = EpgUtil.getEpgInfo(channelName);
+    if (epgInfo != null) {
+        epgInfoLayout.setVisibility(View.VISIBLE);
+        tvEpgCurrentTime.setText(epgInfo[0]); // 当前节目时间
+        tvEpgCurrentName.setText(epgInfo[1]); // 当前节目名称
+        tvEpgNextTime.setText(epgInfo[2]);    // 下一个节目时间
+        tvEpgNextName.setText(epgInfo[3]);    // 下一个节目名称
+    } else {
+        epgInfoLayout.setVisibility(View.GONE);
+    }
+}
+    
     private void initSettingGroupView() {
         mSettingGroupView.setHasFixedSize(true);
         mSettingGroupView.setLayoutManager(new V7LinearLayoutManager(this.mContext, 1, false));
