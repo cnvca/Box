@@ -58,6 +58,10 @@ public class EpgUtil {
                 return new String[]{
                         obj.get("logo").getAsString(),
                         obj.get("epgid").getAsString()
+                    obj.get("current_time").getAsString(),  // 当前节目时间
+                    obj.get("current_name").getAsString(),  // 当前节目名称
+                    obj.get("next_time").getAsString(),     // 下一个节目时间
+                    obj.get("next_name").getAsString()      // 下一个节目名称
                 };
             }
         } catch (Exception ex) {
