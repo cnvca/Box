@@ -1414,7 +1414,8 @@ public class LivePlayActivity extends BaseActivity {
         mChannelGridView.setHasFixedSize(true);
         mChannelGridView.setLayoutManager(new V7LinearLayoutManager(this.mContext, 1, false));
 
-        liveChannelItemAdapter = new LiveChannelItemAdapter();
+//        liveChannelItemAdapter = new LiveChannelItemAdapter();
+        liveChannelItemAdapter = new LiveChannelItemAdapter(this);
         mChannelGridView.setAdapter(liveChannelItemAdapter);
         mChannelGridView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
