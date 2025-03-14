@@ -28,8 +28,18 @@ public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, Ba
     protected void convert(BaseViewHolder holder, LiveChannelItem item) {
         TextView tvChannelNum = holder.getView(R.id.tvChannelNum);
         TextView tvChannel = holder.getView(R.id.tvChannelName);
-        tvChannelNum.setText(String.format("%s", item.getChannelNum()));
+//        tvChannelNum.setText(String.format("%s", item.getChannelNum()));
+        tvChannelNum.setText(String.valueOf(item.getChannelNum()));
         tvChannel.setText(item.getChannelName());
+
+        // 设置点击事件
+        holder.itemView.setOnClickListener(v -> {
+          int position = holder.getAdapterPosition();
+          if (position != RecyclerView.NO_POSITION) {
+            // 触发更新EPG信息的逻辑
+            ((LivePlayActivity) context).updateEpgInfoDisplay(position);
+          }
+        });
         int channelIndex = item.getChannelIndex();
         if (channelIndex == selectedChannelIndex && channelIndex != focusedChannelIndex) {
             // takagen99: Added Theme Color
