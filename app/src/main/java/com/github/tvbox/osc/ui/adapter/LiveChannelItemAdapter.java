@@ -3,6 +3,8 @@ package com.github.tvbox.osc.ui.adapter;
 import android.graphics.Color;
 import android.widget.TextView;
 
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
 import com.github.tvbox.osc.R;
