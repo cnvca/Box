@@ -1568,6 +1568,10 @@ private void updateEpgInfoDisplay(int position) {
         mSettingItemView.setHasFixedSize(true);
         mSettingItemView.setLayoutManager(new V7LinearLayoutManager(this.mContext, 1, false));
 
+         // 修改这里：传递 this 作为 Context
+        liveChannelItemAdapter = new LiveChannelItemAdapter(this);
+        mChannelGridView.setAdapter(liveChannelItemAdapter);
+
         liveSettingItemAdapter = new LiveSettingItemAdapter();
         mSettingItemView.setAdapter(liveSettingItemAdapter);
         mSettingItemView.addOnScrollListener(new RecyclerView.OnScrollListener() {
