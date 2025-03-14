@@ -191,48 +191,26 @@
                 android:textStyle="bold" />
         </LinearLayout>
 
-            <!-- 新增的EPG信息显示区域 -->
-    <LinearLayout
-        android:id="@+id/epgInfoLayout"
-        android:layout_width="match_parent"
+<!-- 新增的 EPG 信息显示区域 -->
+<LinearLayout
+    android:id="@+id/epgInfoLayout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="@dimen/vs_10"
+    android:background="@color/color_32364E"
+    android:visibility="gone">
+
+    <!-- 只显示当前节目名称 -->
+    <TextView
+        android:id="@+id/tv_epg_current_name"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="@dimen/vs_10"
-        android:background="@color/color_32364E"
-        android:visibility="gone">
+        android:text="当前节目名称"
+        android:textColor="@color/color_FFFFFF"
+        android:textSize="@dimen/ts_16" />
+</LinearLayout>
 
-        <TextView
-            android:id="@+id/tv_epg_current_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="当前节目时间"
-            android:textColor="@color/color_FFFFFF"
-            android:textSize="@dimen/ts_16" />
-
-        <TextView
-            android:id="@+id/tv_epg_current_name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="当前节目名称"
-            android:textColor="@color/color_FFFFFF"
-            android:textSize="@dimen/ts_16" />
-
-        <TextView
-            android:id="@+id/tv_epg_next_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="下一个节目时间"
-            android:textColor="@color/color_FFFFFF"
-            android:textSize="@dimen/ts_16" />
-
-        <TextView
-            android:id="@+id/tv_epg_next_name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="下一个节目名称"
-            android:textColor="@color/color_FFFFFF"
-            android:textSize="@dimen/ts_16" />
-    </LinearLayout>
         
         <LinearLayout
             android:id="@+id/mGroupEPG"
