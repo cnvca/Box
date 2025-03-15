@@ -3,10 +3,6 @@ package com.github.tvbox.osc.ui.adapter;
 import android.graphics.Color;
 import android.widget.TextView;
 
-import android.content.Context;
-import androidx.recyclerview.widget.RecyclerView;
-import com.github.tvbox.osc.ui.activity.LivePlayActivity;
-
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
 import com.github.tvbox.osc.R;
@@ -23,38 +19,17 @@ import java.util.ArrayList;
 public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, BaseViewHolder> {
     private int selectedChannelIndex = -1;
     private int focusedChannelIndex = -1;
-    
-    private Context context; // 添加 context 变量
-    public LiveChannelItemAdapter(Context context) { // 修改构造函数
+
+    public LiveChannelItemAdapter() {
         super(R.layout.item_live_channel, new ArrayList<>());
-        this.context = context; // 初始化 context
     }
-//    public LiveChannelItemAdapter() {
-//        super(R.layout.item_live_channel, new ArrayList<>())
-//   }
 
     @Override
     protected void convert(BaseViewHolder holder, LiveChannelItem item) {
         TextView tvChannelNum = holder.getView(R.id.tvChannelNum);
         TextView tvChannel = holder.getView(R.id.tvChannelName);
-//        tvChannelNum.setText(String.format("%s", item.getChannelNum()));
-        tvChannelNum.setText(String.valueOf(item.getChannelNum()));
+        tvChannelNum.setText(String.format("%s", item.getChannelNum()));
         tvChannel.setText(item.getChannelName());
-
-        // 设置点击事件
-        holder.itemView.setOnClickListener(v -> {
-          int position = holder.getAdapterPosition();
-          if (position != RecyclerView.NO_POSITION) {
-            // 触发更新EPG信息的逻辑
-            ((LivePlayActivity) context).updateEpgInfoDisplay(position);
-            // 触发播放频道的逻辑
-            ((LivePlayActivity) context).playChannel(
-                ((LivePlayActivity) context).currentChannelGroupIndex,
-                position,
-                false
-            );   
-          }
-        });
         int channelIndex = item.getChannelIndex();
         if (channelIndex == selectedChannelIndex && channelIndex != focusedChannelIndex) {
             // takagen99: Added Theme Color
