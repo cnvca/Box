@@ -7,14 +7,11 @@
     android:background="@drawable/shape_live_focus"
     android:layout_marginLeft="10mm"
     android:layout_marginRight="10mm"
-    
     android:clickable="true"
     android:focusable="true"
     android:onClick="divLoadEpgR"
-    android:orientation="vertical"
-    
-    android:focusableInTouchMode="false"
-    android:orientation="horizontal">
+    android:orientation="horizontal"
+    android:focusableInTouchMode="false">
 
     <TextView
         android:id="@+id/tvChannelNum"
@@ -36,45 +33,52 @@
         android:textSize="24mm"
         android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/tvChannelName"
+    <!-- 新增的垂直布局，用于包裹频道名称和EPG实时名称 -->
+    <LinearLayout
         android:layout_width="0mm"
-        android:layout_height="60mm"
+        android:layout_height="66mm" <!-- 增加6mm -->
+        android:layout_weight="1"
+        android:orientation="vertical"
         android:layout_marginStart="@dimen/vs_10"
         android:layout_marginLeft="@dimen/vs_10"
         android:layout_marginEnd="@dimen/vs_10"
-        android:layout_marginRight="@dimen/vs_10"
-        android:layout_weight="1"
-        android:ellipsize="marquee"
-        android:gravity="left|center_vertical"
-        android:marqueeRepeatLimit="marquee_forever"
-        android:shadowDx="0"
-        android:shadowDy="0"
-        android:shadowRadius="2"
-        android:singleLine="true"
-        android:textColor="@android:color/white"
-        android:textSize="22mm" />
+        android:layout_marginRight="@dimen/vs_10">
 
-       <com.github.tvbox.osc.ui.tv.widget.MarqueeTextView
-                    android:id="@+id/tv_current_program_name"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center|left"
-                    android:layout_weight="1"
-                    android:ellipsize="marquee"
-                    android:fontFamily="sans-serif"
-                    android:gravity="left"
-                    android:paddingRight="@dimen/vs_20"
-                    android:shadowColor="@color/color_FF000000"
-                    android:shadowDx="0"
-                    android:shadowDy="0"
-                    android:shadowRadius="3"
-                    android:singleLine="true"
-                    android:text="No information"
-                    android:textColor="@color/color_FFFFFF"
-                    android:textSize="12mm"
-                    android:textStyle="bold" />
+        <!-- 频道名称 -->
+        <TextView
+            android:id="@+id/tvChannelName"
+            android:layout_width="match_parent"
+            android:layout_height="0mm"
+            android:layout_weight="1"
+            android:ellipsize="marquee"
+            android:gravity="left|center_vertical"
+            android:marqueeRepeatLimit="marquee_forever"
+            android:shadowDx="0"
+            android:shadowDy="0"
+            android:shadowRadius="2"
+            android:singleLine="true"
+            android:textColor="@android:color/white"
+            android:textSize="22mm" />
+
+        <!-- EPG实时名称 -->
+        <com.github.tvbox.osc.ui.tv.widget.MarqueeTextView
+            android:id="@+id/tv_current_program_name"
+            android:layout_width="match_parent"
+            android:layout_height="0mm"
+            android:layout_weight="1"
+            android:layout_gravity="center|left"
+            android:ellipsize="marquee"
+            android:fontFamily="sans-serif"
+            android:gravity="left"
+            android:paddingRight="@dimen/vs_20"
+            android:shadowColor="@color/color_FF000000"
+            android:shadowDx="0"
+            android:shadowDy="0"
+            android:shadowRadius="3"
+            android:singleLine="true"
+            android:text="No information"
+            android:textColor="@color/color_FFFFFF"
+            android:textSize="12mm"
+            android:textStyle="bold" />
+    </LinearLayout>
 </LinearLayout>
-
-
-
