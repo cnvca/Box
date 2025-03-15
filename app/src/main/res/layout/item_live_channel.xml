@@ -7,7 +7,12 @@
     android:background="@drawable/shape_live_focus"
     android:layout_marginLeft="10mm"
     android:layout_marginRight="10mm"
+    
+    android:clickable="true"
     android:focusable="true"
+    android:onClick="divLoadEpgR"
+    android:orientation="vertical"
+    
     android:focusableInTouchMode="false"
     android:orientation="horizontal">
 
