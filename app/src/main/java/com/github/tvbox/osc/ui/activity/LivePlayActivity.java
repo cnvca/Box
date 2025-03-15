@@ -149,7 +149,7 @@ public class LivePlayActivity extends BaseActivity {
     private TextView tv_channelname;
     private TextView tv_channelnum;
     private TextView tv_curr_name;
-    private marqueeTextView tv_current_program_name;
+    private TextView tv_current_program_name;
     private TextView tv_curr_time;
     private TextView tv_next_name;
     private TextView tv_next_time;
