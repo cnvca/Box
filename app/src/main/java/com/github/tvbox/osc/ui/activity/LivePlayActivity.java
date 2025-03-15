@@ -803,14 +803,6 @@ public class LivePlayActivity extends BaseActivity {
                 }
                 epgListAdapter.CanBack(currentLiveChannelItem.getinclude_back());
                 epgListAdapter.setNewData(arrayList);
-                
-               // 绑定 EPG 信息到布局
-               if (arrayList.size() > 0) {
-                Epginfo currentEpg = (Epginfo) arrayList.get(0); // 获取当前 EPG 信息
-                tvEpgInfo.setText(currentEpg.getTitle()); // 更新 EPG 信息
-               } else {
-                tvEpgInfo.setText("暂无节目信息"); // 如果没有 EPG 信息，显示默认文本
-               }            
             } else {
                 int selectedIndex = epgDateAdapter.getSelectedIndex();
                 if (selectedIndex < 0)
@@ -875,14 +867,6 @@ public class LivePlayActivity extends BaseActivity {
                     jSONException.printStackTrace();
                 }
                 showEpg(date, arrayList);
-                
-                 // 绑定 EPG 信息到布局
-            if (arrayList.size() > 0) {
-                Epginfo currentEpg = (Epginfo) arrayList.get(0); // 获取当前 EPG 信息
-                tvEpgInfo.setText(currentEpg.getTitle()); // 更新 EPG 信息
-            } else {
-                tvEpgInfo.setText("暂无节目信息"); // 如果没有 EPG 信息，显示默认文本
-            }
 
                 String savedEpgKey = channelName + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
                 if (!hsEpg.contains(savedEpgKey))
