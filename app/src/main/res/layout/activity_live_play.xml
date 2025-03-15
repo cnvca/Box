@@ -40,6 +40,11 @@
         android:layout_height="match_parent"
         android:layout_margin="@dimen/vs_20"
         android:background="@drawable/bg_live"
+        
+        android:clickable="true"
+        android:focusable="true"
+        android:onClick="divLoadEpgR"
+        
         android:baselineAligned="false"
         android:orientation="horizontal">
 
