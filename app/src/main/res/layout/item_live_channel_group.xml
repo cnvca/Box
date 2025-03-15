@@ -9,7 +9,6 @@
     android:clickable="true"
     android:focusable="true"
     android:onClick="divLoadEpgR"
-    android:orientation="vertical"
     
     android:focusableInTouchMode="false"
     android:orientation="horizontal">
