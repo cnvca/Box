@@ -867,7 +867,16 @@ public class LivePlayActivity extends BaseActivity {
                     jSONException.printStackTrace();
                 }
                 showEpg(date, arrayList);
+                            
+                // 绑定 EPG 信息到布局
+            if (arrayList.size() > 0) {
+                Epginfo currentEpg = (Epginfo) arrayList.get(0); // 获取当前 EPG 信息
+                tv_current_program_name.setText(currentEpg.getTitle()); // 更新当前节目名称
 
+            } else {
+                tv_current_program_name.setText("暂无节目信息"); // 如果没有 EPG 信息，显示默认文本
+            }
+                
                 String savedEpgKey = channelName + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
                 if (!hsEpg.contains(savedEpgKey))
                     hsEpg.put(savedEpgKey, arrayList);
