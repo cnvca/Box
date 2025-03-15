@@ -148,6 +148,7 @@ public class LivePlayActivity extends BaseActivity {
     private TextView tv_channelname;
     private TextView tv_channelnum;
     private TextView tv_curr_name;
+    private MarqueeTextView tv_current_program_name;
     private TextView tv_curr_time;
     private TextView tv_next_name;
     private TextView tv_next_time;
@@ -873,7 +874,6 @@ public class LivePlayActivity extends BaseActivity {
             if (arrayList.size() > 0) {
                 Epginfo currentEpg = (Epginfo) arrayList.get(0); // 获取当前 EPG 信息
                 tv_current_program_name.setText(currentEpg.getTitle()); // 更新当前节目名称
-
             } else {
                 tv_current_program_name.setText("暂无节目信息"); // 如果没有 EPG 信息，显示默认文本
             }
