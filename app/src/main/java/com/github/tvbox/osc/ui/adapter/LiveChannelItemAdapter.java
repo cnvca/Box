@@ -47,6 +47,12 @@ public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, Ba
           if (position != RecyclerView.NO_POSITION) {
             // 触发更新EPG信息的逻辑
             ((LivePlayActivity) context).updateEpgInfoDisplay(position);
+            // 触发播放频道的逻辑
+            ((LivePlayActivity) context).playChannel(
+                ((LivePlayActivity) context).currentChannelGroupIndex,
+                position,
+                false
+            );   
           }
         });
         int channelIndex = item.getChannelIndex();
