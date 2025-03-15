@@ -1479,7 +1479,11 @@ public class LivePlayActivity extends BaseActivity {
 public void updateEpgInfoDisplay(int position) {
     LinearLayout epgInfoLayout = findViewById(R.id.epgInfoLayout);
     TextView tvEpgCurrentName = findViewById(R.id.tv_epg_current_name);
-
+    
+    if (epgInfoLayout == null || tvEpgCurrentName == null) {
+        return; // 如果布局或控件未初始化，直接返回
+    }
+    
     LiveChannelItem currentChannel = liveChannelItemAdapter.getItem(position);
     String channelName = currentChannel.getChannelName();
 
