@@ -907,7 +907,7 @@ public class LivePlayActivity extends BaseActivity {
     }
 
     //节目播放
-    private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
+    public boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
         if ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
                 || (changeSource && currentLiveChannelItem.getSourceNum() == 1)) {
             showChannelInfo();
