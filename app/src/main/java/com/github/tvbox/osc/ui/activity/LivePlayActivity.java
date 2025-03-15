@@ -907,7 +907,7 @@ public class LivePlayActivity extends BaseActivity {
     }
 
     //节目播放
-    public boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
+    private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
         if ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
                 || (changeSource && currentLiveChannelItem.getSourceNum() == 1)) {
             showChannelInfo();
@@ -1414,8 +1414,7 @@ public class LivePlayActivity extends BaseActivity {
         mChannelGridView.setHasFixedSize(true);
         mChannelGridView.setLayoutManager(new V7LinearLayoutManager(this.mContext, 1, false));
 
-//        liveChannelItemAdapter = new LiveChannelItemAdapter();
-        liveChannelItemAdapter = new LiveChannelItemAdapter(this);
+        liveChannelItemAdapter = new LiveChannelItemAdapter();
         mChannelGridView.setAdapter(liveChannelItemAdapter);
         mChannelGridView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -1469,34 +1468,8 @@ public class LivePlayActivity extends BaseActivity {
 //            mHandler.postDelayed(mHideChannelListRun, 500);
         }
         playChannel(liveChannelGroupAdapter.getSelectedGroupIndex(), position, false);
-       
-        // 更新EPG信息显示区域
-        updateEpgInfoDisplay(position);
+    }
 
-    }
-    
-// 新增方法：更新EPG信息显示区域
-public void updateEpgInfoDisplay(int position) {
-    LinearLayout epgInfoLayout = findViewById(R.id.epgInfoLayout);
-    TextView tvEpgCurrentName = findViewById(R.id.tv_epg_current_name);
-    
-    if (epgInfoLayout == null || tvEpgCurrentName == null) {
-        return; // 如果布局或控件未初始化，直接返回
-    }
-    
-    LiveChannelItem currentChannel = liveChannelItemAdapter.getItem(position);
-    String channelName = currentChannel.getChannelName();
-
-    // 获取当前频道的节目名称
-    String[] epgInfo = EpgUtil.getEpgInfo(channelName); // 修改为 getEpgInfo
-    if (epgInfo != null && epgInfo.length > 0) {
-        epgInfoLayout.setVisibility(View.VISIBLE);
-        tvEpgCurrentName.setText(epgInfo[0]); // 显示当前节目名称
-    } else {
-        epgInfoLayout.setVisibility(View.GONE); // 如果没有节目信息，隐藏 EPG 区域
-    }
-}
-    
     private void initSettingGroupView() {
         mSettingGroupView.setHasFixedSize(true);
         mSettingGroupView.setLayoutManager(new V7LinearLayoutManager(this.mContext, 1, false));
@@ -1571,10 +1544,6 @@ public void updateEpgInfoDisplay(int position) {
     private void initSettingItemView() {
         mSettingItemView.setHasFixedSize(true);
         mSettingItemView.setLayoutManager(new V7LinearLayoutManager(this.mContext, 1, false));
-
-         // 修改这里：传递 this 作为 Context
-        liveChannelItemAdapter = new LiveChannelItemAdapter(this);
-        mChannelGridView.setAdapter(liveChannelItemAdapter);
 
         liveSettingItemAdapter = new LiveSettingItemAdapter();
         mSettingItemView.setAdapter(liveSettingItemAdapter);
