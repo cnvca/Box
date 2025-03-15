@@ -79,7 +79,7 @@
             android:singleLine="true"
             android:text="No information"
             android:textColor="@color/color_FFFFFF"
-            android:textSize="12mm"
+            android:textSize="16mm"
             android:textStyle="bold" />
     </LinearLayout>
 </LinearLayout>
