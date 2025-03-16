@@ -32,7 +32,6 @@ import com.github.tvbox.osc.api.ApiConfig;
 import com.github.tvbox.osc.base.App;
 import com.github.tvbox.osc.base.BaseActivity;
 import com.github.tvbox.osc.bean.Epginfo;
-import com.github.tvbox.osc.ui.tv.widget.MarqueeTextView; // 确保导入 MarqueeTextView
 import com.github.tvbox.osc.bean.LiveChannelGroup;
 import com.github.tvbox.osc.bean.LiveChannelItem;
 import com.github.tvbox.osc.bean.LiveEpgDate;
@@ -149,7 +148,6 @@ public class LivePlayActivity extends BaseActivity {
     private TextView tv_channelname;
     private TextView tv_channelnum;
     private TextView tv_curr_name;
-    private TextView tv_current_program_name;
     private TextView tv_curr_time;
     private TextView tv_next_name;
     private TextView tv_next_time;
@@ -259,7 +257,6 @@ public class LivePlayActivity extends BaseActivity {
         tv_logo = findViewById(R.id.tv_logo);
         tv_curr_time = findViewById(R.id.tv_current_program_time);
         tv_curr_name = findViewById(R.id.tv_current_program_name);
-        tv_current_program_name = findViewById(R.id.tv_current_program_name);
         tv_next_time = findViewById(R.id.tv_next_program_time);
         tv_next_name = findViewById(R.id.tv_next_program_name);
 
@@ -476,11 +473,6 @@ public class LivePlayActivity extends BaseActivity {
                     case KeyEvent.KEYCODE_ENTER:
                     case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
                         showChannelList();
-                        
-                        // 加载并显示 EPG 信息
-            loadAndShowEpgInfo();
-            return true;
-                        
                         break;
                     default:
                         if (keyCode >= KeyEvent.KEYCODE_0 && keyCode <= KeyEvent.KEYCODE_9) {
@@ -875,15 +867,7 @@ public class LivePlayActivity extends BaseActivity {
                     jSONException.printStackTrace();
                 }
                 showEpg(date, arrayList);
-                            
-                // 绑定 EPG 信息到布局
-            if (arrayList.size() > 0) {
-                Epginfo currentEpg = (Epginfo) arrayList.get(0); // 获取当前 EPG 信息
-                tv_current_program_name.setText(currentEpg.getTitle()); // 更新当前节目名称
-            } else {
-                tv_current_program_name.setText("暂无节目信息"); // 如果没有 EPG 信息，显示默认文本
-            }
-                
+
                 String savedEpgKey = channelName + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
                 if (!hsEpg.contains(savedEpgKey))
                     hsEpg.put(savedEpgKey, arrayList);
