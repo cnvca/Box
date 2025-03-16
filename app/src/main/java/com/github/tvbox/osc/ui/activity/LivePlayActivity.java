@@ -162,7 +162,7 @@ public class LivePlayActivity extends BaseActivity {
     SimpleDateFormat timeFormat = new SimpleDateFormat("yyyy-MM-dd");
     private final Handler mHandler = new Handler();
     private static LiveChannelItem channel_Name = null;
-    private static final Hashtable hsEpg = new Hashtable();
+ //   private static final Hashtable hsEpg = new Hashtable();
     private TextView tvTime;
     private TextView tvNetSpeed;
 
@@ -1454,7 +1454,7 @@ public class LivePlayActivity extends BaseActivity {
             mHandler.postDelayed(mHideChannelListRun, 6000);
         }
     }
-   public class LivePlayActivity extends AppCompatActivity {	
+  	
     private Hashtable<String, ArrayList<Epginfo>> hsEpg = new Hashtable<>(); // 确保 hsEpg 是成员变量
 
     private void initLiveChannelView() {
@@ -1847,12 +1847,11 @@ public class LivePlayActivity extends BaseActivity {
         }
 
         @Override
-        protected void someMethod() {
-        // 方法实现
-        }
-        private void someOtherMethod() {
-        Log.e("EPG", "Failed to load EPG for channel: " + channelName);
-       }
+            public void onFailure(int i, String str) {
+                Log.e("EPG", "Failed to load EPG for channel: " + channelName);
+            }
+        });
+    }
 	  // 如果有匿名类，确保正确闭合
     someObject.setOnClickListener(new View.OnClickListener() {
     @Override
