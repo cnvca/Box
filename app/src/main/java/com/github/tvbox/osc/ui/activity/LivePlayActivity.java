@@ -1775,8 +1775,80 @@ public class LivePlayActivity extends BaseActivity {
             liveChannelGroupList.addAll(list);
             showSuccess();
             initLiveState();
+			// 新增：加载所有频道的 EPG 信息
+            loadAllChannelsEpg();
         }
     }
+
+    private void loadAllChannelsEpg() {
+    if (liveChannelGroupList == null || liveChannelGroupList.isEmpty()) return;
+
+    // 遍历所有频道组
+    for (LiveChannelGroup group : liveChannelGroupList) {
+        if (group.getLiveChannels() == null || group.getLiveChannels().isEmpty()) continue;
+
+        // 遍历当前频道组中的所有频道
+        for (LiveChannelItem channel : group.getLiveChannels()) {
+            // 加载当前频道的 EPG 信息
+            getEpgForChannel(channel, new Date());
+        }
+    }
+}
+
+    private void getEpgForChannel(LiveChannelItem channel, Date date) {
+    String channelName = channel.getChannelName();
+    SimpleDateFormat timeFormat = new SimpleDateFormat("yyyy-MM-dd");
+    timeFormat.setTimeZone(TimeZone.getTimeZone("GMT+8:00"));
+    String[] epgInfo = EpgUtil.getEpgInfo(channelName);
+    String epgTagName = channelName;
+    if (epgInfo != null && !epgInfo[1].isEmpty()) {
+        epgTagName = epgInfo[1];
+    }
+
+    String epgUrl;
+    if (epgStringAddress.contains("{name}") && epgStringAddress.contains("{date}")) {
+        epgUrl = epgStringAddress.replace("{name}", URLEncoder.encode(epgTagName)).replace("{date}", timeFormat.format(date));
+    } else {
+        epgUrl = epgStringAddress + "?ch=" + URLEncoder.encode(epgTagName) + "&date=" + timeFormat.format(date);
+    }
+
+    OkGo.<String>get(epgUrl).execute(new StringCallback() {
+        @Override
+        public void onSuccess(Response<String> response) {
+            String paramString = response.body();
+            ArrayList<Epginfo> arrayList = new ArrayList<>();
+
+            try {
+                if (paramString.contains("epg_data")) {
+                    final JSONArray jSONArray = new JSONObject(paramString).optJSONArray("epg_data");
+                    if (jSONArray != null)
+                        for (int b = 0; b < jSONArray.length(); b++) {
+                            JSONObject jSONObject = jSONArray.getJSONObject(b);
+                            Epginfo epgbcinfo = new Epginfo(date, jSONObject.optString("title"), date, jSONObject.optString("start"), jSONObject.optString("end"), b);
+                            arrayList.add(epgbcinfo);
+                        }
+                }
+            } catch (JSONException jSONException) {
+                jSONException.printStackTrace();
+            }
+
+            // 将 EPG 数据存储到 hsEpg 中
+            String savedEpgKey = channelName + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
+            hsEpg.put(savedEpgKey, arrayList);
+
+            // 通知适配器更新 UI
+            if (liveChannelItemAdapter != null) {
+                liveChannelItemAdapter.notifyDataSetChanged();
+            }
+        }
+
+        @Override
+        public void onFailure(int i, String str) {
+            // 处理加载失败的情况
+        }
+    });
+}
+
 
     //加载列表
     public void loadProxyLives(String url) {
