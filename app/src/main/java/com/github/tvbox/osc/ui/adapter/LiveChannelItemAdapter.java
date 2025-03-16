@@ -60,12 +60,17 @@ public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, Ba
                 ArrayList<Epginfo> epgList = hsEpg.get(epgKey);
                 if (epgList != null && epgList.size() > 0) {
                     Date now = new Date();
+                    boolean found = false;
                     for (Epginfo epg : epgList) {
                         if (now.after(epg.startdateTime) && now.before(epg.enddateTime)) {
                             tvCurrentProgramName.setText(epg.title); // 设置当前节目名称
                             Log.d("EPG", "Channel: " + item.getChannelName() + ", EPG: " + epg.title);
+                            found = true;
                             break;
                         }
+                    }
+                    if (!found) {
+                        tvCurrentProgramName.setText("暂无节目信息");
                     }
                 } else {
                     tvCurrentProgramName.setText("暂无节目信息");
