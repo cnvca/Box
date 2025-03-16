@@ -1852,13 +1852,7 @@ public class LivePlayActivity extends BaseActivity {
             }
         });
     }
-	  // 如果有匿名类，确保正确闭合
-    someObject.setOnClickListener(new View.OnClickListener() {
-    @Override
-    public void onClick(View v) {
-        // 处理点击事件
-    }
-    });
+
 }
     //加载列表
     public void loadProxyLives(String url) {
