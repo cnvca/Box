@@ -1842,7 +1842,7 @@ public class LivePlayActivity extends BaseActivity {
             }
         }
 
-        @Override
+        
         public void onFailure(int i, String str) {
             // 处理加载失败的情况
         }
