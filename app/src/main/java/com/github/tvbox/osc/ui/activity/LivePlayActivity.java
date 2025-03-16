@@ -894,7 +894,7 @@ public class LivePlayActivity extends BaseActivity {
 				
 				// 绑定 EPG 信息到界面
                 if (arrayList.size() > 0) {
-                    Epginfo currentEpg = arrayList.get(0); // 获取当前 EPG 信息
+                    Epginfo currentEpg = (Epginfo) arrayList.get(0); // 获取当前 EPG 信息
                     tv_current_program_name.setText(currentEpg.getTitle()); // 更新当前节目名称
                     
                 } else {
