@@ -148,6 +148,7 @@ public class LivePlayActivity extends BaseActivity {
     private TextView tv_channelname;
     private TextView tv_channelnum;
     private TextView tv_curr_name;
+	private TextView tv_current_program_name; // 当前节目名称
     private TextView tv_curr_time;
     private TextView tv_next_name;
     private TextView tv_next_time;
@@ -257,6 +258,7 @@ public class LivePlayActivity extends BaseActivity {
         tv_logo = findViewById(R.id.tv_logo);
         tv_curr_time = findViewById(R.id.tv_current_program_time);
         tv_curr_name = findViewById(R.id.tv_current_program_name);
+		tv_current_program_name = findViewById(R.id.tv_current_program_name);
         tv_next_time = findViewById(R.id.tv_next_program_time);
         tv_next_name = findViewById(R.id.tv_next_program_name);
 
@@ -473,6 +475,10 @@ public class LivePlayActivity extends BaseActivity {
                     case KeyEvent.KEYCODE_ENTER:
                     case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
                         showChannelList();
+						
+						// 加载并显示 EPG 信息
+                        loadAndShowEpgInfo();
+						
                         break;
                     default:
                         if (keyCode >= KeyEvent.KEYCODE_0 && keyCode <= KeyEvent.KEYCODE_9) {
@@ -490,6 +496,22 @@ public class LivePlayActivity extends BaseActivity {
         return super.dispatchKeyEvent(event);
     }
 
+     private void loadAndShowEpgInfo() {
+        if (currentLiveChannelItem != null) {
+            // 获取当前频道名称
+            String channelName = currentLiveChannelItem.getChannelName();
+
+            // 获取当前日期
+            Date currentDate = new Date();
+
+            // 加载 EPG 信息
+            getEpg(currentDate);
+
+            // 显示 EPG 信息
+            showBottomEpg();
+        }
+    }
+	
     // takagen99 : Use onStopCalled to track close activity
     private boolean onStopCalled;
 
@@ -788,6 +810,9 @@ public class LivePlayActivity extends BaseActivity {
 //                            if (new Date().compareTo(((Epginfo) arrayList.get(size)).startdateTime) >= 0) {
                             tv_curr_time.setText(((Epginfo) arrayList.get(size)).start + " - " + ((Epginfo) arrayList.get(size)).end);
                             tv_curr_name.setText(((Epginfo) arrayList.get(size)).title);
+							
+							tv_current_program_name.setText(arrayList.get(size).title); // 更新当前节目名称
+							
                             if (size != arrayList.size() - 1) {
                                 tv_next_time.setText(((Epginfo) arrayList.get(size + 1)).start + " - " + ((Epginfo) arrayList.get(size + 1)).end);
                                 tv_next_name.setText(((Epginfo) arrayList.get(size + 1)).title);
@@ -866,6 +891,17 @@ public class LivePlayActivity extends BaseActivity {
                 } catch (JSONException jSONException) {
                     jSONException.printStackTrace();
                 }
+				
+				// 绑定 EPG 信息到界面
+                if (arrayList.size() > 0) {
+                    Epginfo currentEpg = arrayList.get(0); // 获取当前 EPG 信息
+                    tv_current_program_name.setText(currentEpg.getTitle()); // 更新当前节目名称
+                    
+                } else {
+                    tv_current_program_name.setText("暂无节目信息"); // 如果没有 EPG 信息，显示默认文本
+                    
+                }
+
                 showEpg(date, arrayList);
 
                 String savedEpgKey = channelName + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
