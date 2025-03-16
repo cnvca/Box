@@ -69,16 +69,6 @@
             android:textSize="22mm" />
 
         <!-- EPG 实时名称 -->
-        <View
-                    android:id="@+id/redLine"
-                    android:layout_width="@dimen/vs_6"
-                    android:layout_height="match_parent"
-                    android:layout_gravity="center"
-                    android:layout_marginStart="@dimen/vs_20"
-                    android:layout_marginLeft="@dimen/vs_20"
-                    android:layout_marginTop="@dimen/vs_5"
-                    android:layout_marginBottom="@dimen/vs_5"
-                    android:background="?attr/color_theme" />
         
         <com.github.tvbox.osc.ui.tv.widget.MarqueeTextView
             android:id="@+id/tv_current_program_name"
