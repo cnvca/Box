@@ -1440,12 +1440,29 @@ public class LivePlayActivity extends BaseActivity {
                 return;
             }
             loadChannelGroupDataAndPlay(groupIndex, liveChannelIndex);
+			
+			// 新增：加载当前频道组的所有频道 EPG 信息
+        loadAllChannelsEpgForGroup(groupIndex);
         }
         if (tvLeftChannelListLayout.getVisibility() == View.VISIBLE) {
             mHandler.removeCallbacks(mHideChannelListRun);
             mHandler.postDelayed(mHideChannelListRun, 6000);
         }
     }
+
+    private void loadAllChannelsEpgForGroup(int groupIndex) {
+    if (liveChannelGroupList == null || liveChannelGroupList.isEmpty()) return;
+
+    // 获取当前频道组
+    LiveChannelGroup group = liveChannelGroupList.get(groupIndex);
+    if (group.getLiveChannels() == null || group.getLiveChannels().isEmpty()) return;
+
+    // 遍历当前频道组中的所有频道
+    for (LiveChannelItem channel : group.getLiveChannels()) {
+        // 加载当前频道的 EPG 信息
+        getEpgForChannel(channel, new Date());
+    }
+}
 
     private void initLiveChannelView() {
         mChannelGridView.setHasFixedSize(true);
