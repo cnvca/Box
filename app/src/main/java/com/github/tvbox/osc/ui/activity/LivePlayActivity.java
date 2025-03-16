@@ -1853,6 +1853,7 @@ public class LivePlayActivity extends BaseActivity {
         private void someOtherMethod() {
         Log.e("EPG", "Failed to load EPG for channel: " + channelName);
        }
+	  } 
     });
 }
     //加载列表
