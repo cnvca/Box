@@ -1454,7 +1454,7 @@ public class LivePlayActivity extends BaseActivity {
             mHandler.postDelayed(mHideChannelListRun, 6000);
         }
     }
-  	
+  	public class LivePlayActivity extends AppCompatActivity {
     private Hashtable<String, ArrayList<Epginfo>> hsEpg = new Hashtable<>(); // 确保 hsEpg 是成员变量
 
     private void initLiveChannelView() {
