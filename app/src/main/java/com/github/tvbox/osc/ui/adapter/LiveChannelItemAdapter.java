@@ -64,7 +64,7 @@ public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, Ba
                     for (Epginfo epg : epgList) {
                         if (now.after(epg.startdateTime) && now.before(epg.enddateTime)) {
                             tvCurrentProgramName.setText(epg.title); // 设置当前节目名称
-                            Log.d("EPG", "Channel: " + item.getChannelName() + ", EPG: " + epg.title);
+     //                       Log.d("EPG", "Channel: " + item.getChannelName() + ", EPG: " + epg.title);
                             found = true;
                             break;
                         }
