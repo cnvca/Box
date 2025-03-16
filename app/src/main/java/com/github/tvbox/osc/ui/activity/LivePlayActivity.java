@@ -5,6 +5,7 @@ import static xyz.doikki.videoplayer.util.PlayerUtils.stringForTimeVod;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.content.Intent;
+import android.util.Log;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -1453,9 +1454,9 @@ public class LivePlayActivity extends BaseActivity {
             mHandler.postDelayed(mHideChannelListRun, 6000);
         }
     }
-	
+   public class LivePlayActivity extends AppCompatActivity {	
     private Hashtable<String, ArrayList<Epginfo>> hsEpg = new Hashtable<>(); // 确保 hsEpg 是成员变量
-	
+
     private void initLiveChannelView() {
         mChannelGridView.setHasFixedSize(true);
         mChannelGridView.setLayoutManager(new V7LinearLayoutManager(this.mContext, 1, false));
@@ -1846,10 +1847,12 @@ public class LivePlayActivity extends BaseActivity {
         }
 
         @Override
-        public void onFailure(int i, String str) {
-            // 处理加载失败的情况
-            Log.e("EPG", "Failed to load EPG for channel: " + channelName);
+        protected void someMethod() {
+        // 方法实现
         }
+        private void someOtherMethod() {
+        Log.e("EPG", "Failed to load EPG for channel: " + channelName);
+       }
     });
 }
     //加载列表
