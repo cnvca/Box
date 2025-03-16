@@ -946,6 +946,7 @@ public class LivePlayActivity extends BaseActivity {
     private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
         if ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
                 || (changeSource && currentLiveChannelItem.getSourceNum() == 1)) {
+			getEpg(new Date());		
             showChannelInfo();
             return true;
         }
@@ -1450,7 +1451,8 @@ public class LivePlayActivity extends BaseActivity {
         mChannelGridView.setHasFixedSize(true);
         mChannelGridView.setLayoutManager(new V7LinearLayoutManager(this.mContext, 1, false));
 
-        liveChannelItemAdapter = new LiveChannelItemAdapter();
+ //       liveChannelItemAdapter = new LiveChannelItemAdapter();
+        liveChannelItemAdapter = new LiveChannelItemAdapter(hsEpg, epgDateAdapter);
         mChannelGridView.setAdapter(liveChannelItemAdapter);
         mChannelGridView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
