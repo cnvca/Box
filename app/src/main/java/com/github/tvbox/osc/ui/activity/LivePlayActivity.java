@@ -5,7 +5,6 @@ import static xyz.doikki.videoplayer.util.PlayerUtils.stringForTimeVod;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.content.Intent;
-import android.util.Log;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -162,7 +161,7 @@ public class LivePlayActivity extends BaseActivity {
     SimpleDateFormat timeFormat = new SimpleDateFormat("yyyy-MM-dd");
     private final Handler mHandler = new Handler();
     private static LiveChannelItem channel_Name = null;
- //   private static final Hashtable hsEpg = new Hashtable();
+    private static final Hashtable hsEpg = new Hashtable();
     private TextView tvTime;
     private TextView tvNetSpeed;
 
@@ -906,13 +905,6 @@ public class LivePlayActivity extends BaseActivity {
                 showEpg(date, arrayList);
 
                 String savedEpgKey = channelName + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
-				hsEpg.put(savedEpgKey, arrayList);
-
-               // 刷新频道列表
-                if (liveChannelItemAdapter != null) {
-                liveChannelItemAdapter.notifyDataSetChanged();
-                }
-				showBottomEpg();
                 if (!hsEpg.contains(savedEpgKey))
                     hsEpg.put(savedEpgKey, arrayList);
                 showBottomEpg();
@@ -1454,8 +1446,6 @@ public class LivePlayActivity extends BaseActivity {
             mHandler.postDelayed(mHideChannelListRun, 6000);
         }
     }
-  	public class LivePlayActivity extends AppCompatActivity {
-    private Hashtable<String, ArrayList<Epginfo>> hsEpg = new Hashtable<>(); // 确保 hsEpg 是成员变量
 
     private void initLiveChannelView() {
         mChannelGridView.setHasFixedSize(true);
@@ -1785,75 +1775,9 @@ public class LivePlayActivity extends BaseActivity {
             liveChannelGroupList.addAll(list);
             showSuccess();
             initLiveState();
-			// 加载所有频道的 EPG 数据
-            loadAllChannelsEpg();
         }
     }
-    private void loadAllChannelsEpg() {
-    for (LiveChannelGroup group : liveChannelGroupList) {
-        for (LiveChannelItem channel : group.getLiveChannels()) {
-            getEpgForChannel(channel);
-        }
-    }
-}
 
-    private void getEpgForChannel(LiveChannelItem channel) {
-    String channelName = channel.getChannelName();
-    Date date = new Date(); // 使用当前日期
-    SimpleDateFormat timeFormat = new SimpleDateFormat("yyyy-MM-dd");
-    timeFormat.setTimeZone(TimeZone.getTimeZone("GMT+8:00"));
-    String[] epgInfo = EpgUtil.getEpgInfo(channelName);
-    String epgTagName = channelName;
-    if (epgInfo != null && !epgInfo[1].isEmpty()) {
-        epgTagName = epgInfo[1];
-    }
-
-    String epgUrl;
-    if (epgStringAddress.contains("{name}") && epgStringAddress.contains("{date}")) {
-        epgUrl = epgStringAddress.replace("{name}", URLEncoder.encode(epgTagName)).replace("{date}", timeFormat.format(date));
-    } else {
-        epgUrl = epgStringAddress + "?ch=" + URLEncoder.encode(epgTagName) + "&date=" + timeFormat.format(date);
-    }
-
-    OkGo.<String>get(epgUrl).execute(new StringCallback() {
-        @Override
-        public void onSuccess(Response<String> response) {
-            String paramString = response.body();
-            ArrayList<Epginfo> arrayList = new ArrayList<>();
-
-            try {
-                if (paramString.contains("epg_data")) {
-                    final JSONArray jSONArray = new JSONObject(paramString).optJSONArray("epg_data");
-                    if (jSONArray != null) {
-                        for (int b = 0; b < jSONArray.length(); b++) {
-                            JSONObject jSONObject = jSONArray.getJSONObject(b);
-                            Epginfo epgbcinfo = new Epginfo(date, jSONObject.optString("title"), date, jSONObject.optString("start"), jSONObject.optString("end"), b);
-                            arrayList.add(epgbcinfo);
-                        }
-                    }
-                }
-            } catch (JSONException jSONException) {
-                jSONException.printStackTrace();
-            }
-
-            // 缓存 EPG 数据
-            String savedEpgKey = channelName + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
-            hsEpg.put(savedEpgKey, arrayList);
-
-            // 刷新频道列表
-            if (liveChannelItemAdapter != null) {
-                liveChannelItemAdapter.notifyDataSetChanged();
-            }
-        }
-
-        @Override
-            public void onFailure(int i, String str) {
-                Log.e("EPG", "Failed to load EPG for channel: " + channelName);
-            }
-        });
-    }
-
-}
     //加载列表
     public void loadProxyLives(String url) {
         try {
