@@ -19,6 +19,8 @@
         android:layout_marginLeft="@dimen/vs_10"
         android:layout_marginEnd="@dimen/vs_10"
         android:layout_marginRight="@dimen/vs_10"
+        android:layout_marginTop="@dimen/vs_10" 
+        android:layout_marginBottom="@dimen/vs_10" 
         android:background="@drawable/channel_num_bg"
         android:ellipsize="marquee"
         android:gravity="center"
@@ -30,8 +32,8 @@
         android:textColor="@android:color/white"
         android:textSize="24mm"
         android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="@id/tvChannelName" 
-        app:layout_constraintBottom_toBottomOf="@id/tv_current_program_name" 
+        app:layout_constraintTop_toTopOf="parent" 
+        app:layout_constraintBottom_toBottomOf="parent" 
         app:layout_constraintStart_toStartOf="parent" /> 
 
     <!-- 频道名称 -->
@@ -43,6 +45,7 @@
         android:layout_marginLeft="@dimen/vs_10"
         android:layout_marginEnd="@dimen/vs_10"
         android:layout_marginRight="@dimen/vs_10"
+        android:layout_marginTop="@dimen/vs_10" 
         android:ellipsize="marquee"
         android:gravity="left|center_vertical"
         android:marqueeRepeatLimit="marquee_forever"
@@ -66,6 +69,7 @@
         android:layout_marginEnd="@dimen/vs_10"
         android:layout_marginRight="@dimen/vs_10"
         android:layout_marginTop="@dimen/vs_5" 
+        android:layout_marginBottom="@dimen/vs_10" 
         android:ellipsize="marquee"
         android:fontFamily="sans-serif"
         android:gravity="left"
