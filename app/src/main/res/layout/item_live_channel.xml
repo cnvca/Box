@@ -7,9 +7,6 @@
     android:background="@drawable/shape_live_focus"
     android:layout_marginLeft="10mm"
     android:layout_marginRight="10mm"
-    android:clickable="true"
-    android:focusable="true"
-    android:onClick="divLoadEpgR"
     android:orientation="horizontal"
     android:focusableInTouchMode="false">
 
@@ -40,9 +37,6 @@
         android:layout_width="0mm"
         android:layout_height="66mm"
         android:layout_weight="1"
-        android:clickable="true"
-        android:focusable="true"
-        android:onClick="divLoadEpgR"
         android:orientation="vertical"
         android:layout_marginStart="@dimen/vs_10"
         android:layout_marginLeft="@dimen/vs_10"
