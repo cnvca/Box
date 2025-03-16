@@ -14,14 +14,15 @@
     <TextView
         android:id="@+id/tvChannelNum"
         android:layout_width="60mm"
-        android:layout_height="35mm"
+        android:layout_height="wrap_content" 
         android:layout_marginStart="@dimen/vs_10"
         android:layout_marginLeft="@dimen/vs_10"
         android:layout_marginEnd="@dimen/vs_10"
         android:layout_marginRight="@dimen/vs_10"
         android:background="@drawable/channel_num_bg"
         android:ellipsize="marquee"
-        android:gravity="center"
+        android:gravity="center" 
+        android:layout_gravity="center_vertical" 
         android:marqueeRepeatLimit="marquee_forever"
         android:shadowDx="0"
         android:shadowDy="0"
@@ -59,7 +60,6 @@
             android:textSize="22mm" />
 
         <!-- EPG 实时名称 -->
-        
         <com.github.tvbox.osc.ui.tv.widget.MarqueeTextView
             android:id="@+id/tv_current_program_name"
             android:layout_width="match_parent"
