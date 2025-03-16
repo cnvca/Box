@@ -65,7 +65,7 @@
 
         <!-- EPG 实时名称 -->
         <com.github.tvbox.osc.ui.tv.widget.MarqueeTextView
-            android:id="@+id/tv_current_program_name"
+            android:id="@+id/tv_curr_name"
             android:layout_width="match_parent"
             android:layout_height="0mm"
             android:layout_weight="1"
