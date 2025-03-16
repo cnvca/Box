@@ -5,11 +5,7 @@
     android:layout_marginTop="10mm"
     android:layout_marginBottom="10mm"
     android:background="@drawable/shape_live_focus"
-    android:gravity="bottom"
-    android:clickable="true"
     android:focusable="true"
-    android:onClick="divLoadEpgR"
-    
     android:focusableInTouchMode="false"
     android:orientation="horizontal">
 
