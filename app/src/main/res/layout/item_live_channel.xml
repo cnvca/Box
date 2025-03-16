@@ -33,7 +33,6 @@
 
     <!-- 频道名称和 EPG 实时名称的垂直布局 -->
     <LinearLayout
-        android:id="@+id/ll_line1"
         android:layout_width="0mm"
         android:layout_height="66mm"
         android:layout_weight="1"
@@ -79,6 +78,7 @@
             android:text="No information"
             android:textColor="@color/color_FFFFFF"
             android:textSize="16mm"
-            android:textStyle="bold" />
+            android:textStyle="bold" 
+            android:visibility="visible" />
     </LinearLayout>
 </LinearLayout>
