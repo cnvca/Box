@@ -905,6 +905,13 @@ public class LivePlayActivity extends BaseActivity {
                 showEpg(date, arrayList);
 
                 String savedEpgKey = channelName + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
+				hsEpg.put(savedEpgKey, arrayList);
+
+               // 刷新频道列表
+                if (liveChannelItemAdapter != null) {
+                liveChannelItemAdapter.notifyDataSetChanged();
+                }
+				showBottomEpg();
                 if (!hsEpg.contains(savedEpgKey))
                     hsEpg.put(savedEpgKey, arrayList);
                 showBottomEpg();
