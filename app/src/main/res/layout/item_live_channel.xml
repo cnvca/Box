@@ -63,8 +63,8 @@
     <LinearLayout
         android:layout_width="0mm"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/vs_15" 
-        android:layout_marginLeft="@dimen/vs_15" 
+        android:layout_marginStart="@dimen/vs_20" 
+        android:layout_marginLeft="@dimen/vs_20" 
         android:layout_marginEnd="@dimen/vs_10"
         android:layout_marginRight="@dimen/vs_10"
         android:layout_marginTop="@dimen/vs_5" 
