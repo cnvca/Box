@@ -17,8 +17,8 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/vs_10"
         android:layout_marginLeft="@dimen/vs_10"
-        android:layout_marginEnd="@dimen/vs_10"
-        android:layout_marginRight="@dimen/vs_10"
+        android:layout_marginEnd="@dimen/vs_15" 
+        android:layout_marginRight="@dimen/vs_15" 
         android:layout_marginTop="@dimen/vs_10" 
         android:layout_marginBottom="@dimen/vs_10" 
         android:background="@drawable/channel_num_bg"
@@ -41,8 +41,8 @@
         android:id="@+id/tvChannelName"
         android:layout_width="0mm"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/vs_10"
-        android:layout_marginLeft="@dimen/vs_10"
+        android:layout_marginStart="@dimen/vs_10" 
+        android:layout_marginLeft="@dimen/vs_10" 
         android:layout_marginEnd="@dimen/vs_10"
         android:layout_marginRight="@dimen/vs_10"
         android:layout_marginTop="@dimen/vs_10" 
@@ -60,31 +60,51 @@
         app:layout_constraintEnd_toEndOf="parent" /> 
 
     <!-- EPG 实时名称 -->
-    <com.github.tvbox.osc.ui.tv.widget.MarqueeTextView
-        android:id="@+id/tv_current_program_name"
+    <LinearLayout
         android:layout_width="0mm"
         android:layout_height="wrap_content"
-        android:layout_marginStart="@dimen/vs_10"
-        android:layout_marginLeft="@dimen/vs_10"
+        android:layout_marginStart="@dimen/vs_10" 
+        android:layout_marginLeft="@dimen/vs_10" 
         android:layout_marginEnd="@dimen/vs_10"
         android:layout_marginRight="@dimen/vs_10"
         android:layout_marginTop="@dimen/vs_5" 
-        android:layout_marginBottom="@dimen/vs_10" 
-        android:ellipsize="marquee"
-        android:fontFamily="sans-serif"
-        android:gravity="left"
-        android:paddingRight="@dimen/vs_20"
-        android:shadowColor="@color/color_FF000000"
-        android:shadowDx="0"
-        android:shadowDy="0"
-        android:shadowRadius="3"
-        android:singleLine="true"
-        android:text="No information"
-        android:textColor="@color/color_FFFFFF"
-        android:textSize="15mm"
-        android:textStyle="bold"
-        android:visibility="visible"
+        android:layout_marginBottom="@dimen/vs_10"
+        android:orientation="horizontal"
         app:layout_constraintTop_toBottomOf="@id/tvChannelName" 
         app:layout_constraintStart_toEndOf="@id/tvChannelNum" 
-        app:layout_constraintEnd_toEndOf="parent" /> 
+        app:layout_constraintEnd_toEndOf="parent"> 
+
+        <!-- 红色竖线 -->
+        <View
+            android:id="@+id/redLine"
+            android:layout_width="@dimen/vs_6"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:layout_marginStart="@dimen/vs_20" 
+            android:layout_marginLeft="@dimen/vs_20" 
+            android:layout_marginTop="@dimen/vs_5"
+            android:layout_marginBottom="@dimen/vs_5"
+            android:background="?attr/color_theme" /> 
+
+        <!-- EPG 信息 -->
+        <com.github.tvbox.osc.ui.tv.widget.MarqueeTextView
+            android:id="@+id/tv_current_program_name"
+            android:layout_width="0mm"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="marquee"
+            android:fontFamily="sans-serif"
+            android:gravity="left"
+            android:paddingRight="@dimen/vs_20"
+            android:shadowColor="@color/color_FF000000"
+            android:shadowDx="0"
+            android:shadowDy="0"
+            android:shadowRadius="3"
+            android:singleLine="true"
+            android:text="No information"
+            android:textColor="@color/color_FFFFFF"
+            android:textSize="16mm"
+            android:textStyle="bold"
+            android:visibility="visible" />
+    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
