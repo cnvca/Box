@@ -46,13 +46,11 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import java.io.InputStreamReader;
-import java.net.InetAddress; // 导入 InetAddress
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*; // 导入并发工具类
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -357,68 +355,7 @@ public class ApiConfig {
         parseJson(apiUrl, sb.toString());
     }
     
-    // 新增方法：解析域名并获取所有IP地址
-    private List<String> resolveDomain(String domain) {
-        List<String> ipList = new ArrayList<>();
-        try {
-            InetAddress[] addresses = InetAddress.getAllByName(domain);
-            for (InetAddress address : addresses) {
-                ipList.add(address.getHostAddress());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return ipList;
-    }
 
-    // 新增方法：检测最快的IP地址
-    private String findFastestIp(List<String> ipList) {
-        ExecutorService executor = Executors.newFixedThreadPool(ipList.size());
-        Map<String, Future<Long>> pingResults = new HashMap<>();
-
-        // 对每个IP地址进行ping测试
-        for (String ip : ipList) {
-            Future<Long> future = executor.submit(() -> pingIp(ip));
-            pingResults.put(ip, future);
-        }
-
-        String fastestIp = null;
-        long minPing = Long.MAX_VALUE;
-
-        // 找出最快的IP地址
-        for (Map.Entry<String, Future<Long>> entry : pingResults.entrySet()) {
-            try {
-                long pingTime = entry.getValue().get(5, TimeUnit.SECONDS); // 设置超时时间为5秒
-                if (pingTime < minPing) {
-                    minPing = pingTime;
-                    fastestIp = entry.getKey();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        executor.shutdown();
-        return fastestIp;
-    }
-
-    // 新增方法：ping IP地址
-    private long pingIp(String ip) {
-        long startTime = System.currentTimeMillis();
-        try {
-            InetAddress address = InetAddress.getByName(ip);
-            if (address.isReachable(5000)) { // 设置超时时间为5秒
-                return System.currentTimeMillis() - startTime; // 返回响应时间
-            } else {
-                return Long.MAX_VALUE; // 如果不可达，返回一个很大的值
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return Long.MAX_VALUE; // 如果发生异常，返回一个很大的值
-        }
-    }
-
-    
     private void parseJson(String apiUrl, String jsonStr) {
 
         JsonObject infoJson = new Gson().fromJson(jsonStr, JsonObject.class);
@@ -671,26 +608,17 @@ public class ApiConfig {
             }
         }
 
-       // 解析hosts
-        myHosts = new HashMap<>();
-        if (infoJson.has("hosts")) {
-            JsonArray hostsArray = infoJson.getAsJsonArray("hosts");
-            for (int i = 0; i < hostsArray.size(); i++) {
-                String entry = hostsArray.get(i).getAsString();
-                String[] parts = entry.split("=", 2); // 只分割一次，防止 value 里有 =
-                if (parts.length == 2) {
-                    String domain = parts[1]; // 获取域名
-                    List<String> ipList = resolveDomain(domain); // 解析域名获取所有IP地址
-                    if (!ipList.isEmpty()) {
-                        String fastestIp = findFastestIp(ipList); // 检测最快的IP地址
-                        if (fastestIp != null) {
-                            myHosts.put(parts[0], fastestIp); // 将最快的IP地址存入myHosts
-                            System.out.println("域名: " + domain + " 的最快IP地址是: " + fastestIp);
-                        }
-                    }
-                }
-            }
-        }
+       myHosts = new HashMap<>();
+         if (infoJson.has("hosts")) {
+             JsonArray hostsArray = infoJson.getAsJsonArray("hosts");
+             for (int i = 0; i < hostsArray.size(); i++) {
+                 String entry = hostsArray.get(i).getAsString();
+                 String[] parts = entry.split("=", 2); // 只分割一次，防止 value 里有 =
+                 if (parts.length == 2) {
+                     myHosts.put(parts[0], parts[1]);
+                 }
+             }
+         }
         
         String defaultIJKADS = "{\"ijk\":[{\"options\":[{\"name\":\"opensles\",\"category\":4,\"value\":\"0\"},{\"name\":\"overlay-format\",\"category\":4,\"value\":\"842225234\"},{\"name\":\"framedrop\",\"category\":4,\"value\":\"0\"},{\"name\":\"soundtouch\",\"category\":4,\"value\":\"1\"},{\"name\":\"start-on-prepared\",\"category\":4,\"value\":\"1\"},{\"name\":\"http-detect-rangeupport\",\"category\":1,\"value\":\"0\"},{\"name\":\"fflags\",\"category\":1,\"value\":\"fastseek\"},{\"name\":\"skip_loop_filter\",\"category\":2,\"value\":\"48\"},{\"name\":\"reconnect\",\"category\":4,\"value\":\"1\"},{\"name\":\"enable-accurate-seek\",\"category\":4,\"value\":\"0\"},{\"name\":\"mediacodec\",\"category\":4,\"value\":\"0\"},{\"name\":\"mediacodec-auto-rotate\",\"category\":4,\"value\":\"0\"},{\"name\":\"mediacodec-handle-resolution-change\",\"category\":4,\"value\":\"0\"},{\"name\":\"mediacodec-hevc\",\"category\":4,\"value\":\"0\"},{\"name\":\"dns_cache_timeout\",\"category\":1,\"value\":\"600000000\"}],\"group\":\"软解码\"},{\"options\":[{\"name\":\"opensles\",\"category\":4,\"value\":\"0\"},{\"name\":\"overlay-format\",\"category\":4,\"value\":\"842225234\"},{\"name\":\"framedrop\",\"category\":4,\"value\":\"0\"},{\"name\":\"soundtouch\",\"category\":4,\"value\":\"1\"},{\"name\":\"start-on-prepared\",\"category\":4,\"value\":\"1\"},{\"name\":\"http-detect-rangeupport\",\"category\":1,\"value\":\"0\"},{\"name\":\"fflags\",\"category\":1,\"value\":\"fastseek\"},{\"name\":\"skip_loop_filter\",\"category\":2,\"value\":\"48\"},{\"name\":\"reconnect\",\"category\":4,\"value\":\"1\"},{\"name\":\"enable-accurate-seek\",\"category\":4,\"value\":\"0\"},{\"name\":\"mediacodec\",\"category\":4,\"value\":\"1\"},{\"name\":\"mediacodec-auto-rotate\",\"category\":4,\"value\":\"1\"},{\"name\":\"mediacodec-handle-resolution-change\",\"category\":4,\"value\":\"1\"},{\"name\":\"mediacodec-hevc\",\"category\":4,\"value\":\"1\"},{\"name\":\"dns_cache_timeout\",\"category\":1,\"value\":\"600000000\"}],\"group\":\"硬解码\"}],\"ads\":[\"mimg.0c1q0l.cn\",\"www.googletagmanager.com\",\"www.google-analytics.com\",\"mc.usihnbcq.cn\",\"mg.g1mm3d.cn\",\"mscs.svaeuzh.cn\",\"cnzz.hhttm.top\",\"tp.vinuxhome.com\",\"cnzz.mmstat.com\",\"www.baihuillq.com\",\"s23.cnzz.com\",\"z3.cnzz.com\",\"c.cnzz.com\",\"stj.v1vo.top\",\"z12.cnzz.com\",\"img.mosflower.cn\",\"tips.gamevvip.com\",\"ehwe.yhdtns.com\",\"xdn.cqqc3.com\",\"www.jixunkyy.cn\",\"sp.chemacid.cn\",\"hm.baidu.com\",\"s9.cnzz.com\",\"z6.cnzz.com\",\"um.cavuc.com\",\"mav.mavuz.com\",\"wofwk.aoidf3.com\",\"z5.cnzz.com\",\"xc.hubeijieshikj.cn\",\"tj.tianwenhu.com\",\"xg.gars57.cn\",\"k.jinxiuzhilv.com\",\"cdn.bootcss.com\",\"ppl.xunzhuo123.com\",\"xomk.jiangjunmh.top\",\"img.xunzhuo123.com\",\"z1.cnzz.com\",\"s13.cnzz.com\",\"xg.huataisangao.cn\",\"z7.cnzz.com\",\"xg.huataisangao.cn\",\"z2.cnzz.com\",\"s96.cnzz.com\",\"q11.cnzz.com\",\"thy.dacedsfa.cn\",\"xg.whsbpw.cn\",\"s19.cnzz.com\",\"z8.cnzz.com\",\"s4.cnzz.com\",\"f5w.as12df.top\",\"ae01.alicdn.com\",\"www.92424.cn\",\"k.wudejia.com\",\"vivovip.mmszxc.top\",\"qiu.xixiqiu.com\",\"cdnjs.hnfenxun.com\",\"cms.qdwght.com\"]}";
         JsonObject defaultJson = new Gson().fromJson(defaultIJKADS, JsonObject.class);
