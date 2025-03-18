@@ -234,56 +234,7 @@ public class ApiConfig {
                 });
     }
 
-    // 解析域名并筛选 IP
-    private List<String> resolveAndFilterIPs(String domain) {
-        List<String> filteredIPs = new ArrayList<>();
-        try {
-            // 解析域名获取所有 IP 地址
-            InetAddress[] addresses = InetAddress.getAllByName(domain);
-            for (InetAddress address : addresses) {
-                String ip = address.getHostAddress();
-                // 调用第三方 API 或本地数据库获取 IP 的地理位置和运营商信息
-                String location = getIPLocation(ip); // 例如：返回 "China, Fujian, China Mobile"
-                String isp = getIPISP(ip);         // 例如：返回 "China Mobile"
 
-                // 筛选条件：福建移动
-                if (location != null && location.contains("Fujian") && isp != null && isp.contains("China Mobile")) {
-                    filteredIPs.add(ip);
-                }
-            }
-
-            // 如果没有福建移动的 IP，则筛选江苏移动的 IP
-            if (filteredIPs.isEmpty()) {
-                for (InetAddress address : addresses) {
-                    String ip = address.getHostAddress();
-                    String location = getIPLocation(ip);
-                    String isp = getIPISP(ip);
-
-                    // 筛选条件：江苏移动
-                    if (location != null && location.contains("Jiangsu") && isp != null && isp.contains("China Mobile")) {
-                        filteredIPs.add(ip);
-                    }
-                }
-            }
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
-        return filteredIPs;
-    }
-
-    // 模拟方法：获取 IP 的地理位置
-    private String getIPLocation(String ip) {
-        // 调用第三方 API 或本地数据库
-        // 例如：使用 IP2Location 或 GeoIP
-        return "China, Fujian, China Mobile"; // 示例返回值
-    }
-
-    // 模拟方法：获取 IP 的运营商
-    private String getIPISP(String ip) {
-        // 调用第三方 API 或本地数据库
-        // 例如：使用 IP2Location 或 GeoIP
-        return "China Mobile"; // 示例返回值
-    }
 
     
     public void loadJar(boolean useCache, String spider, LoadConfigCallback callback) {
@@ -409,7 +360,57 @@ public class ApiConfig {
         parseJson(apiUrl, sb.toString());
     }
     
+    // 解析域名并筛选 IP
+    private List<String> resolveAndFilterIPs(String domain) {
+        List<String> filteredIPs = new ArrayList<>();
+        try {
+            // 解析域名获取所有 IP 地址
+            InetAddress[] addresses = InetAddress.getAllByName(domain);
+            for (InetAddress address : addresses) {
+                String ip = address.getHostAddress();
+                // 调用第三方 API 或本地数据库获取 IP 的地理位置和运营商信息
+                String location = getIPLocation(ip); // 例如：返回 "China, Fujian, China Mobile"
+                String isp = getIPISP(ip);         // 例如：返回 "China Mobile"
 
+                // 筛选条件：福建移动
+                if (location != null && location.contains("Fujian") && isp != null && isp.contains("China Mobile")) {
+                    filteredIPs.add(ip);
+                }
+            }
+
+            // 如果没有福建移动的 IP，则筛选江苏移动的 IP
+            if (filteredIPs.isEmpty()) {
+                for (InetAddress address : addresses) {
+                    String ip = address.getHostAddress();
+                    String location = getIPLocation(ip);
+                    String isp = getIPISP(ip);
+
+                    // 筛选条件：江苏移动
+                    if (location != null && location.contains("Jiangsu") && isp != null && isp.contains("China Mobile")) {
+                        filteredIPs.add(ip);
+                    }
+                }
+            }
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        return filteredIPs;
+    }
+
+    // 模拟方法：获取 IP 的地理位置
+    private String getIPLocation(String ip) {
+        // 调用第三方 API 或本地数据库
+        // 例如：使用 IP2Location 或 GeoIP
+        return "China, Fujian, China Mobile"; // 示例返回值
+    }
+
+    // 模拟方法：获取 IP 的运营商
+    private String getIPISP(String ip) {
+        // 调用第三方 API 或本地数据库
+        // 例如：使用 IP2Location 或 GeoIP
+        return "China Mobile"; // 示例返回值
+    }
+    
     private void parseJson(String apiUrl, String jsonStr) {
 
         JsonObject infoJson = new Gson().fromJson(jsonStr, JsonObject.class);
