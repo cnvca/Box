@@ -46,11 +46,13 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import java.io.InputStreamReader;
+import java.net.InetAddress; // 导入 InetAddress
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.*; // 导入并发工具类
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -355,7 +357,7 @@ public class ApiConfig {
         parseJson(apiUrl, sb.toString());
     }
     
-        // 新增方法：解析域名并获取所有IP地址
+    // 新增方法：解析域名并获取所有IP地址
     private List<String> resolveDomain(String domain) {
         List<String> ipList = new ArrayList<>();
         try {
