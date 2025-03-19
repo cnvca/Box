@@ -475,10 +475,7 @@ public class LivePlayActivity extends BaseActivity {
                     case KeyEvent.KEYCODE_ENTER:
                     case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
                         showChannelList();
-						
-						// 加载并显示 EPG 信息
-                        loadAndShowEpgInfo();
-						
+									
                         break;
                     default:
                         if (keyCode >= KeyEvent.KEYCODE_0 && keyCode <= KeyEvent.KEYCODE_9) {
@@ -588,6 +585,9 @@ public class LivePlayActivity extends BaseActivity {
             mGroupGridView.setSelection(currentChannelGroupIndex);
             mHandler.postDelayed(mFocusCurrentChannelAndShowChannelList, 200);
             mHandler.post(tv_sys_timeRunnable);
+	   
+		// 加载并显示 EPG 信息
+            loadAndShowEpgInfo(); 	
         } else {
             mBack.setVisibility(View.INVISIBLE);
             mHandler.removeCallbacks(mHideChannelListRun);
