@@ -29,8 +29,7 @@ android {
         versionCode generateVersionCode() // 每次编译时调用 generateVersionCode()
         versionName "1.0.".concat(buildTime())
         multiDexEnabled true
-    }
-}
+
 
         // 设置 room 的 Schema 的位置
         javaCompileOptions {
