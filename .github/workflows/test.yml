@@ -25,9 +25,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set Build Time
+      - name: Set Build Time (Beijing Time)
         run: |
-          echo "tag=$(date +'%Y%m%d-%H%M')" >> $GITHUB_ENV
+          # 获取 UTC 时间并加上 8 小时，转换为北京时间
+          beijing_time=$(date -d "+8 hours" +'%Y%m%d-%H%M')
+          echo "tag=$beijing_time" >> $GITHUB_ENV
 
       - name: Modify Version and About Dialog
         run: |
@@ -102,8 +104,18 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git remote set-url --add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
-          git pull --rebase
-          sed -i "/Updated:/s#Updated: [a-zA-Z0-9]*#Updated: ${{ env.tag }}#" README.md
+          
+          # 提交所有更改
           git add --all
+          git commit -m "Auto-commit changes before rebase"
+
+          # 拉取最新代码并 rebase
+          git pull --rebase
+
+          # 更新 README.md
+          sed -i "/Updated:/s#Updated: [a-zA-Z0-9]*#Updated: ${{ env.tag }}#" README.md
+          git add README.md
           git commit -m "${{ env.tag }}"
+
+          # 推送更改
           git push -u -f origin main
