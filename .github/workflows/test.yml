@@ -81,7 +81,7 @@ jobs:
             ${{ github.workspace }}/apk/*.apk
 
       - name: Post To Telegram
-        if: ${{ secrets.BOT_TOKEN }}  # 这里可以直接使用 secrets 上下文
+        if: ${{ github.event_name == 'workflow_dispatch' }}  # 确保只在手动触发时运行
         env:
           CHAT_ID: -1001734684817
           TELEGRAM_TOKEN: ${{ secrets.BOT_TOKEN }}  # 将 secrets.BOT_TOKEN 赋值给环境变量
@@ -93,6 +93,8 @@ jobs:
             ./telegram-bot-api-binary --api-id=21724 --api-hash=3e0cb5efcd52300aec5994fdfc5bdc16 --local 2>&1 > /dev/null &
             mv ../.github/scripts/upload.py ./
             python upload.py
+          else
+            echo "TELEGRAM_TOKEN is not set, skipping Telegram notification."
           fi
 
       - name: Push to Main Branch
