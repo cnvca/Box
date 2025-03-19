@@ -10,10 +10,11 @@ def static buildTime() {
 
 def generateVersionCode() {
     def versionCodeFile = file('versionCode.txt')
-    def versionCode = 1001
+    def versionCode = 1008 // 默认值
     if (versionCodeFile.exists()) {
         versionCode = versionCodeFile.text.toInteger() + 1
     }
+    // 将新的 versionCode 写回文件
     versionCodeFile.write(versionCode.toString())
     return versionCode
 }
@@ -25,9 +26,11 @@ android {
         applicationId 'com.github.tvbox.osc.tk'
         minSdkVersion 21
         targetSdkVersion 33
-        versionCode generateVersionCode()
+        versionCode generateVersionCode() // 每次编译时调用 generateVersionCode()
         versionName "1.0.".concat(buildTime())
         multiDexEnabled true
+    }
+}
 
         // 设置 room 的 Schema 的位置
         javaCompileOptions {
