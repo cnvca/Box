@@ -60,12 +60,6 @@ android {
             }
         }
 
-        generic  {
-            //通用版本
-            applicationId 'com.hgys.tv'
-            dimension = "brand"
-        }
-
         hisense {
             //海信的
             applicationId 'com.hgys.tv'
