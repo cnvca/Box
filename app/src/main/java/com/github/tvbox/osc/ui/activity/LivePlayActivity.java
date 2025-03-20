@@ -974,17 +974,18 @@ private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean
 
     // 测速并选择最快的源
     if (currentLiveChannelItem.getSourceNum() > 1) {
-        int fastestSourceIndex = 0;
-        long minLatency = Long.MAX_VALUE;
+        // 使用 final 变量来存储最快的源索引
+        final int[] fastestSourceIndex = {0};
+        final LiveChannelItem finalChannelItem = currentLiveChannelItem; // 将 currentLiveChannelItem 转为 final
 
         for (int i = 0; i < currentLiveChannelItem.getSourceNum(); i++) {
             testSourceSpeed(currentLiveChannelItem, i, (sourceIndex, latency) -> {
-                currentLiveChannelItem.setSourceLatency(sourceIndex, latency);
+                finalChannelItem.setSourceLatency(sourceIndex, latency);
 
                 // 如果所有源都测速完成，选择最快的源进行播放
-                if (sourceIndex == currentLiveChannelItem.getSourceNum() - 1) {
-                    fastestSourceIndex = currentLiveChannelItem.getFastestSourceIndex();
-                    currentLiveChannelItem.setSourceIndex(fastestSourceIndex);
+                if (sourceIndex == finalChannelItem.getSourceNum() - 1) {
+                    fastestSourceIndex[0] = finalChannelItem.getFastestSourceIndex();
+                    finalChannelItem.setSourceIndex(fastestSourceIndex[0]);
                     playChannelInternal();
                 }
             });
