@@ -33,9 +33,12 @@ jobs:
 
       - name: Modify Version and About Dialog
         run: |
-          echo '修改 VersionName 和 About Dialog'
-          sed -i "/versionName/s#[0-9a-zA-Z_\.\'\"-]\+\$#\'HGTV-${{ env.tag }}\'#" ${{ github.workspace }}/app/build.gradle
-          sed -i "/android:text=/s#=\"#=\"HGTV-${{ env.tag }}\\\\n\\\\n#" ${{ github.workspace }}/app/src/main/res/layout/dialog_about.xml
+         echo '修改 VersionName 和 About Dialog'
+         # 修改 build.gradle 中的 versionName
+         sed -i "/versionName/s#[0-9a-zA-Z_\.\'\"-]\+\$#\'HGTV-${{ env.tag }}\'#" ${{ github.workspace }}/app/build.gradle
+
+         # 修改 dialog_about.xml 中的版本信息，确保在同一行覆盖
+         sed -i "/android:text=\"/s#=\"[^\"]*\"#=\"HGTV-${{ env.tag }}\"#" ${{ github.workspace }}/app/src/main/res/layout/dialog_about.xml
 
       - uses: actions/setup-java@v4
         with:
