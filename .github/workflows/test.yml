@@ -1,3 +1,5 @@
+name: Test
+
 on:
 #  schedule:
    # - cron: 59 */8 * * *
