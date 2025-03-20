@@ -11,11 +11,17 @@ def static buildTime() {
 def generateVersionCode() {
     def versionCodeFile = file('versionCode.txt')
     def versionCode = 1008 // 默认值
-    if (versionCodeFile.exists()) {
-        versionCode = versionCodeFile.text.toInteger() + 1
+    // 加锁确保文件操作的原子性
+    synchronized (this) {
+        if (versionCodeFile.exists()) {
+            versionCodeFile.withReader { reader ->
+                versionCode = reader.text.toInteger() + 1
+            }
+        }
+        versionCodeFile.withWriter { writer ->
+            writer.write(versionCode.toString())
+        }
     }
-    // 将新的 versionCode 写回文件
-    versionCodeFile.write(versionCode.toString())
     return versionCode
 }
 
