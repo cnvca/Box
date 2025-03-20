@@ -1245,15 +1245,22 @@ private void testSourceSpeed(LiveChannelItem channelItem, int sourceIndex, OnSpe
     OkGo.<String>get(url)
         .execute(new AbsCallback<String>() {
             @Override
-            public String convertResponse(okhttp3.Response response) throws Throwable {
+            public void onSuccess(Response<String> response) {
+                // 请求成功时计算延迟
                 long latency = System.currentTimeMillis() - startTime;
                 listener.onSpeedTestResult(sourceIndex, latency);
-                return response.body().string();
             }
 
             @Override
             public void onError(Response<String> response) {
-                listener.onSpeedTestResult(sourceIndex, Long.MAX_VALUE); // 测速失败，返回最大值
+                // 请求失败时返回最大延迟值
+                listener.onSpeedTestResult(sourceIndex, Long.MAX_VALUE);
+            }
+
+            @Override
+            public String convertResponse(okhttp3.Response response) throws Throwable {
+                // 将原始响应转换为字符串
+                return response.body().string();
             }
         });
 }
