@@ -594,6 +594,11 @@ public class LivePlayActivity extends BaseActivity {
             mHandler.post(mHideChannelListRun);
             mHandler.removeCallbacks(tv_sys_timeRunnable);
         }
+		
+		 // 确保不触发底部菜单和进度条
+    if (llSeekBar != null) {
+        llSeekBar.setVisibility(View.GONE); // 隐藏进度条
+       }
     }
 
     //频道列表
@@ -1005,6 +1010,11 @@ public class LivePlayActivity extends BaseActivity {
         if (!isCurrentLiveChannelValid()) return;
         currentLiveChannelItem.nextSource();
         playChannel(currentChannelGroupIndex, currentLiveChannelIndex, true);
+		
+		// 确保不触发底部菜单和进度条
+    if (llSeekBar != null) {
+        llSeekBar.setVisibility(View.GONE); // 隐藏进度条
+        }
     }
 
     //显示设置列表
