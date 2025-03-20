@@ -952,25 +952,46 @@ public class LivePlayActivity extends BaseActivity {
     }
 
     //节目播放
-    private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
-        if ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
-                || (changeSource && currentLiveChannelItem.getSourceNum() == 1)) {
-			getEpg(new Date());		
-            showChannelInfo();
-            return true;
+// 替换现有的 playChannel 方法
+private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
+    if ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
+            || (changeSource && currentLiveChannelItem.getSourceNum() == 1)) {
+        showChannelInfo();
+        return true;
+    }
+    if (mVideoView == null) return true;
+    mVideoView.release();
+    if (!changeSource) {
+        currentChannelGroupIndex = channelGroupIndex;
+        currentLiveChannelIndex = liveChannelIndex;
+        currentLiveChannelItem = getLiveChannels(currentChannelGroupIndex).get(currentLiveChannelIndex);
+        Hawk.put(HawkConfig.LIVE_CHANNEL, currentLiveChannelItem.getChannelName());
+        HawkUtils.setLastLiveChannelGroup(liveChannelGroupList.get(currentChannelGroupIndex).getGroupName());
+        livePlayerManager.getLiveChannelPlayer(mVideoView, currentLiveChannelItem.getChannelName());
+    }
+    channel_Name = currentLiveChannelItem;
+    currentLiveChannelItem.setinclude_back(currentLiveChannelItem.getUrl().indexOf("PLTV/8888") != -1);
+
+    // 测速并选择最快的源
+    if (currentLiveChannelItem.getSourceNum() > 1) {
+        int fastestSourceIndex = 0;
+        long minLatency = Long.MAX_VALUE;
+
+        for (int i = 0; i < currentLiveChannelItem.getSourceNum(); i++) {
+            testSourceSpeed(currentLiveChannelItem, i, (sourceIndex, latency) -> {
+                currentLiveChannelItem.setSourceLatency(sourceIndex, latency);
+
+                // 如果所有源都测速完成，选择最快的源进行播放
+                if (sourceIndex == currentLiveChannelItem.getSourceNum() - 1) {
+                    fastestSourceIndex = currentLiveChannelItem.getFastestSourceIndex();
+                    currentLiveChannelItem.setSourceIndex(fastestSourceIndex);
+                    playChannelInternal();
+                }
+            });
         }
-        if (mVideoView == null) return true;
-        mVideoView.release();
-        if (!changeSource) {
-            currentChannelGroupIndex = channelGroupIndex;
-            currentLiveChannelIndex = liveChannelIndex;
-            currentLiveChannelItem = getLiveChannels(currentChannelGroupIndex).get(currentLiveChannelIndex);
-            Hawk.put(HawkConfig.LIVE_CHANNEL, currentLiveChannelItem.getChannelName());
-            HawkUtils.setLastLiveChannelGroup(liveChannelGroupList.get(currentChannelGroupIndex).getGroupName());
-            livePlayerManager.getLiveChannelPlayer(mVideoView, currentLiveChannelItem.getChannelName());
-        }
-        channel_Name = currentLiveChannelItem;
-        currentLiveChannelItem.setinclude_back(currentLiveChannelItem.getUrl().indexOf("PLTV/8888") != -1);
+    } else {
+        playChannelInternal();
+    }
 
         // takagen99 : Moved update of Channel Info here before getting EPG (no dependency on EPG)
         mHandler.post(tv_sys_timeRunnable);
@@ -990,6 +1011,27 @@ public class LivePlayActivity extends BaseActivity {
         mVideoView.start();
         return true;
     }
+
+
+    // 在 playChannel 方法之后添加以下方法
+private void playChannelInternal() {
+    mHandler.post(tv_sys_timeRunnable);
+
+    // Channel Name & No. + Source No.
+    tv_channelname.setText(channel_Name.getChannelName());
+    tv_channelnum.setText("" + channel_Name.getChannelNum());
+    if (channel_Name == null || channel_Name.getSourceNum() <= 0) {
+        tv_source.setText("1/1");
+    } else {
+        tv_source.setText("线路 " + (channel_Name.getSourceIndex() + 1) + "/" + channel_Name.getSourceNum());
+    }
+
+    getEpg(new Date());
+    mVideoView.setUrl(currentLiveChannelItem.getUrl(), setPlayHeaders(currentLiveChannelItem.getUrl()));
+    showChannelInfo();
+    mVideoView.start();
+}
+
 
     private void playNext() {
         if (!isCurrentLiveChannelValid()) return;
@@ -1194,6 +1236,33 @@ public class LivePlayActivity extends BaseActivity {
         mVideoView.setVideoController(controller);
         mVideoView.setProgressManager(null);
     }
+	
+	// 在 LivePlayActivity 类中添加以下方法
+private void testSourceSpeed(LiveChannelItem channelItem, int sourceIndex, OnSpeedTestListener listener) {
+    String url = channelItem.getChannelUrls().get(sourceIndex);
+    long startTime = System.currentTimeMillis();
+
+    OkGo.<String>get(url)
+        .execute(new AbsCallback<String>() {
+            @Override
+            public String convertResponse(okhttp3.Response response) throws Throwable {
+                long latency = System.currentTimeMillis() - startTime;
+                listener.onSpeedTestResult(sourceIndex, latency);
+                return response.body().string();
+            }
+
+            @Override
+            public void onError(Response<String> response) {
+                listener.onSpeedTestResult(sourceIndex, Long.MAX_VALUE); // 测速失败，返回最大值
+            }
+        });
+}
+
+// 定义测速结果回调接口
+interface OnSpeedTestListener {
+    void onSpeedTestResult(int sourceIndex, long latency);
+}
+
 
     private final Runnable mConnectTimeoutChangeSourceRun = new Runnable() {
         @Override
