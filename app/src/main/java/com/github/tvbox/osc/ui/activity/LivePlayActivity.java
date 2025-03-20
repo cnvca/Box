@@ -466,6 +466,7 @@ public class LivePlayActivity extends BaseActivity {
                         break;
                     case KeyEvent.KEYCODE_DPAD_RIGHT:
                         if (!isVOD) {
+						    showChannelInfo(); // 显式调用 showChannelInfo()
                             playNextSource();
                         } else {
                             showChannelInfo();
@@ -699,6 +700,11 @@ public class LivePlayActivity extends BaseActivity {
         mHandler.removeCallbacks(mHideChannelInfoRun);
         mHandler.postDelayed(mHideChannelInfoRun, 6000);
         mHandler.postDelayed(mUpdateLayout, 255);   // Workaround Fix : SurfaceView
+		
+		// 隐藏进度条
+        if (llSeekBar != null) {
+            llSeekBar.setVisibility(View.GONE);
+       }
     }
 
     private final Runnable mHideChannelInfoRun = new Runnable() {
@@ -1011,11 +1017,14 @@ public class LivePlayActivity extends BaseActivity {
         currentLiveChannelItem.nextSource();
         playChannel(currentChannelGroupIndex, currentLiveChannelIndex, true);
 		
-		// 确保不触发底部菜单和进度条
+		// 确保底部菜单显示，但隐藏进度条
+    if (tvBottomLayout != null) {
+        tvBottomLayout.setVisibility(View.VISIBLE); // 显示底部菜单
+    }
     if (llSeekBar != null) {
         llSeekBar.setVisibility(View.GONE); // 隐藏进度条
-        }
     }
+}
 
     //显示设置列表
     private void showSettingGroup() {
