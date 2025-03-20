@@ -10,7 +10,7 @@ def static buildTime() {
 
 def generateVersionCode() {
     def versionCodeFile = file('versionCode.txt')
-    def versionCode = 1008 // 默认值
+//    def versionCode = 1008 // 默认值
     if (versionCodeFile.exists()) {
         versionCode = versionCodeFile.text.toInteger() + 1
     }
