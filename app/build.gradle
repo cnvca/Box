@@ -146,7 +146,8 @@ dependencies {
     implementation('com.thoughtworks.xstream:xstream:1.4.20') {
         exclude group: 'xmlpull', module: 'xmlpull'
     }
-    implementation 'org.nanohttpd:nanohttpd:2.3.1'
+    implementation 'org.nanohttpd:nanohttpd:2.3.1' // 核心库
+    implementation 'org.nanohttpd:nanohttpd-websocket:2.3.1' // WebSocket 模块
     implementation 'org.greenrobot:eventbus:3.3.1'
     implementation 'com.orhanobut:hawk:2.0.1'
     implementation 'net.sourceforge.streamsupport:android-retrofuture:1.7.4'
