@@ -1,7 +1,6 @@
 package com.github.tvbox.osc.bean;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author pj567
@@ -33,6 +32,7 @@ public class LiveChannelItem {
     public boolean getinclude_back() {
         return include_back;
     }
+
 
     public void setChannelIndex(int channelIndex) {
         this.channelIndex = channelIndex;
@@ -66,12 +66,10 @@ public class LiveChannelItem {
         this.channelUrls = channelUrls;
         sourceNum = channelUrls.size();
     }
-
     public void preSource() {
         sourceIndex--;
         if (sourceIndex < 0) sourceIndex = sourceNum - 1;
     }
-
     public void nextSource() {
         sourceIndex++;
         if (sourceIndex == sourceNum) sourceIndex = 0;
@@ -103,29 +101,5 @@ public class LiveChannelItem {
 
     public String getSourceName() {
         return channelSourceNames.get(sourceIndex);
-    }
-
-    // 在 LiveChannelItem 类中添加以下字段和方法
-    private List<Long> sourceLatencies = new ArrayList<>();
-
-    public void setSourceLatency(int sourceIndex, long latency) {
-        if (sourceLatencies.size() <= sourceIndex) {
-            for (int i = sourceLatencies.size(); i <= sourceIndex; i++) {
-                sourceLatencies.add(Long.MAX_VALUE);
-            }
-        }
-        sourceLatencies.set(sourceIndex, latency);
-    }
-
-    public int getFastestSourceIndex() {
-        int fastestIndex = 0;
-        long minLatency = Long.MAX_VALUE;
-        for (int i = 0; i < sourceLatencies.size(); i++) {
-            if (sourceLatencies.get(i) < minLatency) {
-                minLatency = sourceLatencies.get(i);
-                fastestIndex = i;
-            }
-        }
-        return fastestIndex;
     }
 }
