@@ -218,6 +218,9 @@ public class LivePlayActivity extends BaseActivity {
 
     @Override
     protected void init() {
+	
+	     // 初始化 ItvDns 服务
+        ItvDns.startLocalProxyServer();
 
         // takagen99 : Hide only when video playing
         hideSystemUI(false);
@@ -971,6 +974,16 @@ public class LivePlayActivity extends BaseActivity {
         }
         channel_Name = currentLiveChannelItem;
         currentLiveChannelItem.setinclude_back(currentLiveChannelItem.getUrl().indexOf("PLTV/8888") != -1);
+		
+		// 使用 ItvDns 解析播放地址
+        String originalUrl = currentLiveChannelItem.getUrl();
+        String proxyUrl = ItvDns.getProxyUrl(originalUrl);
+        if (proxyUrl != null) {
+        originalUrl = proxyUrl;
+        }
+
+        // 更新播放地址
+        mVideoView.setUrl(originalUrl, setPlayHeaders(originalUrl));
 
         // takagen99 : Moved update of Channel Info here before getting EPG (no dependency on EPG)
         mHandler.post(tv_sys_timeRunnable);
