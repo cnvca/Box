@@ -6,6 +6,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -103,13 +106,50 @@ public class ItvDns extends NanoHTTPD {
         if (uri.equals("/apv.php")) {
             String u = params.get("u"); // 获取 u 参数
             if (u != null) {
-                // 这里可以根据需要实现具体的代理逻辑
-                // 例如：转发请求到目标服务器并返回响应
-                return newFixedLengthResponse(Status.OK, "application/octet-stream", "代理响应");
+                try {
+                    // 转发请求到目标服务器
+                    URL targetUrl = new URL(u);
+                    HttpURLConnection connection = (HttpURLConnection) targetUrl.openConnection();
+                    connection.setRequestMethod("GET");
+
+                    // 获取目标服务器的响应
+                    int responseCode = connection.getResponseCode();
+                    InputStream inputStream;
+                    if (responseCode < HttpURLConnection.HTTP_BAD_REQUEST) {
+                        inputStream = connection.getInputStream();
+                    } else {
+                        inputStream = connection.getErrorStream();
+                    }
+
+                    // 创建响应并返回
+                    Response response = newFixedLengthResponse(Status.OK, "application/octet-stream", inputStream);
+                    return response;
+                } catch (IOException e) {
+                    Log.e("ItvDns", "转发请求失败", e);
+                    return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", "Internal Error");
+                }
             }
         }
 
         // 其他请求返回 404
         return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", "404 Not Found");
+    }
+
+    // 辅助方法：创建带有输入流的响应
+    private Response newFixedLengthResponse(Status status, String mimeType, InputStream inputStream) {
+        try {
+            byte[] buffer = new byte[4096];
+            int length;
+            OutputStream outputStream = newFixedLengthResponse(status, mimeType, inputStream.available()).getOutputStream();
+            while ((length = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, length);
+            }
+            outputStream.close();
+            inputStream.close();
+            return newFixedLengthResponse(status, mimeType, inputStream.available());
+        } catch (IOException e) {
+            Log.e("ItvDns", "创建响应失败", e);
+            return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", "Internal Error");
+        }
     }
 }
