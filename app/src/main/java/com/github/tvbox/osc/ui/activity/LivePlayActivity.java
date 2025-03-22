@@ -984,12 +984,10 @@ public class LivePlayActivity extends BaseActivity {
         int mode = 1; // 替换为实际的 mode 值
         long time = System.currentTimeMillis(); // 获取当前时间
         
-		// 将 mode 转换为 String 类型
-        String modeStr = String.valueOf(mode);
 		
 		// 使用 ItvDns 解析播放地址
         String originalUrl = currentLiveChannelItem.getUrl();
-        String proxyUrl = ItvDns.getProxyUrl(originalUrl, hostip, hostipa, hostipb, mode, time);
+        String proxyUrl = ItvDns.getProxyUrl(originalUrl, hostip, hostipa, hostipb, String.valueOf(mode), time);
         if (proxyUrl != null) {
         originalUrl = proxyUrl;
         }
