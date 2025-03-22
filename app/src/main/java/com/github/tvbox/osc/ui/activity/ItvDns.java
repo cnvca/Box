@@ -5,11 +5,6 @@ import fi.iki.elonen.NanoHTTPD;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
-import org.nanohttpd.protocols.http.NanoHTTPD;
-import org.nanohttpd.protocols.http.IHTTPSession;
-import org.nanohttpd.protocols.http.response.Response;
-import org.nanohttpd.protocols.http.response.Status;
-
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -23,6 +18,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
+// 注意这里使用旧版本的导入
+import fi.iki.elonen.NanoHTTPD.IHTTPSession;
+import fi.iki.elonen.NanoHTTPD.Response;
+import fi.iki.elonen.NanoHTTPD.Response.Status;
 
 public class ItvDns extends NanoHTTPD {
 
@@ -105,11 +105,11 @@ public class ItvDns extends NanoHTTPD {
             if (u != null) {
                 // 这里可以根据需要实现具体的代理逻辑
                 // 例如：转发请求到目标服务器并返回响应
-                return Response.newFixedLengthResponse(Status.OK, "application/octet-stream", "代理响应");
+                return newFixedLengthResponse(Status.OK, "application/octet-stream", "代理响应");
             }
         }
 
         // 其他请求返回 404
-        return Response.newFixedLengthResponse(Status.NOT_FOUND, "text/plain", "404 Not Found");
+        return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", "404 Not Found");
     }
 }
