@@ -121,7 +121,7 @@ public class ItvDns extends NanoHTTPD {
                     }
 
                     // 创建响应并返回
-                    return newFixedLengthResponse(Status.OK, "application/octet-stream", inputStream);
+                    return newChunkedResponse(Status.OK, "application/octet-stream", inputStream);
                 } catch (IOException e) {
                     Log.e("ItvDns", "转发请求失败", e);
                     return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", "Internal Error");
@@ -134,7 +134,7 @@ public class ItvDns extends NanoHTTPD {
     }
 
     // 辅助方法：创建带有输入流的响应
-    private Response newFixedLengthResponse(Status status, String mimeType, InputStream inputStream) {
-        return super.newFixedLengthResponse(status, mimeType, inputStream);
+    private Response newChunkedResponse(Status status, String mimeType, InputStream inputStream) {
+        return Response.newChunkedResponse(status, mimeType, inputStream);
     }
 }
