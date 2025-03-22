@@ -7,6 +7,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -120,16 +121,31 @@ public class ItvDns extends NanoHTTPD {
                         inputStream = connection.getErrorStream();
                     }
 
+                    // 将输入流转换为字节数组，以便获取内容长度
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    byte[] buffer = new byte[4096];
+                    int length;
+                    while ((length = inputStream.read(buffer)) != -1) {
+                        bos.write(buffer, 0, length);
+                    }
+                    byte[] data = bos.toByteArray();
+                    bos.close();
+                    inputStream.close();
+
                     // 创建响应并返回
-                    return new Response(Status.OK, "application/octet-stream", inputStream);
+                    return newFixedLengthResponse(Status.OK, "application/octet-stream", data, data.length);
                 } catch (IOException e) {
                     Log.e("ItvDns", "转发请求失败", e);
-                    return new Response(Status.INTERNAL_ERROR, "text/plain", "Internal Error");
+                    String errorMessage = "Internal Error";
+                    byte[] errorData = errorMessage.getBytes(StandardCharsets.UTF_8);
+                    return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", errorData, errorData.length);
                 }
             }
         }
 
         // 其他请求返回 404
-        return new Response(Status.NOT_FOUND, "text/plain", "404 Not Found");
+        String notFoundMessage = "404 Not Found";
+        byte[] notFoundData = notFoundMessage.getBytes(StandardCharsets.UTF_8);
+        return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", notFoundData, notFoundData.length);
     }
 }
