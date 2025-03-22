@@ -983,7 +983,9 @@ public class LivePlayActivity extends BaseActivity {
         String hostipb = ""; // 替换为实际的 hostipb
         int mode = 1; // 替换为实际的 mode 值
         long time = System.currentTimeMillis(); // 获取当前时间
-
+        
+		// 将 mode 转换为 String 类型
+        String modeStr = String.valueOf(mode);
 		
 		// 使用 ItvDns 解析播放地址
         String originalUrl = currentLiveChannelItem.getUrl();
