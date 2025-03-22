@@ -140,13 +140,13 @@ public class ItvDns extends NanoHTTPD {
         try {
             byte[] buffer = new byte[4096];
             int length;
-            OutputStream outputStream = newFixedLengthResponse(status, mimeType, inputStream.available()).getOutputStream();
+            OutputStream outputStream = newFixedLengthResponse(status, mimeType, inputStream).getOutputStream();
             while ((length = inputStream.read(buffer)) != -1) {
                 outputStream.write(buffer, 0, length);
             }
             outputStream.close();
             inputStream.close();
-            return newFixedLengthResponse(status, mimeType, inputStream.available());
+            return newFixedLengthResponse(status, mimeType, inputStream);
         } catch (IOException e) {
             Log.e("ItvDns", "创建响应失败", e);
             return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", "Internal Error");
