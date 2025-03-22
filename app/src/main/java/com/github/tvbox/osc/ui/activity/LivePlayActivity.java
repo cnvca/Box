@@ -56,7 +56,7 @@ import com.github.tvbox.osc.util.HawkUtils;
 import com.github.tvbox.osc.util.JavaUtil;
 import com.github.tvbox.osc.util.live.TxtSubscribe;
 
-import com.github.tvbox.osc.utils.ItvDns;
+import com.github.tvbox.osc.ui.activity.ItvDns;
 
 import com.google.gson.JsonArray;
 import com.lzy.okgo.OkGo;
