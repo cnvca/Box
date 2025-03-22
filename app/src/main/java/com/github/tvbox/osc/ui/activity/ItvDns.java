@@ -311,13 +311,14 @@ public class ItvDns extends NanoHTTPD {
                                     for (int i = 0; i < ipsJsonArray.size(); i++) {
                                         ipsArray.add(ipsJsonArray.get(i).getAsString());
                                     }
+									JsonObject jsonToSave = new JsonObject();
+                                    jsonToSave.add("ipsArray", jsonObj.get("ipsArray"));
+                                    jsonToSave.addProperty("pullDate", new Date().getTime() / 1000);
+                                    try (FileWriter writer = new FileWriter(jsonFile)) {
+                                        writer.write(gson.toJson(jsonToSave));
+                                    }
                                 }
-                                JsonObject jsonToSave = new JsonObject();
-                                jsonToSave.add("ipsArray", jsonObj.get("ipsArray"));
-                                jsonToSave.addProperty("pullDate", new Date().getTime() / 1000);
-                                try (FileWriter writer = new FileWriter(jsonFile)) {
-                                    writer.write(gson.toJson(jsonToSave));
-                                }
+                                
                             } catch (Exception e) {
                                 Log.e("ItvDns", "更新 JSON 文件时出错", e);
                             }
