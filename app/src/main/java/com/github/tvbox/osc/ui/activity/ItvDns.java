@@ -132,7 +132,7 @@ public class ItvDns extends NanoHTTPD {
                         url = decodedUts.replace(decodedUrl.getHost(), hostipb);
                         data = get(url, headers);
                         if (data[1][0] != 200) {
-                            return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", "404 Not Found", "404 Not Found".length());
+                            return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", new ByteArrayInputStream("404 Not Found".getBytes(StandardCharsets.UTF_8)), "404 Not Found".length());
                         } else {
                             return createResponse(Status.OK, "video/MP2T", "inline", data[0], data[0].length);
                         }
@@ -144,7 +144,7 @@ public class ItvDns extends NanoHTTPD {
                 }
             } catch (Exception e) {
                 Log.e("ItvDns", "处理 ts 请求时出错", e);
-                return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", "Internal Error", "Internal Error".length());
+                return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", new ByteArrayInputStream("Internal Error".getBytes(StandardCharsets.UTF_8)), "Internal Error".length());
             }
         } else {
             String u = params.get("u") != null? params.get("u") : "";
@@ -178,7 +178,7 @@ public class ItvDns extends NanoHTTPD {
                             url = decodedU.replace(decodedUrl.getHost(), hostipb);
                             m3u8 = get(url, headers, 3)[0];
                             if (new String(m3u8, StandardCharsets.UTF_8).indexOf("EXTM3U") == -1) {
-                                return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", "404 Not Found", "404 Not Found".length());
+                                return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", new ByteArrayInputStream("404 Not Found".getBytes(StandardCharsets.UTF_8)), "404 Not Found".length());
                             }
                         }
                     }
@@ -209,7 +209,7 @@ public class ItvDns extends NanoHTTPD {
                     return createResponse(Status.OK, "application/vnd.apple.mpegurl", "inline", d.toString().getBytes(StandardCharsets.UTF_8), d.toString().getBytes(StandardCharsets.UTF_8).length);
                 } catch (Exception e) {
                     Log.e("ItvDns", "处理 u 请求时出错", e);
-                    return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", "Internal Error", "Internal Error".length());
+                    return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", new ByteArrayInputStream("Internal Error".getBytes(StandardCharsets.UTF_8)), "Internal Error".length());
                 }
             } else {
                 String channelId = params.get("channel-id") != null? params.get("channel-id") : "ystenlive";
@@ -253,7 +253,7 @@ public class ItvDns extends NanoHTTPD {
                 if (new String(url2, StandardCharsets.UTF_8).indexOf("cache.ott") == -1) {
                     int position = new String(url2, StandardCharsets.UTF_8).indexOf("/", 8);
                     String str = new String(url2, StandardCharsets.UTF_8).substring(position);
-                    url2 = "http://cache.ott." + domainId + ".itv.cmvideo.cn" + str;
+                    url2 = ("http://cache.ott." + domainId + ".itv.cmvideo.cn" + str).getBytes(StandardCharsets.UTF_8);
                 }
 
                 String url4;
@@ -274,7 +274,7 @@ public class ItvDns extends NanoHTTPD {
                         File directory = new File(jsonFile).getParentFile();
                         if (!directory.exists() &&!directory.mkdirs()) {
                             Log.e("ItvDns", "目录创建失败: " + directory.getAbsolutePath());
-                            return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", "目录创建失败", "目录创建失败".length());
+                            return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", new ByteArrayInputStream("目录创建失败".getBytes(StandardCharsets.UTF_8)), "目录创建失败".length());
                         }
 
                         int update = 1;
@@ -336,8 +336,8 @@ public class ItvDns extends NanoHTTPD {
                                 int a = ct / 3;
                                 int b = a * 2;
                                 hostip = ipsArray.get(new Random().nextInt(a));
-                                hostipa = ipsArray.get(new Random().nextInt(a, b));
-                                hostipb = ipsArray.get(new Random().nextInt(b, ct));
+                                hostipa = ipsArray.get(nextIntInRange(a, b));
+                                hostipb = ipsArray.get(nextIntInRange(b, ct));
                             }
                         }
                     }
@@ -396,7 +396,7 @@ public class ItvDns extends NanoHTTPD {
             return createResponse(Status.OK, "video/mp2t", "inline", data, data.length);
         } catch (Exception e) {
             Log.e("ItvDns", "获取 ts 数据时出错", e);
-            return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", "Internal Error", "Internal Error".length());
+            return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", new ByteArrayInputStream("Internal Error".getBytes(StandardCharsets.UTF_8)), "Internal Error".length());
         }
     }
 
@@ -438,6 +438,10 @@ public class ItvDns extends NanoHTTPD {
         Response response = newFixedLengthResponse(status, contentType, new ByteArrayInputStream(data), length);
         response.addHeader("Content-Disposition", disposition + "; filename=" + (contentType.contains("video") ? "video.ts" : "index.m3u8"));
         return response;
+    }
+
+    private int nextIntInRange(int min, int max) {
+        return new Random().nextInt(max - min) + min;
     }
 
     public static void main(String[] args) {
