@@ -121,7 +121,7 @@ dependencies {
     implementation('com.github.thegrizzlylabs:sardine-android:0.8') {
         exclude group: 'com.squareup.okhttp3'
     }
-    implementation 'org.nanohttpd:nanohttpd:2.3.2'
+    
     implementation 'com.github.NanoHttpd.nanohttpd:nanohttpd:nanohttpd-project-2.3.1'
     implementation 'com.github.NanoHttpd.nanohttpd:nanohttpd:nanohttpd-websocket-2.3.1'
     implementation 'com.google.zxing:core:3.5.1'
