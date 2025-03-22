@@ -999,7 +999,7 @@ public class LivePlayActivity extends BaseActivity {
         getEpg(new Date());
 		        // 更新播放地址
         mVideoView.setUrl(originalUrl, setPlayHeaders(originalUrl));
-        mVideoView.setUrl(currentLiveChannelItem.getUrl(), setPlayHeaders(currentLiveChannelItem.getUrl()));
+//        mVideoView.setUrl(currentLiveChannelItem.getUrl(), setPlayHeaders(currentLiveChannelItem.getUrl()));
         showChannelInfo();
         mVideoView.start();
         return true;
