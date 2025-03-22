@@ -7,7 +7,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonArray;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -122,8 +121,7 @@ public class ItvDns extends NanoHTTPD {
                     }
 
                     // 创建响应并返回
-                    Response response = newFixedLengthResponse(Status.OK, "application/octet-stream", inputStream);
-                    return response;
+                    return newFixedLengthResponse(Status.OK, "application/octet-stream", inputStream);
                 } catch (IOException e) {
                     Log.e("ItvDns", "转发请求失败", e);
                     return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", "Internal Error");
@@ -137,19 +135,6 @@ public class ItvDns extends NanoHTTPD {
 
     // 辅助方法：创建带有输入流的响应
     private Response newFixedLengthResponse(Status status, String mimeType, InputStream inputStream) {
-        try {
-            byte[] buffer = new byte[4096];
-            int length;
-            OutputStream outputStream = newFixedLengthResponse(status, mimeType, inputStream).getOutputStream();
-            while ((length = inputStream.read(buffer)) != -1) {
-                outputStream.write(buffer, 0, length);
-            }
-            outputStream.close();
-            inputStream.close();
-            return newFixedLengthResponse(status, mimeType, inputStream);
-        } catch (IOException e) {
-            Log.e("ItvDns", "创建响应失败", e);
-            return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", "Internal Error");
-        }
+        return super.newFixedLengthResponse(status, mimeType, inputStream);
     }
 }
