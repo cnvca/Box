@@ -33,7 +33,7 @@ public class ItvDns extends NanoHTTPD {
     private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private static ItvDns instance; // 单例实例
 
-    // channel-id 到主机名的映射
+    // channel - id 到主机名的映射
     private static final Map<String, String> CHANNEL_TO_HOST = new HashMap<>();
     static {
         CHANNEL_TO_HOST.put("bestzb", "cache.ott.bestlive.itv.cmvideo.cn");
@@ -80,7 +80,6 @@ public class ItvDns extends NanoHTTPD {
                         + "&mode=" + mode
                         + "&time=" + time;
             }
-
             return originalUrl;
         } catch (Exception e) {
             Log.e("ItvDns", "解析 URL 失败", e);
@@ -106,10 +105,12 @@ public class ItvDns extends NanoHTTPD {
 
         if (ts != null &&!ts.isEmpty()) {
             try {
+                // 处理 URLDecoder.decode 异常
                 String decodedUts = URLDecoder.decode(ts, StandardCharsets.UTF_8.toString());
                 String[] tsa = decodedUts.split("AuthInfo=");
                 if (tsa.length > 1) {
                     try {
+                        // 处理 URLEncoder.encode 异常
                         String authinfo = URLEncoder.encode(tsa[1], StandardCharsets.UTF_8.toString());
                         decodedUts = tsa[0] + "AuthInfo=" + authinfo;
                     } catch (UnsupportedEncodingException e) {
@@ -163,12 +164,14 @@ public class ItvDns extends NanoHTTPD {
             String httpHost = session.getHeaders().get("Host");
             String requestUri = session.getUri();
             try {
+                // 处理 URLDecoder.decode 异常
                 String decodedUri = URLDecoder.decode(requestUri, StandardCharsets.UTF_8.toString());
                 String[] uriParts = decodedUri.split("\\?");
                 String Uripath = uriParts[0];
 
                 if (u != null &&!u.isEmpty()) {
                     try {
+                        // 处理 URLDecoder.decode 异常
                         String decodedU = URLDecoder.decode(u, StandardCharsets.UTF_8.toString());
                         String[] urlpathParts = decodedU.split("index.m3u8");
                         String urlpath = urlpathParts[0];
@@ -207,6 +210,7 @@ public class ItvDns extends NanoHTTPD {
                             for (String m3u8l : m3u8s) {
                                 if (m3u8l.toLowerCase().indexOf(".ts") != -1) {
                                     try {
+                                        // 处理 URLEncoder.encode 异常
                                         d.append(urlp)
                                                .append(URLEncoder.encode(urlpath + m3u8l, StandardCharsets.UTF_8.toString()))
                                                .append("&hostip=").append(hostip)
@@ -256,121 +260,128 @@ public class ItvDns extends NanoHTTPD {
                             break;
                     }
 
+                    String url1;
+                    if (playseek != null &&!playseek.isEmpty()) {
+                        String[] tArr = playseek.replace("-", ".0").concat(".0").split("(?<=\\G.{8})");
+                        String starttime = tArr[0] + "T" + tArr[1] + "0Z";
+                        String endtime = tArr[2] + "T" + tArr[3] + "0Z";
+                        url1 = "http://gslbserv.itv.cmvideo.cn/index.m3u8?channel-id=" + channelId + "&Contentid=" + contentId + "&livemode=4&stbId=" + stbId + "&starttime=" + starttime + "&endtime=" + endtime;
+                    } else {
+                        url1 = "http://gslbserv.itv.cmvideo.cn/index.m3u8?channel-id=" + channelId + "&Contentid=" + contentId + "&livemode=1&stbId=" + stbId;
+                    }
 
-                String url1;
-                if (playseek != null &&!playseek.isEmpty()) {
-                    String[] tArr = playseek.replace("-", ".0").concat(".0").split("(?<=\\G.{8})");
-                    String starttime = tArr[0] + "T" + tArr[1] + "0Z";
-                    String endtime = tArr[2] + "T" + tArr[3] + "0Z";
-                    url1 = "http://gslbserv.itv.cmvideo.cn/index.m3u8?channel-id=" + channelId + "&Contentid=" + contentId + "&livemode=4&stbId=" + stbId + "&starttime=" + starttime + "&endtime=" + endtime;
-                } else {
-                    url1 = "http://gslbserv.itv.cmvideo.cn/index.m3u8?channel-id=" + channelId + "&Contentid=" + contentId + "&livemode=1&stbId=" + stbId;
-                }
+                    byte[] url2 = get(url1, Arrays.asList("User-Agent: okhttp/3.12.3"), 3)[0];
+                    if (url2 == null || url2.length == 0) {
+                        url1 = url1.replace("gslbserv.itv.cmvideo.cn", "221.181.100.64");
+                        url2 = get(url1, Arrays.asList("User-Agent: okhttp/3.12.3", "Host: gslbserv.itv.cmvideo.cn"), 3)[0];
+                    }
 
-                byte[] url2 = get(url1, Arrays.asList("User-Agent: okhttp/3.12.3"), 3)[0];
-                if (url2 == null || url2.length == 0) {
-                    url1 = url1.replace("gslbserv.itv.cmvideo.cn", "221.181.100.64");
-                    url2 = get(url1, Arrays.asList("User-Agent: okhttp/3.12.3", "Host: gslbserv.itv.cmvideo.cn"), 3)[0];
-                }
+                    if (new String(url2, StandardCharsets.UTF_8).indexOf("cache.ott") == -1) {
+                        int position = new String(url2, StandardCharsets.UTF_8).indexOf("/", 8);
+                        String str = new String(url2, StandardCharsets.UTF_8).substring(position);
+                        url2 = ("http://cache.ott." + domainId + ".itv.cmvideo.cn" + str).getBytes(StandardCharsets.UTF_8);
+                    }
 
-                if (new String(url2, StandardCharsets.UTF_8).indexOf("cache.ott") == -1) {
-                    int position = new String(url2, StandardCharsets.UTF_8).indexOf("/", 8);
-                    String str = new String(url2, StandardCharsets.UTF_8).substring(position);
-                    url2 = ("http://cache.ott." + domainId + ".itv.cmvideo.cn" + str).getBytes(StandardCharsets.UTF_8);
-                }
-
-                String url4;
-                if ("3".equals(mode)) {
-                    url4 = new String(url2, StandardCharsets.UTF_8);
-                } else {
-                    if (hostip == null || hostip.isEmpty()) {
-                        String jsonFile;
-                        String api;
-                        if ("1".equals(yw)) {
-                            jsonFile = "json/yditv/hostip_yw.json";
-                            api = "http://611594.lovexyz.cc/live/hostip_yw";
-                        } else {
-                            jsonFile = "json/yditv/hostip.json";
-                            api = "https://api.wheiss.com/json/yditv/hostip.json";
-                        }
-
-                        File directory = new File(jsonFile).getParentFile();
-                        if (!directory.exists() &&!directory.mkdirs()) {
-                            Log.e("ItvDns", "目录创建失败: " + directory.getAbsolutePath());
-                            return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", new ByteArrayInputStream("目录创建失败".getBytes(StandardCharsets.UTF_8)), "目录创建失败".length());
-                        }
-
-                        int update = 1;
-                        List<String> ipsArray = new ArrayList<>();
-                        if (new File(jsonFile).exists()) {
-                            try (BufferedReader reader = new BufferedReader(new FileReader(jsonFile))) {
-                                StringBuilder jsonData = new StringBuilder();
-                                String line;
-                                while ((line = reader.readLine()) != null) {
-                                    jsonData.append(line);
-                                }
-                                JsonObject jsonObj = gson.fromJson(jsonData.toString(), JsonObject.class);
-                                JsonArray ipsJsonArray = jsonObj.getAsJsonArray("ipsArray").getAsJsonArray();
-                                for (int i = 0; i < ipsJsonArray.size(); i++) {
-                                    ipsArray.add(ipsJsonArray.get(i).getAsString());
-                                }
-                                long updated = jsonObj.get("updated").getAsLong();
-                                long pullDate = jsonObj.has("pullDate")? jsonObj.get("pullDate").getAsLong() : updated;
-                                if (System.currentTimeMillis() / 1000 - updated < 3600 || System.currentTimeMillis() / 1000 - pullDate < 3600 && new Random().nextInt(10) < 8) {
-                                    update = 0;
-                                }
-                            } catch (Exception e) {
-                                Log.e("ItvDns", "读取 JSON 文件时出错", e);
+                    String url4;
+                    if ("3".equals(mode)) {
+                        url4 = new String(url2, StandardCharsets.UTF_8);
+                    } else {
+                        if (hostip == null || hostip.isEmpty()) {
+                            String jsonFile;
+                            String api;
+                            if ("1".equals(yw)) {
+                                jsonFile = "json/yditv/hostip_yw.json";
+                                api = "http://611594.lovexyz.cc/live/hostip_yw";
+                            } else {
+                                jsonFile = "json/yditv/hostip.json";
+                                api = "https://api.wheiss.com/json/yditv/hostip.json";
                             }
-                        }
 
-                        if (update == 1) {
-                            try {
-                                byte[] jsondata = get(api, Collections.emptyList())[0];
-                                if (jsondata != null && new String(jsondata, StandardCharsets.UTF_8).startsWith("{")) {
-                                    JsonObject jsonObj = gson.fromJson(new String(jsondata, StandardCharsets.UTF_8), JsonObject.class);
+                            File directory = new File(jsonFile).getParentFile();
+                            if (!directory.exists() &&!directory.mkdirs()) {
+                                Log.e("ItvDns", "目录创建失败: " + directory.getAbsolutePath());
+                                return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", new ByteArrayInputStream("目录创建失败".getBytes(StandardCharsets.UTF_8)), "目录创建失败".length());
+                            }
+
+                            int update = 1;
+                            List<String> ipsArray = new ArrayList<>();
+                            if (new File(jsonFile).exists()) {
+                                try (BufferedReader reader = new BufferedReader(new FileReader(jsonFile))) {
+                                    StringBuilder jsonData = new StringBuilder();
+                                    String line;
+                                    while ((line = reader.readLine()) != null) {
+                                        jsonData.append(line);
+                                    }
+                                    JsonObject jsonObj = gson.fromJson(jsonData.toString(), JsonObject.class);
                                     JsonArray ipsJsonArray = jsonObj.getAsJsonArray("ipsArray").getAsJsonArray();
-                                    ipsArray.clear();
                                     for (int i = 0; i < ipsJsonArray.size(); i++) {
                                         ipsArray.add(ipsJsonArray.get(i).getAsString());
                                     }
-									JsonObject jsonToSave = new JsonObject();
-                                    jsonToSave.add("ipsArray", jsonObj.get("ipsArray"));
-                                    jsonToSave.addProperty("pullDate", new Date().getTime() / 1000);
-                                    try (FileWriter writer = new FileWriter(jsonFile)) {
-                                        writer.write(gson.toJson(jsonToSave));
+                                    long updated = jsonObj.get("updated").getAsLong();
+                                    long pullDate = jsonObj.has("pullDate")? jsonObj.get("pullDate").getAsLong() : updated;
+                                    if (System.currentTimeMillis() / 1000 - updated < 3600 || System.currentTimeMillis() / 1000 - pullDate < 3600 && new Random().nextInt(10) < 8) {
+                                        update = 0;
                                     }
+                                } catch (Exception e) {
+                                    Log.e("ItvDns", "读取 JSON 文件时出错", e);
                                 }
-                                
-                            } catch (Exception e) {
-                                Log.e("ItvDns", "更新 JSON 文件时出错", e);
+                            }
+
+                            if (update == 1) {
+                                try {
+                                    byte[] jsondata = get(api, Collections.emptyList())[0];
+                                    if (jsondata != null && new String(jsondata, StandardCharsets.UTF_8).startsWith("{")) {
+                                        JsonObject jsonObj = gson.fromJson(new String(jsondata, StandardCharsets.UTF_8), JsonObject.class);
+                                        JsonArray ipsJsonArray = jsonObj.getAsJsonArray("ipsArray").getAsJsonArray();
+                                        ipsArray.clear();
+                                        for (int i = 0; i < ipsJsonArray.size(); i++) {
+                                            ipsArray.add(ipsJsonArray.get(i).getAsString());
+                                        }
+                                        JsonObject jsonToSave = new JsonObject();
+                                        jsonToSave.add("ipsArray", jsonObj.get("ipsArray"));
+                                        jsonToSave.addProperty("pullDate", new Date().getTime() / 1000);
+                                        try (FileWriter writer = new FileWriter(jsonFile)) {
+                                            writer.write(gson.toJson(jsonToSave));
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    Log.e("ItvDns", "更新 JSON 文件时出错", e);
+                                }
+                            }
+
+                            if (ipsArray.isEmpty()) {
+                                hostip = "39.134.95.33";
+                            } else {
+                                Collections.shuffle(ipsArray);
+                                int ct = ipsArray.size();
+                                if (ct < 3) {
+                                    hostip = ipsArray.get(new Random().nextInt(ct));
+                                    hostipa = ipsArray.get(new Random().nextInt(ct));
+                                    hostipb = ipsArray.get(new Random().nextInt(ct));
+                                } else {
+                                    int a = ct / 3;
+                                    int b = a * 2;
+                                    hostip = ipsArray.get(new Random().nextInt(a));
+                                    hostipa = ipsArray.get(nextIntInRange(a, b));
+                                    hostipb = ipsArray.get(nextIntInRange(b, ct));
+                                }
                             }
                         }
-
-                        if (ipsArray.isEmpty()) {
-                            hostip = "39.134.95.33";
-                        } else {
-                            Collections.shuffle(ipsArray);
-                            int ct = ipsArray.size();
-                            if (ct < 3) {
-                                hostip = ipsArray.get(new Random().nextInt(ct));
-                                hostipa = ipsArray.get(new Random().nextInt(ct));
-                                hostipb = ipsArray.get(new Random().nextInt(ct));
-                            } else {
-                                int a = ct / 3;
-                                int b = a * 2;
-                                hostip = ipsArray.get(new Random().nextInt(a));
-                                hostipa = ipsArray.get(nextIntInRange(a, b));
-                                hostipb = ipsArray.get(nextIntInRange(b, ct));
-                            }
+                        try {
+                            String url3 = URLEncoder.encode(new String(url2, StandardCharsets.UTF_8), StandardCharsets.UTF_8.toString());
+                            url4 = https + "://" + httpHost + Uripath + "?u=" + url3 + "&hostip=" + hostip + "&hostipa=" + hostipa + "&hostipb=" + hostipb + "&mode=" + mode + "&time=" + timeStr;
+                        } catch (UnsupportedEncodingException e) {
+                            Log.e("ItvDns", "URLEncoder.encode 异常", e);
+                            return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", new ByteArrayInputStream("Internal Error".getBytes(StandardCharsets.UTF_8)), "Internal Error".length());
                         }
                     }
-                    String url3 = URLEncoder.encode(new String(url2, StandardCharsets.UTF_8), StandardCharsets.UTF_8.toString());
-                    url4 = https + "://" + httpHost + Uripath + "?u=" + url3 + "&hostip=" + hostip + "&hostipa=" + hostipa + "&hostipb=" + hostipb + "&mode=" + mode + "&time=" + timeStr;
+                    Response response = newFixedLengthResponse(Status.REDIRECT, "text/plain", "");
+                    response.addHeader("Location", url4);
+                    return response;
                 }
-                Response response = newFixedLengthResponse(Status.REDIRECT, "text/plain", "");
-                response.addHeader("Location", url4);
-                return response;
+            } catch (UnsupportedEncodingException e) {
+                Log.e("ItvDns", "URLDecoder.decode 异常", e);
+                return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", new ByteArrayInputStream("Internal Error".getBytes(StandardCharsets.UTF_8)), "Internal Error".length());
             }
         }
     }
@@ -475,4 +486,4 @@ public class ItvDns extends NanoHTTPD {
             e.printStackTrace();
         }
     }
-}
+}    
