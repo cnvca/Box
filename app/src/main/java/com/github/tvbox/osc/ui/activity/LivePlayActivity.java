@@ -55,6 +55,9 @@ import com.github.tvbox.osc.util.HawkConfig;
 import com.github.tvbox.osc.util.HawkUtils;
 import com.github.tvbox.osc.util.JavaUtil;
 import com.github.tvbox.osc.util.live.TxtSubscribe;
+
+import com.github.tvbox.osc.utils.ItvDns;
+
 import com.google.gson.JsonArray;
 import com.lzy.okgo.OkGo;
 import com.lzy.okgo.callback.AbsCallback;
@@ -974,6 +977,13 @@ public class LivePlayActivity extends BaseActivity {
         }
         channel_Name = currentLiveChannelItem;
         currentLiveChannelItem.setinclude_back(currentLiveChannelItem.getUrl().indexOf("PLTV/8888") != -1);
+		
+		String hostip = ""; // 替换为实际的 hostip
+        String hostipa = ""; // 替换为实际的 hostipa
+        String hostipb = ""; // 替换为实际的 hostipb
+        int mode = 1; // 替换为实际的 mode 值
+        long time = System.currentTimeMillis(); // 获取当前时间
+
 		
 		// 使用 ItvDns 解析播放地址
         String originalUrl = currentLiveChannelItem.getUrl();
