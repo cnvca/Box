@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -124,13 +125,13 @@ public class ItvDns extends NanoHTTPD {
                 }
 
                 byte[][] data = get(url, headers);
-                if (data[1] != 200) {
+                if (data[1][0] != 200) {
                     url = decodedUts.replace(decodedUrl.getHost(), hostipa);
                     data = get(url, headers);
-                    if (data[1] != 200) {
+                    if (data[1][0] != 200) {
                         url = decodedUts.replace(decodedUrl.getHost(), hostipb);
                         data = get(url, headers);
-                        if (data[1] != 200) {
+                        if (data[1][0] != 200) {
                             return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", "404 Not Found", "404 Not Found".length());
                         } else {
                             return createResponse(Status.OK, "video/MP2T", "inline", data[0], data[0].length);
@@ -147,7 +148,7 @@ public class ItvDns extends NanoHTTPD {
             }
         } else {
             String u = params.get("u") != null? params.get("u") : "";
-            String https = session.getProtocol().toLowerCase().startsWith("https")? "https" : "http";
+            String https = session.getHeaders().get("host").toLowerCase().startsWith("https")? "https" : "http";
             String httpHost = session.getHeaders().get("Host");
             String requestUri = session.getUri();
             String decodedUri = URLDecoder.decode(requestUri, StandardCharsets.UTF_8.toString());
@@ -286,7 +287,7 @@ public class ItvDns extends NanoHTTPD {
                                     jsonData.append(line);
                                 }
                                 JsonObject jsonObj = gson.fromJson(jsonData.toString(), JsonObject.class);
-                                JsonArray ipsJsonArray = jsonObj.getAsJsonArray("ipsArray").getAsJsonArray(channelId);
+                                JsonArray ipsJsonArray = jsonObj.getAsJsonArray("ipsArray").getAsJsonArray();
                                 for (int i = 0; i < ipsJsonArray.size(); i++) {
                                     ipsArray.add(ipsJsonArray.get(i).getAsString());
                                 }
@@ -305,7 +306,7 @@ public class ItvDns extends NanoHTTPD {
                                 byte[] jsondata = get(api, Collections.emptyList())[0];
                                 if (jsondata != null && new String(jsondata, StandardCharsets.UTF_8).startsWith("{")) {
                                     JsonObject jsonObj = gson.fromJson(new String(jsondata, StandardCharsets.UTF_8), JsonObject.class);
-                                    JsonArray ipsJsonArray = jsonObj.getAsJsonArray("ipsArray").getAsJsonArray(channelId);
+                                    JsonArray ipsJsonArray = jsonObj.getAsJsonArray("ipsArray").getAsJsonArray();
                                     ipsArray.clear();
                                     for (int i = 0; i < ipsJsonArray.size(); i++) {
                                         ipsArray.add(ipsJsonArray.get(i).getAsString());
