@@ -6,6 +6,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import java.io.*;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -90,7 +91,7 @@ public class ItvDns extends NanoHTTPD {
     /**
      * 处理 HTTP 请求
      */
-    @Override
+@Override
     public Response serve(IHTTPSession session) {
         String uri = session.getUri();
         Map<String, String> params = session.getParms();
@@ -104,46 +105,58 @@ public class ItvDns extends NanoHTTPD {
         long time = Long.parseLong(timeStr);
 
         if (ts != null &&!ts.isEmpty()) {
-            String decodedUts = URLDecoder.decode(ts, StandardCharsets.UTF_8.toString());
-            String[] tsa = decodedUts.split("AuthInfo=");
-            if (tsa.length > 1) {
-                String authinfo = URLEncoder.encode(tsa[1], StandardCharsets.UTF_8.toString());
-                decodedUts = tsa[0] + "AuthInfo=" + authinfo;
-            }
-
             try {
-                URL decodedUrl = new URL(decodedUts);
-                String url = decodedUts.replace(decodedUrl.getHost(), hostip);
-
-                List<String> headers = Arrays.asList(
-                        "User-Agent: okhttp/3.12.3",
-                        "Host: " + decodedUrl.getHost()
-                );
-
-                if ("1".equals(mode) || ("0".equals(mode) && System.currentTimeMillis() / 1000 - time < 20)) {
-                    return gettsResponse(url, headers);
+                // 处理 URLDecoder.decode 异常
+                String decodedUts = URLDecoder.decode(ts, StandardCharsets.UTF_8.toString());
+                String[] tsa = decodedUts.split("AuthInfo=");
+                if (tsa.length > 1) {
+                    try {
+                        // 处理 URLEncoder.encode 异常
+                        String authinfo = URLEncoder.encode(tsa[1], StandardCharsets.UTF_8.toString());
+                        decodedUts = tsa[0] + "AuthInfo=" + authinfo;
+                    } catch (UnsupportedEncodingException e) {
+                        Log.e("ItvDns", "URLEncoder.encode 异常", e);
+                        return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", new ByteArrayInputStream("Internal Error".getBytes(StandardCharsets.UTF_8)), "Internal Error".length());
+                    }
                 }
 
-                byte[][] data = get(url, headers);
-                if (data[1][0] != 200) {
-                    url = decodedUts.replace(decodedUrl.getHost(), hostipa);
-                    data = get(url, headers);
+                try {
+                    URL decodedUrl = new URL(decodedUts);
+                    String url = decodedUts.replace(decodedUrl.getHost(), hostip);
+
+                    List<String> headers = Arrays.asList(
+                            "User-Agent: okhttp/3.12.3",
+                            "Host: " + decodedUrl.getHost()
+                    );
+
+                    if ("1".equals(mode) || ("0".equals(mode) && System.currentTimeMillis() / 1000 - time < 20)) {
+                        return gettsResponse(url, headers);
+                    }
+
+                    byte[][] data = get(url, headers);
                     if (data[1][0] != 200) {
-                        url = decodedUts.replace(decodedUrl.getHost(), hostipb);
+                        url = decodedUts.replace(decodedUrl.getHost(), hostipa);
                         data = get(url, headers);
                         if (data[1][0] != 200) {
-                            return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", new ByteArrayInputStream("404 Not Found".getBytes(StandardCharsets.UTF_8)), "404 Not Found".length());
+                            url = decodedUts.replace(decodedUrl.getHost(), hostipb);
+                            data = get(url, headers);
+                            if (data[1][0] != 200) {
+                                return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", new ByteArrayInputStream("404 Not Found".getBytes(StandardCharsets.UTF_8)), "404 Not Found".length());
+                            } else {
+                                return createResponse(Status.OK, "video/MP2T", "inline", data[0], data[0].length);
+                            }
                         } else {
                             return createResponse(Status.OK, "video/MP2T", "inline", data[0], data[0].length);
                         }
                     } else {
                         return createResponse(Status.OK, "video/MP2T", "inline", data[0], data[0].length);
                     }
-                } else {
-                    return createResponse(Status.OK, "video/MP2T", "inline", data[0], data[0].length);
+                } catch (Exception e) {
+                    Log.e("ItvDns", "处理 ts 请求时出错", e);
+                    return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", new ByteArrayInputStream("Internal Error".getBytes(StandardCharsets.UTF_8)), "Internal Error".length());
                 }
-            } catch (Exception e) {
-                Log.e("ItvDns", "处理 ts 请求时出错", e);
+            } catch (UnsupportedEncodingException e) {
+                Log.e("ItvDns", "URLDecoder.decode 异常", e);
                 return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", new ByteArrayInputStream("Internal Error".getBytes(StandardCharsets.UTF_8)), "Internal Error".length());
             }
         } else {
@@ -151,88 +164,103 @@ public class ItvDns extends NanoHTTPD {
             String https = session.getHeaders().get("host").toLowerCase().startsWith("https")? "https" : "http";
             String httpHost = session.getHeaders().get("Host");
             String requestUri = session.getUri();
-            String decodedUri = URLDecoder.decode(requestUri, StandardCharsets.UTF_8.toString());
-            String[] uriParts = decodedUri.split("\\?");
-            String Uripath = uriParts[0];
+            try {
+                // 处理 URLDecoder.decode 异常
+                String decodedUri = URLDecoder.decode(requestUri, StandardCharsets.UTF_8.toString());
+                String[] uriParts = decodedUri.split("\\?");
+                String Uripath = uriParts[0];
 
-            if (u != null &&!u.isEmpty()) {
-                String decodedU = URLDecoder.decode(u, StandardCharsets.UTF_8.toString());
-                String[] urlpathParts = decodedU.split("index.m3u8");
-                String urlpath = urlpathParts[0];
-                String urlp = https + "://" + httpHost + Uripath + "?ts=";
+                if (u != null &&!u.isEmpty()) {
+                    try {
+                        // 处理 URLDecoder.decode 异常
+                        String decodedU = URLDecoder.decode(u, StandardCharsets.UTF_8.toString());
+                        String[] urlpathParts = decodedU.split("index.m3u8");
+                        String urlpath = urlpathParts[0];
+                        String urlp = https + "://" + httpHost + Uripath + "?ts=";
 
-                try {
-                    URL decodedUrl = new URL(decodedU);
-                    String url = decodedU.replace(decodedUrl.getHost(), hostip);
+                        try {
+                            URL decodedUrl = new URL(decodedU);
+                            String url = decodedU.replace(decodedUrl.getHost(), hostip);
 
-                    List<String> headers = Arrays.asList(
-                            "User-Agent: okhttp/3.12.3",
-                            "Host: " + decodedUrl.getHost()
-                    );
+                            List<String> headers = Arrays.asList(
+                                    "User-Agent: okhttp/3.12.3",
+                                    "Host: " + decodedUrl.getHost()
+                            );
 
-                    byte[] m3u8 = get(url, headers, 3)[0];
-                    if (new String(m3u8, StandardCharsets.UTF_8).indexOf("EXTM3U") == -1) {
-                        url = decodedU.replace(decodedUrl.getHost(), hostipa);
-                        m3u8 = get(url, headers, 3)[0];
-                        if (new String(m3u8, StandardCharsets.UTF_8).indexOf("EXTM3U") == -1) {
-                            url = decodedU.replace(decodedUrl.getHost(), hostipb);
-                            m3u8 = get(url, headers, 3)[0];
+                            byte[] m3u8 = get(url, headers, 3)[0];
                             if (new String(m3u8, StandardCharsets.UTF_8).indexOf("EXTM3U") == -1) {
-                                return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", new ByteArrayInputStream("404 Not Found".getBytes(StandardCharsets.UTF_8)), "404 Not Found".length());
+                                url = decodedU.replace(decodedUrl.getHost(), hostipa);
+                                m3u8 = get(url, headers, 3)[0];
+                                if (new String(m3u8, StandardCharsets.UTF_8).indexOf("EXTM3U") == -1) {
+                                    url = decodedU.replace(decodedUrl.getHost(), hostipb);
+                                    m3u8 = get(url, headers, 3)[0];
+                                    if (new String(m3u8, StandardCharsets.UTF_8).indexOf("EXTM3U") == -1) {
+                                        return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", new ByteArrayInputStream("404 Not Found".getBytes(StandardCharsets.UTF_8)), "404 Not Found".length());
+                                    }
+                                }
                             }
+
+                            String[] m3u8s;
+                            if (new String(m3u8, StandardCharsets.UTF_8).indexOf("\r\n") != -1) {
+                                m3u8s = new String(m3u8, StandardCharsets.UTF_8).split("\r\n");
+                            } else {
+                                m3u8s = new String(m3u8, StandardCharsets.UTF_8).split("\n");
+                            }
+
+                            StringBuilder d = new StringBuilder();
+                            for (String m3u8l : m3u8s) {
+                                if (m3u8l.toLowerCase().indexOf(".ts") != -1) {
+                                    try {
+                                        // 处理 URLEncoder.encode 异常
+                                        d.append(urlp)
+                                               .append(URLEncoder.encode(urlpath + m3u8l, StandardCharsets.UTF_8.toString()))
+                                               .append("&hostip=").append(hostip)
+                                               .append("&hostipa=").append(hostipa)
+                                               .append("&hostipb=").append(hostipb)
+                                               .append("&mode=").append(mode)
+                                               .append("&time=").append(timeStr)
+                                               .append("\n");
+                                    } catch (UnsupportedEncodingException e) {
+                                        Log.e("ItvDns", "URLEncoder.encode 异常", e);
+                                        return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", new ByteArrayInputStream("Internal Error".getBytes(StandardCharsets.UTF_8)), "Internal Error".length());
+                                    }
+                                } else {
+                                    d.append(m3u8l).append("\n");
+                                }
+                            }
+
+                            return createResponse(Status.OK, "application/vnd.apple.mpegurl", "inline", d.toString().getBytes(StandardCharsets.UTF_8), d.toString().getBytes(StandardCharsets.UTF_8).length);
+                        } catch (Exception e) {
+                            Log.e("ItvDns", "处理 u 请求时出错", e);
+                            return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", new ByteArrayInputStream("Internal Error".getBytes(StandardCharsets.UTF_8)), "Internal Error".length());
                         }
+                    } catch (UnsupportedEncodingException e) {
+                        Log.e("ItvDns", "URLDecoder.decode 异常", e);
+                        return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", new ByteArrayInputStream("Internal Error".getBytes(StandardCharsets.UTF_8)), "Internal Error".length());
+                    }
+                } else {
+                    String channelId = params.get("channel-id") != null? params.get("channel-id") : "ystenlive";
+                    String contentId = params.get("Contentid") != null? params.get("Contentid") : "8785669936177902664";
+                    String stbId = params.get("stbId") != null? params.get("stbId") : "toShengfen";
+                    String playseek = params.get("playseek") != null? params.get("playseek") : "";
+                    String yw = params.get("yw") != null? params.get("yw") : "";
+
+                    String domainId;
+                    switch (channelId) {
+                        case "bestzb":
+                            domainId = "bestlive";
+                            break;
+                        case "wasusyt":
+                            domainId = "wasulive";
+                            break;
+                        case "FifastbLive":
+                            domainId = "fifalive";
+                            break;
+                        default:
+                            domainId = channelId;
+                            break;
                     }
 
-                    String[] m3u8s;
-                    if (new String(m3u8, StandardCharsets.UTF_8).indexOf("\r\n") != -1) {
-                        m3u8s = new String(m3u8, StandardCharsets.UTF_8).split("\r\n");
-                    } else {
-                        m3u8s = new String(m3u8, StandardCharsets.UTF_8).split("\n");
-                    }
-
-                    StringBuilder d = new StringBuilder();
-                    for (String m3u8l : m3u8s) {
-                        if (m3u8l.toLowerCase().indexOf(".ts") != -1) {
-                            d.append(urlp)
-                                   .append(URLEncoder.encode(urlpath + m3u8l, StandardCharsets.UTF_8.toString()))
-                                   .append("&hostip=").append(hostip)
-                                   .append("&hostipa=").append(hostipa)
-                                   .append("&hostipb=").append(hostipb)
-                                   .append("&mode=").append(mode)
-                                   .append("&time=").append(timeStr)
-                                   .append("\n");
-                        } else {
-                            d.append(m3u8l).append("\n");
-                        }
-                    }
-
-                    return createResponse(Status.OK, "application/vnd.apple.mpegurl", "inline", d.toString().getBytes(StandardCharsets.UTF_8), d.toString().getBytes(StandardCharsets.UTF_8).length);
-                } catch (Exception e) {
-                    Log.e("ItvDns", "处理 u 请求时出错", e);
-                    return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", new ByteArrayInputStream("Internal Error".getBytes(StandardCharsets.UTF_8)), "Internal Error".length());
-                }
-            } else {
-                String channelId = params.get("channel-id") != null? params.get("channel-id") : "ystenlive";
-                String contentId = params.get("Contentid") != null? params.get("Contentid") : "8785669936177902664";
-                String stbId = params.get("stbId") != null? params.get("stbId") : "toShengfen";
-                String playseek = params.get("playseek") != null? params.get("playseek") : "";
-                String yw = params.get("yw") != null? params.get("yw") : "";
-
-                String domainId;
-                switch (channelId) {
-                    case "bestzb":
-                        domainId = "bestlive";
-                        break;
-                    case "wasusyt":
-                        domainId = "wasulive";
-                        break;
-                    case "FifastbLive":
-                        domainId = "fifalive";
-                        break;
-                    default:
-                        domainId = channelId;
-                        break;
-                }
 
                 String url1;
                 if (playseek != null &&!playseek.isEmpty()) {
