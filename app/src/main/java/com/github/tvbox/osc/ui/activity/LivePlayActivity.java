@@ -987,7 +987,7 @@ public class LivePlayActivity extends BaseActivity {
 		
 		// 使用 ItvDns 解析播放地址
         String originalUrl = currentLiveChannelItem.getUrl();
-        String proxyUrl = ItvDns.getProxyUrl(originalUrl, hostip, hostipa, hostipb, String.valueOf(mode), time);
+        String proxyUrl = ItvDns.getProxyUrl(originalUrl, hostip, hostipa, hostipb, String.valueOf(mode), String.valueOf(time));
         if (proxyUrl != null) {
         originalUrl = proxyUrl;
         }
