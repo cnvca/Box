@@ -91,7 +91,7 @@ public class ItvDns extends NanoHTTPD {
     /**
      * 处理 HTTP 请求
      */
-@Override
+    @Override
     public Response serve(IHTTPSession session) {
         String uri = session.getUri();
         Map<String, String> params = session.getParms();
@@ -106,12 +106,10 @@ public class ItvDns extends NanoHTTPD {
 
         if (ts != null &&!ts.isEmpty()) {
             try {
-                // 处理 URLDecoder.decode 异常
                 String decodedUts = URLDecoder.decode(ts, StandardCharsets.UTF_8.toString());
                 String[] tsa = decodedUts.split("AuthInfo=");
                 if (tsa.length > 1) {
                     try {
-                        // 处理 URLEncoder.encode 异常
                         String authinfo = URLEncoder.encode(tsa[1], StandardCharsets.UTF_8.toString());
                         decodedUts = tsa[0] + "AuthInfo=" + authinfo;
                     } catch (UnsupportedEncodingException e) {
@@ -165,14 +163,12 @@ public class ItvDns extends NanoHTTPD {
             String httpHost = session.getHeaders().get("Host");
             String requestUri = session.getUri();
             try {
-                // 处理 URLDecoder.decode 异常
                 String decodedUri = URLDecoder.decode(requestUri, StandardCharsets.UTF_8.toString());
                 String[] uriParts = decodedUri.split("\\?");
                 String Uripath = uriParts[0];
 
                 if (u != null &&!u.isEmpty()) {
                     try {
-                        // 处理 URLDecoder.decode 异常
                         String decodedU = URLDecoder.decode(u, StandardCharsets.UTF_8.toString());
                         String[] urlpathParts = decodedU.split("index.m3u8");
                         String urlpath = urlpathParts[0];
@@ -211,7 +207,6 @@ public class ItvDns extends NanoHTTPD {
                             for (String m3u8l : m3u8s) {
                                 if (m3u8l.toLowerCase().indexOf(".ts") != -1) {
                                     try {
-                                        // 处理 URLEncoder.encode 异常
                                         d.append(urlp)
                                                .append(URLEncoder.encode(urlpath + m3u8l, StandardCharsets.UTF_8.toString()))
                                                .append("&hostip=").append(hostip)
