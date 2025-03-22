@@ -982,11 +982,8 @@ public class LivePlayActivity extends BaseActivity {
         originalUrl = proxyUrl;
         }
 
-        // 更新播放地址
-        mVideoView.setUrl(originalUrl, setPlayHeaders(originalUrl));
-        showChannelInfo();
-        mVideoView.start();
-        return true;
+
+
         // takagen99 : Moved update of Channel Info here before getting EPG (no dependency on EPG)
         mHandler.post(tv_sys_timeRunnable);
 
@@ -1000,6 +997,8 @@ public class LivePlayActivity extends BaseActivity {
         }
 
         getEpg(new Date());
+		        // 更新播放地址
+        mVideoView.setUrl(originalUrl, setPlayHeaders(originalUrl));
         mVideoView.setUrl(currentLiveChannelItem.getUrl(), setPlayHeaders(currentLiveChannelItem.getUrl()));
         showChannelInfo();
         mVideoView.start();
