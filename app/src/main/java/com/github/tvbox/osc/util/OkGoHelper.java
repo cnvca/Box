@@ -22,6 +22,7 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.UnknownHostException;
 import java.net.Socket;
+import java.net.InetAddress; // 导入 InetAddress
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
