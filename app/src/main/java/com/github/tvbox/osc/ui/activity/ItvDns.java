@@ -15,6 +15,9 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+// 导入 Status 类
+import fi.iki.elonen.NanoHTTPD.Response.Status;
+
 public class ItvDns extends NanoHTTPD {
 
     private static final int PORT = 9978; // 代理服务器端口
