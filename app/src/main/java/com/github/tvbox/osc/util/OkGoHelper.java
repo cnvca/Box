@@ -57,6 +57,9 @@ public class OkGoHelper {
     // 带代理的客户端
     static OkHttpClient proxyClient = null;
 
+    // 无重定向的客户端
+    static OkHttpClient noRedirectClient = null;
+
     // DNS over HTTPS
     public static DnsOverHttps dnsOverHttps = null;
     public static ArrayList<String> dnsHttpsList = new ArrayList<>();
@@ -118,7 +121,17 @@ public class OkGoHelper {
         defaultClient = builder.build();
         OkGo.getInstance().setOkHttpClient(defaultClient);
 
+        // 初始化无重定向的客户端
+        builder.followRedirects(false);
+        builder.followSslRedirects(false);
+        noRedirectClient = builder.build();
+
         initExoOkHttpClient();
+    }
+
+    // 获取无重定向的客户端
+    public static OkHttpClient getNoRedirectClient() {
+        return noRedirectClient;
     }
 
     // 设置代理
