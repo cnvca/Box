@@ -16,15 +16,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-private void saveLogToFile(String logMessage) {
-    String logFilePath = "/sdcard/tvbox_log.txt"; // 日志文件路径
-    try (FileWriter writer = new FileWriter(logFilePath, true)) {
-        writer.write(logMessage + "\n");
-    } catch (IOException e) {
-        Log.e("ItvDns", "保存日志到文件失败", e);
-    }
-}
-
 public class ItvDns extends NanoHTTPD {
 
     private static final int PORT = 9978; // 代理服务器端口
@@ -34,6 +25,18 @@ public class ItvDns extends NanoHTTPD {
     // 构造函数
     public ItvDns() throws IOException {
         super(PORT);
+    }
+
+    /**
+     * 保存日志到文件
+     */
+    private void saveLogToFile(String logMessage) {
+        String logFilePath = "/sdcard/tvbox_log.txt"; // 日志文件路径
+        try (FileWriter writer = new FileWriter(logFilePath, true)) {
+            writer.write(logMessage + "\n");
+        } catch (IOException e) {
+            Log.e("ItvDns", "保存日志到文件失败", e);
+        }
     }
 
     /**
