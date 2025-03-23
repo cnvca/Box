@@ -196,10 +196,33 @@ public class OkGoHelper {
     public static OkHttpClient getDefaultClient() {
         return defaultClient;
     }
-
+	
+	
+    //添加全局SOCK代理
     public static OkHttpClient getNoRedirectClient() {
         return noRedirectClient;
     }
+
+    public static void setProxy(String type, String host, int port, String username, String password) {
+    Proxy proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(host, port));
+
+    OkHttpClient.Builder builder = defaultClient.newBuilder();
+    builder.proxy(proxy);
+
+    if (username != null && password != null) {
+        builder.proxyAuthenticator((route, response) -> {
+            String credential = Credentials.basic(username, password);
+            return response.request().newBuilder()
+                    .header("Proxy-Authorization", credential)
+                    .build();
+        });
+    }
+
+    defaultClient = builder.build();
+    OkGo.getInstance().setOkHttpClient(defaultClient);
+}
+
+
 
     public static void init() {
         initDnsOverHttps();
