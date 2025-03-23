@@ -181,6 +181,21 @@ public class ApiConfig {
                         try {
                             String json = response.body();
                             parseJson(apiUrl, json);
+							
+							// 解析 proxy 配置
+                        JsonObject configJson = new Gson().fromJson(json, JsonObject.class);
+                        if (configJson.has("proxy")) {
+                            JsonObject proxyConfig = configJson.getAsJsonObject("proxy");
+                            String type = proxyConfig.get("type").getAsString();
+                            String host = proxyConfig.get("host").getAsString();
+                            int port = proxyConfig.get("port").getAsInt();
+                            String username = proxyConfig.has("username") ? proxyConfig.get("username").getAsString() : null;
+                            String password = proxyConfig.has("password") ? proxyConfig.get("password").getAsString() : null;
+
+                            // 设置代理
+                            OkGoHelper.setProxy(type, host, port, username, password);
+                        }
+
                             try {
                                 File cacheDir = cache.getParentFile();
                                 if (!cacheDir.exists())
