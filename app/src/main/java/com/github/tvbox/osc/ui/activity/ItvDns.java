@@ -9,6 +9,7 @@ import fi.iki.elonen.NanoHTTPD.Response.Status;
 
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -81,19 +82,27 @@ public class ItvDns extends NanoHTTPD {
 
         // 处理 TS 文件请求
         if (ts != null && !ts.isEmpty()) {
-            String decodedUts = URLDecoder.decode(ts, StandardCharsets.UTF_8);
-            String[] tsa = decodedUts.split("AuthInfo=");
-            if (tsa.length > 1) {
-                String authinfo = URLEncoder.encode(tsa[1], StandardCharsets.UTF_8);
-                decodedUts = tsa[0] + "AuthInfo=" + authinfo;
+            try {
+                String decodedUts = URLDecoder.decode(ts, StandardCharsets.UTF_8);
+                String[] tsa = decodedUts.split("AuthInfo=");
+                if (tsa.length > 1) {
+                    String authinfo = URLEncoder.encode(tsa[1], StandardCharsets.UTF_8);
+                    decodedUts = tsa[0] + "AuthInfo=" + authinfo;
+                }
+                URL decodedUrl = new URL(decodedUts);
+                String url = decodedUts.replace(decodedUrl.getHost(), hostip);
+                List<String> headers = Arrays.asList(
+                        "User-Agent: okhttp/3.12.3",
+                        "Host: " + decodedUrl.getHost()
+                );
+                return gettsResponse(url, headers);
+            } catch (MalformedURLException e) {
+                Log.e("ItvDns", "URL 格式错误", e);
+                return newFixedLengthResponse(Status.BAD_REQUEST, "text/plain", "Invalid URL");
+            } catch (Exception e) {
+                Log.e("ItvDns", "处理 TS 请求时出错", e);
+                return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", "Internal Error");
             }
-            URL decodedUrl = new URL(decodedUts);
-            String url = decodedUts.replace(decodedUrl.getHost(), hostip);
-            List<String> headers = Arrays.asList(
-                    "User-Agent: okhttp/3.12.3",
-                    "Host: " + decodedUrl.getHost()
-            );
-            return gettsResponse(url, headers);
         }
 
         // 生成最终的播放地址
@@ -142,7 +151,7 @@ public class ItvDns extends NanoHTTPD {
             String url2 = get(originalUrl, Arrays.asList("User-Agent: okhttp/3.12.3"), 3);
             if (url2 == null || url2.isEmpty()) {
                 // 如果获取失败，尝试替换 host
-                originalUrl = originalUrl.replace("gslbserv.itv.cmvideo.cn", "36.155.98.21");
+                originalUrl = originalUrl.replace("gslbserv.itv.cmvideo.cn", "221.181.100.64");
                 url2 = get(originalUrl, Arrays.asList("User-Agent: okhttp/3.12.3", "Host: gslbserv.itv.cmvideo.cn"), 3);
             }
 
