@@ -22,7 +22,7 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.UnknownHostException;
 import java.net.Socket;
-import java.net.InetAddress; // 导入 InetAddress
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,46 +41,117 @@ import okhttp3.Dns;
 import okhttp3.ConnectionSpec;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import okhttp3.dnsoverhttps.DnsOverHttps;
 import okhttp3.internal.Util;
 import okhttp3.internal.Version;
 import xyz.doikki.videoplayer.exo.ExoMediaSourceHelper;
 
 public class OkGoHelper {
-    public static final long DEFAULT_MILLISECONDS = 10000;      //默认的超时时间
+    public static final long DEFAULT_MILLISECONDS = 10000; // 默认的超时时间
 
-    //https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/200
-    public static HashMap<Integer, String> httpPhaseMap = new HashMap<Integer, String>() {{
-        put(200, "OK");
-        put(301, "Moved Permanently");
-        put(302, "Found");
-        put(400, "Bad Request");
-        put(401, "Unauthorized");
-        put(403, "Forbidden");
-        put(404, "Not Found");
-        put(429, "Too Many Requests");
-        put(500, "Internal Server Error");
-        put(502, "Bad Gateway");
-        put(503, "Service Unavailable");
-        put(504, "Gateway Timeout");
-    }};
+    // 默认客户端（无代理）
+    static OkHttpClient defaultClient = null;
 
+    // 带代理的客户端
+    static OkHttpClient proxyClient = null;
+
+    // DNS over HTTPS
     public static DnsOverHttps dnsOverHttps = null;
     public static ArrayList<String> dnsHttpsList = new ArrayList<>();
     public static boolean is_doh = false;
     public static Map<String, String> myHosts = null;
 
-    static OkHttpClient defaultClient = null;
-    static OkHttpClient noRedirectClient = null;
+    // 初始化
+    public static void init() {
+        initDnsOverHttps();
 
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor("OkGo");
+
+        if (Hawk.get(HawkConfig.DEBUG_OPEN, false)) {
+            loggingInterceptor.setPrintLevel(HttpLoggingInterceptor.Level.BODY);
+            loggingInterceptor.setColorLevel(Level.INFO);
+        } else {
+            loggingInterceptor.setPrintLevel(HttpLoggingInterceptor.Level.NONE);
+            loggingInterceptor.setColorLevel(Level.OFF);
+        }
+
+        // 添加拦截器，支持失败时切换到代理
+        builder.addInterceptor(chain -> {
+            Request request = chain.request();
+            Response response = null;
+            try {
+                // 第一次尝试（无代理）
+                response = chain.proceed(request);
+                if (!response.isSuccessful()) {
+                    // 如果失败，切换到代理客户端
+                    OkHttpClient proxyClient = getProxyClient();
+                    if (proxyClient != null) {
+                        response = proxyClient.newCall(request).execute();
+                    }
+                }
+            } catch (IOException e) {
+                // 如果第一次请求失败，切换到代理客户端
+                OkHttpClient proxyClient = getProxyClient();
+                if (proxyClient != null) {
+                    response = proxyClient.newCall(request).execute();
+                }
+            }
+            return response;
+        });
+
+        builder.connectionSpecs(getConnectionSpec());
+        builder.readTimeout(DEFAULT_MILLISECONDS, TimeUnit.MILLISECONDS);
+        builder.writeTimeout(DEFAULT_MILLISECONDS, TimeUnit.MILLISECONDS);
+        builder.connectTimeout(DEFAULT_MILLISECONDS, TimeUnit.MILLISECONDS);
+        if (dnsOverHttps != null) builder.dns(dnsOverHttps);
+
+        try {
+            setOkHttpSsl(builder);
+        } catch (Throwable th) {
+            th.printStackTrace();
+        }
+
+        HttpHeaders.setUserAgent(Version.userAgent());
+        defaultClient = builder.build();
+        OkGo.getInstance().setOkHttpClient(defaultClient);
+
+        initExoOkHttpClient();
+    }
+
+    // 设置代理
+    public static void setProxy(String type, String host, int port, String username, String password) {
+        Proxy proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(host, port));
+
+        OkHttpClient.Builder builder = defaultClient.newBuilder();
+        builder.proxy(proxy);
+
+        if (username != null && password != null) {
+            builder.proxyAuthenticator((route, response) -> {
+                String credential = Credentials.basic(username, password);
+                return response.request().newBuilder()
+                        .header("Proxy-Authorization", credential)
+                        .build();
+            });
+        }
+
+        // 更新带代理的客户端
+        proxyClient = builder.build();
+    }
+
+    // 获取带代理的客户端
+    public static OkHttpClient getProxyClient() {
+        return proxyClient;
+    }
+
+    // 获取默认客户端
     public static OkHttpClient getDefaultClient() {
         return defaultClient;
     }
 
-    public static OkHttpClient getNoRedirectClient() {
-        return noRedirectClient;
-    }
-
+    // 初始化 ExoPlayer 的客户端
     static void initExoOkHttpClient() {
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
         HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor("OkExoPlayer");
@@ -108,34 +179,31 @@ public class OkGoHelper {
         ExoMediaSourceHelper.getInstance(App.getInstance()).setOkClient(builder.build());
     }
 
+    // 获取连接配置
     public static List<ConnectionSpec> getConnectionSpec() {
         return Util.immutableList(RESTRICTED_TLS, MODERN_TLS, COMPATIBLE_TLS, CLEARTEXT);
     }
 
+    // 获取 DoH URL
     public static String getDohUrl(int type) {
         switch (type) {
-            case 1: {
+            case 1:
                 return "https://doh.pub/dns-query";
-            }
-            case 2: {
+            case 2:
                 return "https://dns.alidns.com/dns-query";
-            }
-            case 3: {
+            case 3:
                 return "https://doh.360.cn/dns-query";
-            }
-            case 4: {
+            case 4:
                 return "https://dns.google/dns-query";
-            }
-            case 5: {
+            case 5:
                 return "https://dns.adguard.com/dns-query";
-            }
-            case 6: {
+            case 6:
                 return "https://dns.quad9.net/dns-query";
-            }
         }
         return "";
     }
 
+    // 初始化 DNS over HTTPS
     static void initDnsOverHttps() {
         dnsHttpsList.add("关闭");
         dnsHttpsList.add("腾讯");
@@ -144,6 +212,7 @@ public class OkGoHelper {
         dnsHttpsList.add("Google");
         dnsHttpsList.add("AdGuard");
         dnsHttpsList.add("Quad9");
+
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
         HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor("OkExoPlayer");
         if (Hawk.get(HawkConfig.DEBUG_OPEN, false)) {
@@ -170,7 +239,7 @@ public class OkGoHelper {
                 .build();
     }
 
-    // 自定义 DNS 解析器，优先使用 DoH，失败时降级到系统 DNS
+    // 自定义 DNS 解析器
     static class CustomDns implements Dns {
         @NonNull
         @Override
@@ -195,65 +264,7 @@ public class OkGoHelper {
         }
     }
 
-    public static void init() {
-        initDnsOverHttps();
-
-        OkHttpClient.Builder builder = new OkHttpClient.Builder();
-        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor("OkGo");
-
-        if (Hawk.get(HawkConfig.DEBUG_OPEN, false)) {
-            loggingInterceptor.setPrintLevel(HttpLoggingInterceptor.Level.BODY);
-            loggingInterceptor.setColorLevel(Level.INFO);
-        } else {
-            loggingInterceptor.setPrintLevel(HttpLoggingInterceptor.Level.NONE);
-            loggingInterceptor.setColorLevel(Level.OFF);
-        }
-
-        builder.connectionSpecs(getConnectionSpec());
-        builder = builder.addInterceptor(loggingInterceptor)
-                .readTimeout(DEFAULT_MILLISECONDS, TimeUnit.MILLISECONDS)
-                .writeTimeout(DEFAULT_MILLISECONDS, TimeUnit.MILLISECONDS)
-                .connectTimeout(DEFAULT_MILLISECONDS, TimeUnit.MILLISECONDS);
-        if (dnsOverHttps != null) builder.dns(dnsOverHttps);
-
-        try {
-            setOkHttpSsl(builder);
-        } catch (Throwable th) {
-            th.printStackTrace();
-        }
-
-        HttpHeaders.setUserAgent(Version.userAgent());
-        OkHttpClient okHttpClient = builder.build();
-        OkGo.getInstance().setOkHttpClient(okHttpClient);
-
-        defaultClient = okHttpClient;
-        builder.followRedirects(false);
-        builder.followSslRedirects(false);
-        noRedirectClient = builder.build();
-
-        initExoOkHttpClient();
-    }
-
-    // 设置 SOCKS5 代理
-    public static void setProxy(String type, String host, int port, String username, String password) {
-        Proxy proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(host, port));
-
-        OkHttpClient.Builder builder = defaultClient.newBuilder();
-        builder.proxy(proxy);
-
-        if (username != null && password != null) {
-            builder.proxyAuthenticator((route, response) -> {
-                String credential = Credentials.basic(username, password);
-                return response.request().newBuilder()
-                        .header("Proxy-Authorization", credential)
-                        .build();
-            });
-        }
-
-        defaultClient = builder.build();
-        OkGo.getInstance().setOkHttpClient(defaultClient);
-    }
-
+    // 设置 SSL
     private static synchronized void setOkHttpSsl(OkHttpClient.Builder builder) {
         try {
             final SSLSocketFactory sslSocketFactory = new SSLCompat();
@@ -261,59 +272,6 @@ public class OkGoHelper {
             builder.hostnameVerifier(HttpsUtils.UnSafeHostnameVerifier);
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private static class Tls12SocketFactory extends SSLSocketFactory {
-
-        private static final String[] TLS_SUPPORT_VERSION = {"TLSv1.1", "TLSv1.2"};
-
-        final SSLSocketFactory delegate;
-
-        private Tls12SocketFactory(SSLSocketFactory base) {
-            this.delegate = base;
-        }
-
-        @Override
-        public String[] getDefaultCipherSuites() {
-            return delegate.getDefaultCipherSuites();
-        }
-
-        @Override
-        public String[] getSupportedCipherSuites() {
-            return delegate.getSupportedCipherSuites();
-        }
-
-        @Override
-        public Socket createSocket(Socket s, String host, int port, boolean autoClose) throws IOException {
-            return patch(delegate.createSocket(s, host, port, autoClose));
-        }
-
-        @Override
-        public Socket createSocket(String host, int port) throws IOException {
-            return patch(delegate.createSocket(host, port));
-        }
-
-        @Override
-        public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException {
-            return patch(delegate.createSocket(host, port, localHost, localPort));
-        }
-
-        @Override
-        public Socket createSocket(InetAddress host, int port) throws IOException {
-            return patch(delegate.createSocket(host, port));
-        }
-
-        @Override
-        public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort) throws IOException {
-            return patch(delegate.createSocket(address, port, localAddress, localPort));
-        }
-
-        private Socket patch(Socket s) {
-            if (s instanceof SSLSocket) {
-                ((SSLSocket) s).setEnabledProtocols(TLS_SUPPORT_VERSION);
-            }
-            return s;
         }
     }
 }
