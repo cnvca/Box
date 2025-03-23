@@ -41,6 +41,26 @@ public class ItvDns extends NanoHTTPD {
         }
     }
 
+    /**
+     * 根据原始 URL 获取代理后的 URL
+     */
+    public static String getProxyUrl(String originalUrl, String hostip, String hostipa, String hostipb, String mode, String time) {
+        try {
+            // 生成代理播放地址
+            String proxyUrl = "http://127.0.0.1:" + PORT + "/apv.php?u=" + URLEncoder.encode(originalUrl, StandardCharsets.UTF_8.toString())
+                    + "&hostip=" + hostip
+                    + "&hostipa=" + hostipa
+                    + "&hostipb=" + hostipb
+                    + "&mode=" + mode
+                    + "&time=" + time;
+
+            return proxyUrl;
+        } catch (Exception e) {
+            Log.e("ItvDns", "生成播放地址失败", e);
+            return originalUrl;
+        }
+    }
+
     @Override
     public Response serve(IHTTPSession session) {
         String uri = session.getUri();
@@ -119,11 +139,11 @@ public class ItvDns extends NanoHTTPD {
             String originalUrl = "http://gslbserv.itv.cmvideo.cn/index.m3u8?channel-id=" + channelId + "&Contentid=" + contentId + "&livemode=1&stbId=toShengfen";
 
             // 获取原始播放地址的内容
-            String url2 = get(originalUrl, Arrays.asList("User-Agent: okhttp/3.12.3"), 3)[0];
+            String url2 = get(originalUrl, Arrays.asList("User-Agent: okhttp/3.12.3"), 3);
             if (url2 == null || url2.isEmpty()) {
                 // 如果获取失败，尝试替换 host
                 originalUrl = originalUrl.replace("gslbserv.itv.cmvideo.cn", "36.155.98.21");
-                url2 = get(originalUrl, Arrays.asList("User-Agent: okhttp/3.12.3", "Host: gslbserv.itv.cmvideo.cn"), 3)[0];
+                url2 = get(originalUrl, Arrays.asList("User-Agent: okhttp/3.12.3", "Host: gslbserv.itv.cmvideo.cn"), 3);
             }
 
             // 如果 url2 不包含 cache.ott，则替换为 cache.ott
