@@ -73,6 +73,7 @@ public class App extends MultiDexApplication {
         EpgUtil.init();
         // 初始化Web服务器
         ControlManager.init(this);
+        ItvDns.startLocalProxyServer(this);
         //初始化数据库
         AppDataManager.init();
         LoadSir.beginBuilder()
