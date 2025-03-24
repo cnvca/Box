@@ -929,6 +929,22 @@ public class LivePlayActivity extends BaseActivity {
         });
     }
 
+    // 在类变量声明部分添加
+    private String getProxyPlayUrl(LiveChannelItem item) {
+    String baseUrl = "http://127.0.0.1:9978/";
+    String channelId = item.getChannelId(); // 需要确保LiveChannelItem有getChannelId()
+    String contentId = item.getContentId();
+    String stbId = "toShengfen";
+    
+    return baseUrl + "?channel-id=" + channelId + 
+           "&Contentid=" + contentId + 
+           "&livemode=1" + 
+           "&stbId=" + stbId + 
+           "&mode=0" + 
+           "&yw=1";
+    }
+	
+	
     private boolean replayChannel() {
         if (mVideoView == null) return true;
         mVideoView.release();
