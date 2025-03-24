@@ -24,10 +24,19 @@ public class ItvDns extends NanoHTTPD {
     private static final Gson gson = new Gson();
     private static ItvDns instance;
     private Context context;
+    
+    // JSON文件URL
+    private static final String HOSTIP_JSON_URL = "https://api.wheiss.com/json/yditv/hostip.json";
+    private static final String HOSTIP_YW_JSON_URL = "http://611594.lovexyz.cc/live/hostip_yw";
+    // 本地JSON文件路径
+    private static final String HOSTIP_JSON_FILE = "hostip.json";
+    private static final String HOSTIP_YW_JSON_FILE = "hostip_yw.json";
 
     public ItvDns(Context context) throws IOException {
         super(PORT);
         this.context = context;
+        // 启动时检查并创建JSON文件
+        initJsonFiles();
     }
 
     public static void startLocalProxyServer(Context context) {
@@ -39,6 +48,72 @@ public class ItvDns extends NanoHTTPD {
             } catch (IOException e) {
                 Log.e("ItvDns", "启动代理服务器失败", e);
             }
+        }
+    }
+
+    private void initJsonFiles() {
+        // 创建目录
+        File jsonDir = new File(context.getFilesDir(), "json/yditv");
+        if (!jsonDir.exists()) {
+            jsonDir.mkdirs();
+        }
+        
+        // 检查并创建hostip.json
+        File hostipFile = new File(jsonDir, HOSTIP_JSON_FILE);
+        if (!hostipFile.exists()) {
+            downloadJsonFile(HOSTIP_JSON_URL, hostipFile);
+        }
+        
+        // 检查并创建hostip_yw.json
+        File hostipYwFile = new File(jsonDir, HOSTIP_YW_JSON_FILE);
+        if (!hostipYwFile.exists()) {
+            downloadJsonFile(HOSTIP_YW_JSON_URL, hostipYwFile);
+        }
+    }
+
+    private void downloadJsonFile(String url, File outputFile) {
+        new Thread(() -> {
+            try {
+                URL jsonUrl = new URL(url);
+                HttpURLConnection connection = (HttpURLConnection) jsonUrl.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(5000);
+                connection.setReadTimeout(5000);
+                
+                if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                    try (InputStream inputStream = connection.getInputStream();
+                         FileOutputStream outputStream = new FileOutputStream(outputFile)) {
+                        
+                        byte[] buffer = new byte[4096];
+                        int bytesRead;
+                        while ((bytesRead = inputStream.read(buffer)) != -1) {
+                            outputStream.write(buffer, 0, bytesRead);
+                        }
+                        Log.d("ItvDns", "成功下载JSON文件: " + outputFile.getName());
+                    }
+                } else {
+                    Log.e("ItvDns", "下载JSON文件失败，HTTP状态码: " + connection.getResponseCode());
+                    createDefaultJsonFile(outputFile);
+                }
+            } catch (Exception e) {
+                Log.e("ItvDns", "下载JSON文件时出错: " + url, e);
+                createDefaultJsonFile(outputFile);
+            }
+        }).start();
+    }
+
+    private void createDefaultJsonFile(File outputFile) {
+        try {
+            JsonObject defaultJson = new JsonObject();
+            defaultJson.add("ipsArray", new JsonObject());
+            defaultJson.addProperty("updated", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+            
+            try (FileWriter writer = new FileWriter(outputFile)) {
+                writer.write(defaultJson.toString());
+            }
+            Log.d("ItvDns", "创建默认JSON文件: " + outputFile.getName());
+        } catch (Exception ex) {
+            Log.e("ItvDns", "创建默认JSON文件失败", ex);
         }
     }
 
@@ -194,7 +269,7 @@ public class ItvDns extends NanoHTTPD {
 
         String url1;
         if (playseek != null && !playseek.isEmpty()) {
-            String[] tArr = playseek.replace("-", ".0") + ".0".split("(?<=\\G.{8})");
+            String[] tArr = (playseek.replace("-", ".0") + ".0").split("(?<=\\G.{8})");
             String starttime = tArr[0] + "T" + tArr[1] + "0Z";
             String endtime = tArr[2] + "T" + tArr[3] + "0Z";
             url1 = "http://gslbserv.itv.cmvideo.cn/index.m3u8?channel-id=" + channelId + 
@@ -253,44 +328,64 @@ public class ItvDns extends NanoHTTPD {
         }
     }
 
-    private String[] getRandomIps(String channelId, String yw, long time) throws Exception {
-        String jsonFile = "1".equals(yw) ? "/json/yditv/hostip_yw.json" : "/json/yditv/hostip.json";
-        JsonObject jsonObj = loadJsonFromFile(jsonFile);
-        
-        JsonObject ipsArray = jsonObj.getAsJsonObject("ipsArray");
-        JsonArray ips = ipsArray != null ? ipsArray.getAsJsonArray(channelId) : null;
-        
-        if (ips == null || ips.size() == 0) {
-            return new String[]{"39.134.95.33", "39.135.97.80", "39.135.238.209"};
-        }
+    private String[] getRandomIps(String channelId, String yw, long time) {
+        try {
+            String jsonFileName = "1".equals(yw) ? HOSTIP_YW_JSON_FILE : HOSTIP_JSON_FILE;
+            File jsonFile = new File(context.getFilesDir(), "json/yditv/" + jsonFileName);
+            
+            // 检查文件是否需要更新（1小时更新一次）
+            if (jsonFile.exists()) {
+                long lastModified = jsonFile.lastModified() / 1000;
+                if (time - lastModified > 3600) { // 超过1小时
+                    downloadJsonFile("1".equals(yw) ? HOSTIP_YW_JSON_URL : HOSTIP_JSON_URL, jsonFile);
+                }
+            } else {
+                downloadJsonFile("1".equals(yw) ? HOSTIP_YW_JSON_URL : HOSTIP_JSON_URL, jsonFile);
+            }
+            
+            // 读取JSON文件
+            JsonObject jsonObj;
+            try (FileReader reader = new FileReader(jsonFile)) {
+                jsonObj = gson.fromJson(reader, JsonObject.class);
+            }
+            
+            JsonObject ipsArray = jsonObj.getAsJsonObject("ipsArray");
+            JsonArray ips = ipsArray != null ? ipsArray.getAsJsonArray(channelId) : null;
+            
+            if (ips == null || ips.size() == 0) {
+                return new String[]{"39.134.95.33", "39.135.97.80", "39.135.238.209"};
+            }
 
-        // 随机选择IP
-        Random random = new Random();
-        int size = ips.size();
-        
-        if (size < 3) {
-            String ip = ips.get(random.nextInt(size)).getAsString();
-            return new String[]{ip, ip, ip};
-        } else {
-            int a = size / 3;
-            int b = a * 2;
-            return new String[]{
-                ips.get(random.nextInt(a)).getAsString(),
-                ips.get(random.nextInt(a, b)).getAsString(),
-                ips.get(random.nextInt(b, size)).getAsString()
-            };
+            // 随机选择IP
+            Random random = new Random();
+            int size = ips.size();
+            
+            if (size < 3) {
+                String ip = ips.get(random.nextInt(size)).getAsString();
+                return new String[]{ip, ip, ip};
+            } else {
+                int a = size / 3;
+                int b = a * 2;
+                return new String[]{
+                    ips.get(random.nextInt(a)).getAsString(),
+                    ips.get(random.nextInt(a, b)).getAsString(),
+                    ips.get(random.nextInt(b, size)).getAsString()
+                };
+            }
+        } catch (Exception e) {
+            Log.e("ItvDns", "获取随机IP时出错", e);
+            return new String[]{"39.134.95.33", "39.135.97.80", "39.135.238.209"};
         }
     }
 
-    private JsonObject loadJsonFromFile(String path) throws Exception {
-        InputStream is = context.getAssets().open(path);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-        StringBuilder sb = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) {
-            sb.append(line);
+    private String getHostIpFromJson(String channelId, String yw) {
+        try {
+            String[] ips = getRandomIps(channelId, yw, System.currentTimeMillis() / 1000);
+            return ips[0];
+        } catch (Exception e) {
+            Log.e("ItvDns", "从JSON获取IP时出错", e);
+            return "39.134.95.33";
         }
-        return gson.fromJson(sb.toString(), JsonObject.class);
     }
 
     private Response getTsResponse(String url, List<String> headers) throws Exception {
