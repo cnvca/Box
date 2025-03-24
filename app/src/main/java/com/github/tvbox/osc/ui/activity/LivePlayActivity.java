@@ -202,7 +202,7 @@ public class LivePlayActivity extends BaseActivity {
         }
 
         if (!matchTo) {
-            header.put("User-Agent", "okhttp/3.12.13"); // 默认 User-Agent
+            header.put("User-Agent", "okhttp/3.12.3"); // 默认 User-Agent
         }
 
     } catch (Exception e) {
@@ -220,7 +220,7 @@ public class LivePlayActivity extends BaseActivity {
     protected void init() {
 	
         // 启动 ItvDns 代理服务器
-        ItvDns.startLocalProxyServer();
+        ItvDns.startLocalProxyServer(this);
 		
         // takagen99 : Hide only when video playing
         hideSystemUI(false);
