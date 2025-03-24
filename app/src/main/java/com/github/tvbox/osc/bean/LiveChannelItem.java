@@ -108,25 +108,37 @@ public class LiveChannelItem {
     // 在 LiveChannelItem 类中添加以下字段和方法
     private List<Long> sourceLatencies = new ArrayList<>();
 	
-    // 在 LiveChannelItem 类中添加以下字段
-    private String channelId;  // 如 "bestzb"
-    private String contentId; // 如 "5000000001000004953"
+    private String channelId;
+    private String contentId;
+    private String stbId = "toShengfen"; // 默认值
 
-    // 添加getter/setter
-    public String getChannelId() { 
-        return channelId; 
-    }
-
-    public String getContentId() { 
-        return contentId; 
-    }
+    // Getter/Setter
+    public String getChannelId() { return channelId; }
+    public String getContentId() { return contentId; }
+    public String getStbId() { return stbId; }
 
     public void setChannelId(String id) { 
-        this.channelId = id; 
+    // 基础验证
+        this.channelId = (id != null) ? id.trim() : "";
     }
 
-    public void setContentId(String id) { 
-        this.contentId = id; 
+    public void setContentId(String id) {
+        this.contentId = (id != null) ? id.trim() : "";
+    }
+
+    public void setStbId(String id) {
+        this.stbId = (id != null) ? id : "toShengfen";
+    }
+
+   // 新增：从JSON初始化
+    public void initFromJson(JsonObject json) {
+      if (json != null) {
+        setChannelId(json.get("channelId").getAsString());
+        setContentId(json.get("contentId").getAsString());
+        if (json.has("stbId")) {
+            setStbId(json.get("stbId").getAsString());
+          }
+       }
     }
 	
     public void setSourceLatency(int sourceIndex, long latency) {
