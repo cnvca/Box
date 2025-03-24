@@ -31,19 +31,15 @@ public class ItvDns extends NanoHTTPD {
      * 保存日志到文件
      */
     private void saveLogToFile(String logMessage) {
-    // 使用内部存储路径
-    File logFile = new File(getFilesDir(), "tvbox_log.txt");
-    try (FileWriter writer = new FileWriter(logFile, true)) {
-        writer.write(logMessage + "\n");
-        Log.d("ItvDns", "日志已写入文件: " + logFile.getAbsolutePath());
-    } catch (IOException e) {
-        Log.e("ItvDns", "保存日志到文件失败", e);
+        // 使用内部存储路径
+        File logFile = new File(getFilesDir(), "tvbox_log.txt");
+        try (FileWriter writer = new FileWriter(logFile, true)) {
+            writer.write(logMessage + "\n");
+            Log.d("ItvDns", "日志已写入文件: " + logFile.getAbsolutePath());
+        } catch (IOException e) {
+            Log.e("ItvDns", "保存日志到文件失败", e);
+        }
     }
-}
-
-   // 调用示例
-   Log.d("ItvDns", "准备保存日志: 测试日志");
-   saveLogToFile("测试日志");
 
     /**
      * 启动本地代理服务器
@@ -65,8 +61,8 @@ public class ItvDns extends NanoHTTPD {
      */
     public static String getProxyUrl(String originalUrl, String hostip, String hostipa, String hostipb, String mode, String time) {
         try {
-            // 生成代理播放地址
-            String proxyUrl = "http://127.0.0.1:" + PORT + "/apv.php?u=" + URLEncoder.encode(originalUrl, StandardCharsets.UTF_8.toString())
+            // 生成代理播放地址（不包含 apv.php）
+            String proxyUrl = "http://127.0.0.1:" + PORT + "/?u=" + URLEncoder.encode(originalUrl, StandardCharsets.UTF_8.toString())
                     + "&hostip=" + hostip
                     + "&hostipa=" + hostipa
                     + "&hostipb=" + hostipb
@@ -85,46 +81,40 @@ public class ItvDns extends NanoHTTPD {
         String uri = session.getUri();
         Map<String, String> params = session.getParms();
 
+        // 记录请求日志
+        Log.d("ItvDns", "请求 URI: " + uri);
+        Log.d("ItvDns", "请求参数: " + params.toString());
+
         // 提取参数
-        String channelId = params.get("channel-id");
-        String contentId = params.get("Contentid");
-        String mode = params.get("mode");
-        String yw = params.get("yw");
+        String originalUrl = params.get("u"); // 原始 URL
         String hostip = params.get("hostip");
-        String ts = params.get("ts");
+        String hostipa = params.get("hostipa");
+        String hostipb = params.get("hostipb");
+        String mode = params.get("mode");
+        String time = params.get("time");
 
         // 如果 hostip 为空，从 JSON 文件中获取
         if (hostip == null || hostip.isEmpty()) {
-            hostip = getHostIpFromJson(channelId, yw);
+            hostip = getHostIpFromJson("default_channel", "0"); // 默认 channelId 和 yw
         }
 
         // 处理 TS 文件请求
-        if (ts != null && !ts.isEmpty()) {
+        if (uri.endsWith(".ts")) {
+            String tsUrl = params.get("url"); // 假设 TS 文件的 URL 通过参数传递
             try {
-                String decodedUts = URLDecoder.decode(ts, StandardCharsets.UTF_8);
-                String[] tsa = decodedUts.split("AuthInfo=");
-                if (tsa.length > 1) {
-                    String authinfo = URLEncoder.encode(tsa[1], StandardCharsets.UTF_8);
-                    decodedUts = tsa[0] + "AuthInfo=" + authinfo;
-                }
-                URL decodedUrl = new URL(decodedUts);
-                String url = decodedUts.replace(decodedUrl.getHost(), hostip);
                 List<String> headers = Arrays.asList(
                         "User-Agent: okhttp/3.12.3",
-                        "Host: " + decodedUrl.getHost()
+                        "Host: " + new URL(tsUrl).getHost()
                 );
-                return gettsResponse(url, headers);
+                return gettsResponse(tsUrl, headers);
             } catch (MalformedURLException e) {
-                Log.e("ItvDns", "URL 格式错误", e);
-                return newFixedLengthResponse(Status.BAD_REQUEST, "text/plain", "Invalid URL");
-            } catch (Exception e) {
-                Log.e("ItvDns", "处理 TS 请求时出错", e);
-                return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", "Internal Error");
+                Log.e("ItvDns", "TS 文件 URL 格式错误", e);
+                return newFixedLengthResponse(Status.BAD_REQUEST, "text/plain", "Invalid TS URL");
             }
         }
 
         // 生成最终的播放地址
-        String playUrl = generatePlayUrl(channelId, contentId, mode, yw, hostip);
+        String playUrl = generatePlayUrl(originalUrl, hostip, hostipa, hostipb, mode, time);
 
         // 返回播放地址
         return newFixedLengthResponse(Status.OK, "application/json", playUrl);
@@ -160,42 +150,17 @@ public class ItvDns extends NanoHTTPD {
         return "39.134.95.33"; // 默认 IP
     }
 
-    private String generatePlayUrl(String channelId, String contentId, String mode, String yw, String hostip) {
+    private String generatePlayUrl(String originalUrl, String hostip, String hostipa, String hostipb, String mode, String time) {
         try {
-            // 生成原始播放地址
-            String originalUrl = "http://gslbserv.itv.cmvideo.cn/index.m3u8?channel-id=" + channelId + "&Contentid=" + contentId + "&livemode=1&stbId=toShengfen";
-
-            // 获取原始播放地址的内容
-            String url2 = get(originalUrl, Arrays.asList("User-Agent: okhttp/3.12.3"), 3);
-            if (url2 == null || url2.isEmpty()) {
-                // 如果获取失败，尝试替换 host
-                originalUrl = originalUrl.replace("gslbserv.itv.cmvideo.cn", "221.181.100.64");
-                url2 = get(originalUrl, Arrays.asList("User-Agent: okhttp/3.12.3", "Host: gslbserv.itv.cmvideo.cn"), 3);
-            }
-
-            // 如果 url2 不包含 cache.ott，则替换为 cache.ott
-            if (url2 != null && !url2.contains("cache.ott")) {
-                int position = url2.indexOf("/", 8);
-                if (position != -1) {
-                    String str = url2.substring(position);
-                    url2 = "http://cache.ott." + channelId + ".itv.cmvideo.cn" + str;
-                }
-            }
-
-            // 如果 mode 为 3，直接返回 url2
-            if ("3".equals(mode)) {
-                return url2;
-            }
-
-            // 生成代理播放地址
-            String proxyUrl = "http://127.0.0.1:" + PORT + "/apv.php?u=" + URLEncoder.encode(url2, StandardCharsets.UTF_8.toString())
+            // 直接生成播放地址
+            String playUrl = originalUrl
                     + "&hostip=" + hostip
-                    + "&hostipa=" + hostip
-                    + "&hostipb=" + hostip
+                    + "&hostipa=" + hostipa
+                    + "&hostipb=" + hostipb
                     + "&mode=" + mode
-                    + "&time=" + (System.currentTimeMillis() / 1000);
+                    + "&time=" + time;
 
-            return proxyUrl;
+            return playUrl;
         } catch (Exception e) {
             Log.e("ItvDns", "生成播放地址失败", e);
             return "";
