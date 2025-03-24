@@ -107,7 +107,28 @@ public class LiveChannelItem {
 
     // 在 LiveChannelItem 类中添加以下字段和方法
     private List<Long> sourceLatencies = new ArrayList<>();
+	
+    // 在 LiveChannelItem 类中添加以下字段
+    private String channelId;  // 如 "bestzb"
+    private String contentId; // 如 "5000000001000004953"
 
+    // 添加getter/setter
+    public String getChannelId() { 
+        return channelId; 
+    }
+
+    public String getContentId() { 
+        return contentId; 
+    }
+
+    public void setChannelId(String id) { 
+        this.channelId = id; 
+    }
+
+    public void setContentId(String id) { 
+        this.contentId = id; 
+    }
+	
     public void setSourceLatency(int sourceIndex, long latency) {
         if (sourceLatencies.size() <= sourceIndex) {
             for (int i = sourceLatencies.size(); i <= sourceIndex; i++) {
