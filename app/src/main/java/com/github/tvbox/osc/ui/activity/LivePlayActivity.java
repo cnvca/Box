@@ -948,7 +948,26 @@ public class LivePlayActivity extends BaseActivity {
         }
 
         getEpg(new Date());
-        mVideoView.setUrl(currentLiveChannelItem.getUrl(), setPlayHeaders(currentLiveChannelItem.getUrl()));
+		
+		    // 判断播放地址是否为 127.0.0.1:9978
+        String playUrl = currentLiveChannelItem.getUrl();
+        if (playUrl != null && playUrl.contains("127.0.0.1:9978")) {
+        // 调用 ItvDns 解析播放地址
+        String hostip = ""; // 从播放地址中提取 hostip
+        String hostipa = "39.135.97.80"; // 默认值
+        String hostipb = "39.135.238.209"; // 默认值
+        String mode = "0"; // 默认值
+        String time = String.valueOf(System.currentTimeMillis() / 1000); // 当前时间戳
+
+        // 解析播放地址
+        playUrl = ItvDns.getProxyUrl(playUrl, hostip, hostipa, hostipb, mode, time);
+    }
+
+    // 设置播放地址
+        mVideoView.setUrl(playUrl, setPlayHeaders(currentLiveChannelItem.getUrl()));
+ //       mVideoView.setUrl(currentLiveChannelItem.getUrl(),  
+
+		setPlayHeaders(currentLiveChannelItem.getUrl()));
         showChannelInfo();
         mVideoView.start();
         return true;
