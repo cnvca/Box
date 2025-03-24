@@ -1,12 +1,11 @@
-papackage com.github.tvbox.osc.ui.activity;
+package com.github.tvbox.osc.ui.activity;
 
 import android.content.Context;
 import android.util.Log;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import fi.iki.elonen.NanoHTTPD;
-import fi.iki.elonen.NanoHTTPD.Response.Status;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -17,8 +16,12 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public class ItvDns extends NanoHTTPD {
+import fi.iki.elonen.NanoHTTPD;
+import fi.iki.elonen.NanoHTTPD.Response;
+import fi.iki.elonen.NanoHTTPD.Response.Status;
+import fi.iki.elonen.NanoHTTPD.IHTTPSession;
 
+public class ItvDns extends NanoHTTPD {
     private static final int PORT = 9978;
     private static final Gson gson = new Gson();
     private static ItvDns instance;
@@ -32,54 +35,55 @@ public class ItvDns extends NanoHTTPD {
 
     public ItvDns(Context context) throws IOException {
         super(PORT);
-        this.context = context;
+        this.context = context.getApplicationContext();
         initJsonFiles();
     }
 
-    public static void startLocalProxyServer(Context context) {
+    public static synchronized void startLocalProxyServer(Context context) {
         if (instance == null) {
             try {
                 instance = new ItvDns(context);
                 instance.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
                 Log.d("ItvDns", "代理服务器已启动，端口: " + PORT);
             } catch (IOException e) {
-                Log.e("ItvDns", "启动失败", e);
+                Log.e("ItvDns", "启动代理服务器失败", e);
             }
         }
     }
 
     @Override
     public Response serve(IHTTPSession session) {
+        String uri = session.getUri();
         Map<String, String> params = session.getParms();
-        String ts = params.get("ts");
-        String u = params.get("u");
         
+        Log.d("ItvDns", "处理请求: " + uri);
+        Log.d("ItvDns", "请求参数: " + params);
+
         try {
-            if (ts != null) {
+            if (params.containsKey("ts")) {
                 return handleTsRequest(params);
-            } else if (u != null) {
+            } else if (params.containsKey("u")) {
                 return handleM3u8Request(params);
-            } else {
+            } else if (params.containsKey("channel-id")) {
                 return handleLiveChannelRequest(params);
             }
         } catch (Exception e) {
-            Log.e("ItvDns", "处理请求错误", e);
-            return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", "Error");
+            Log.e("ItvDns", "处理请求出错", e);
         }
+        return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", "Not Found");
     }
 
     private Response handleTsRequest(Map<String, String> params) throws Exception {
-        // TS文件处理逻辑（同apv.php）
         String ts = params.get("ts");
         String hostip = params.get("hostip");
         String mode = params.get("mode");
         String time = params.get("time");
 
-        String decodedUts = URLDecoder.decode(ts, "UTF-8");
+        String decodedUts = URLDecoder.decode(ts, StandardCharsets.UTF_8.name());
         String[] tsa = decodedUts.split("AuthInfo=");
         if (tsa.length > 1) {
-            String authinfo = URLEncoder.encode(tsa[1], "UTF-8");
-            decodedUts = tsa[0] + "AuthInfo=" + authinfo;
+            String authinfo = tsa[1].split("&")[0];
+            decodedUts = tsa[0] + "AuthInfo=" + URLEncoder.encode(authinfo, StandardCharsets.UTF_8.name());
         }
 
         URL decodedUrl = new URL(decodedUts);
@@ -90,7 +94,6 @@ public class ItvDns extends NanoHTTPD {
             "Host: " + decodedUrl.getHost()
         );
 
-        // 模式1或20秒内直接返回
         if ("1".equals(mode) || (System.currentTimeMillis()/1000 - Long.parseLong(time)) < 20) {
             return getTsResponse(url, headers);
         }
@@ -101,7 +104,7 @@ public class ItvDns extends NanoHTTPD {
             try {
                 String backupUrl = decodedUts.replace(decodedUrl.getHost(), ip);
                 Response response = getTsResponse(backupUrl, headers);
-                if (response.getStatus() == Status.OK) {
+                if (response != null && response.getStatus() == Status.OK) {
                     return response;
                 }
             } catch (Exception e) {
@@ -112,7 +115,6 @@ public class ItvDns extends NanoHTTPD {
     }
 
     private Response handleM3u8Request(Map<String, String> params) throws Exception {
-        // M3U8处理逻辑（同apv.php）
         String u = params.get("u");
         String hostip = params.getOrDefault("hostip", "");
         String hostipa = params.getOrDefault("hostipa", "39.135.97.80");
@@ -120,7 +122,7 @@ public class ItvDns extends NanoHTTPD {
         String mode = params.get("mode");
         String time = params.get("time");
 
-        String decodedU = URLDecoder.decode(u, "UTF-8");
+        String decodedU = URLDecoder.decode(u, StandardCharsets.UTF_8.name());
         String urlPath = decodedU.split("index.m3u8")[0];
         String proxyUrl = "http://127.0.0.1:" + PORT + "/?ts=";
 
@@ -155,8 +157,11 @@ public class ItvDns extends NanoHTTPD {
             if (line.trim().isEmpty()) continue;
             
             if (line.contains(".ts")) {
+                if (!line.startsWith("http")) {
+                    line = urlPath + line;
+                }
                 result.append(proxyUrl)
-                     .append(URLEncoder.encode(urlPath + line, "UTF-8"))
+                     .append(URLEncoder.encode(line, StandardCharsets.UTF_8.name()))
                      .append("&hostip=").append(hostip)
                      .append("&hostipa=").append(hostipa)
                      .append("&hostipb=").append(hostipb)
@@ -174,7 +179,6 @@ public class ItvDns extends NanoHTTPD {
     }
 
     private Response handleLiveChannelRequest(Map<String, String> params) throws Exception {
-        // 直播频道处理（核心逻辑）
         String channelId = params.get("channel-id");
         String contentId = params.get("Contentid");
         String stbId = params.get("stbId");
@@ -182,13 +186,11 @@ public class ItvDns extends NanoHTTPD {
         String yw = params.get("yw");
         String mode = params.get("mode");
         
-        // 获取IP配置
         String[] ips = getBestIps(channelId, yw);
         String hostip = ips[0];
         String hostipa = ips[1];
         String hostipb = ips[2];
 
-        // 构建请求URL
         String originalUrl = buildOriginalUrl(channelId, contentId, stbId, playseek);
         String finalUrl = getFinalUrl(originalUrl, channelId);
         
@@ -197,7 +199,7 @@ public class ItvDns extends NanoHTTPD {
         }
 
         String proxyUrl = "http://127.0.0.1:" + PORT + "/?u=" + 
-            URLEncoder.encode(finalUrl, "UTF-8") + 
+            URLEncoder.encode(finalUrl, StandardCharsets.UTF_8.name()) + 
             "&hostip=" + hostip + 
             "&hostipa=" + hostipa + 
             "&hostipb=" + hostipb + 
@@ -210,11 +212,9 @@ public class ItvDns extends NanoHTTPD {
     }
 
     private String[] getBestIps(String channelId, String yw) throws Exception {
-        // 从JSON获取最佳IP（同apv.php逻辑）
         File jsonFile = new File(context.getFilesDir(), 
             "json/yditv/" + ("1".equals(yw) ? HOSTIP_YW_JSON_FILE : HOSTIP_JSON_FILE));
         
-        // 检查更新
         if (!jsonFile.exists() || 
             (System.currentTimeMillis() - jsonFile.lastModified()) > 3600000) {
             downloadJsonFile(
@@ -230,7 +230,6 @@ public class ItvDns extends NanoHTTPD {
             return new String[]{"39.134.95.33", "39.135.97.80", "39.135.238.209"};
         }
 
-        // 随机选择IP策略
         Random random = new Random();
         int size = ips.size();
         if (size < 3) {
@@ -246,7 +245,6 @@ public class ItvDns extends NanoHTTPD {
         }
     }
 
-    // 辅助方法
     private String buildOriginalUrl(String channelId, String contentId, String stbId, String playseek) {
         if (playseek != null && !playseek.isEmpty()) {
             String[] times = (playseek.replace("-", ".0") + ".0").split("(?<=\\G.{8})");
@@ -263,7 +261,6 @@ public class ItvDns extends NanoHTTPD {
     }
 
     private String getFinalUrl(String originalUrl, String channelId) throws Exception {
-        // 获取最终URL（带重试逻辑）
         String url = getRedirectUrl(originalUrl, Arrays.asList("User-Agent: okhttp/3.12.3"));
         if (url == null) {
             url = getRedirectUrl(
@@ -291,7 +288,6 @@ public class ItvDns extends NanoHTTPD {
         }
     }
 
-    // 网络请求相关方法
     private Response getTsResponse(String url, List<String> headers) throws Exception {
         HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
         for (String header : headers) {
@@ -346,7 +342,6 @@ public class ItvDns extends NanoHTTPD {
         return null;
     }
 
-    // 初始化JSON文件
     private void initJsonFiles() {
         File jsonDir = new File(context.getFilesDir(), "json/yditv");
         if (!jsonDir.exists()) jsonDir.mkdirs();
@@ -371,6 +366,7 @@ public class ItvDns extends NanoHTTPD {
                     while ((bytesRead = in.read(buffer)) != -1) {
                         out.write(buffer, 0, bytesRead);
                     }
+                    Log.d("ItvDns", "JSON文件下载成功: " + outputFile.getName());
                 }
             } catch (Exception e) {
                 Log.e("ItvDns", "下载JSON失败", e);
@@ -385,341 +381,23 @@ public class ItvDns extends NanoHTTPD {
             json.add("ipsArray", new JsonObject());
             json.addProperty("updated", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
             writer.write(json.toString());
+            Log.d("ItvDns", "创建默认JSON文件: " + file.getName());
         } catch (Exception e) {
             Log.e("ItvDns", "创建默认JSON失败", e);
         }
     }
-}
 
-    @Override
-    public Response serve(IHTTPSession session) {
-        String uri = session.getUri();
-        Map<String, String> params = session.getParms();
-
-        Log.d("ItvDns", "请求 URI: " + uri);
-        Log.d("ItvDns", "请求参数: " + params.toString());
-
+    public static String getProxyUrl(String originalUrl, String hostip, String hostipa, String hostipb, String mode, String time) {
         try {
-            // 处理 TS 文件请求
-            if (params.containsKey("ts")) {
-                return handleTsRequest(params);
-            }
-
-            // 处理 M3U8 请求
-            if (params.containsKey("u")) {
-                return handleM3u8Request(params);
-            }
-
-            // 处理直播频道请求
-            return handleLiveChannelRequest(params);
+            return "http://127.0.0.1:" + PORT + "/?u=" + 
+                   URLEncoder.encode(originalUrl, StandardCharsets.UTF_8.name()) + 
+                   "&hostip=" + hostip + 
+                   "&hostipa=" + hostipa + 
+                   "&hostipb=" + hostipb + 
+                   "&mode=" + mode + 
+                   "&time=" + time;
         } catch (Exception e) {
-            Log.e("ItvDns", "处理请求时出错", e);
-            return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", "Internal Error");
+            return originalUrl;
         }
-    }
-
-    private Response handleTsRequest(Map<String, String> params) throws Exception {
-        String ts = params.get("ts");
-        String hostip = params.get("hostip");
-        String mode = params.get("mode");
-        String time = params.get("time");
-
-        String decodedUts = URLDecoder.decode(ts, StandardCharsets.UTF_8.toString());
-        String[] tsa = decodedUts.split("AuthInfo=");
-        if (tsa.length > 1) {
-            String authinfo = URLEncoder.encode(tsa[1], StandardCharsets.UTF_8.toString());
-            decodedUts = tsa[0] + "AuthInfo=" + authinfo;
-        }
-
-        URL decodedUrl = new URL(decodedUts);
-        String url = decodedUts.replace(decodedUrl.getHost(), hostip);
-
-        List<String> headers = Arrays.asList(
-                "User-Agent: okhttp/3.12.3",
-                "Host: " + decodedUrl.getHost()
-        );
-
-        if ("1".equals(mode) || (System.currentTimeMillis() / 1000 - Long.parseLong(time) < 20)) {
-            return getTsResponse(url, headers);
-        }
-
-        Response response = tryMultipleTsUrls(decodedUts, decodedUrl.getHost(), headers);
-        if (response != null) {
-            return response;
-        }
-
-        return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", "Not Found");
-    }
-
-    private Response tryMultipleTsUrls(String originalUrl, String originalHost, List<String> headers) throws Exception {
-        String hostip = getHostIpFromJson("", "0");
-        String hostipa = "39.135.97.80";
-        String hostipb = "39.135.238.209";
-
-        String[] ips = {hostip, hostipa, hostipb};
-        for (String ip : ips) {
-            String url = originalUrl.replace(originalHost, ip);
-            try {
-                Response response = getTsResponse(url, headers);
-                if (response.getStatus() == Status.OK) {
-                    return response;
-                }
-            } catch (Exception e) {
-                Log.e("ItvDns", "尝试IP " + ip + " 失败", e);
-            }
-        }
-        return null;
-    }
-
-    private Response handleM3u8Request(Map<String, String> params) throws Exception {
-        String u = params.get("u");
-        String hostip = params.get("hostip");
-        String hostipa = params.getOrDefault("hostipa", "39.135.97.80");
-        String hostipb = params.getOrDefault("hostipb", "39.135.238.209");
-        String mode = params.get("mode");
-        String time = params.get("time");
-
-        String decodedU = URLDecoder.decode(u, StandardCharsets.UTF_8.toString());
-        String urlpath = decodedU.split("index.m3u8")[0];
-        String urlp = "http://127.0.0.1:" + PORT + "/?ts=";
-
-        URL decodedUArray = new URL(decodedU);
-        String url = decodedU.replace(decodedUArray.getHost(), hostip);
-
-        List<String> headers = Arrays.asList(
-                "User-Agent: okhttp/3.12.3",
-                "Host: " + decodedUArray.getHost()
-        );
-
-        String m3u8 = get(url, headers, 3);
-        if (m3u8 == null || !m3u8.contains("EXTM3U")) {
-            url = decodedU.replace(decodedUArray.getHost(), hostipa);
-            m3u8 = get(url, headers, 3);
-            if (m3u8 == null || !m3u8.contains("EXTM3U")) {
-                url = decodedU.replace(decodedUArray.getHost(), hostipb);
-                m3u8 = get(url, headers, 3);
-                if (m3u8 == null || !m3u8.contains("EXTM3U")) {
-                    return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", "Not Found");
-                }
-            }
-        }
-
-        StringBuilder d = new StringBuilder();
-        String[] m3u8s = m3u8.split("\n");
-        for (String m3u8l : m3u8s) {
-            if (m3u8l.trim().isEmpty()) continue;
-            
-            if (m3u8l.contains(".ts")) {
-                d.append(urlp).append(URLEncoder.encode(urlpath + m3u8l, StandardCharsets.UTF_8.toString()))
-                 .append("&hostip=").append(hostip)
-                 .append("&hostipa=").append(hostipa)
-                 .append("&hostipb=").append(hostipb)
-                 .append("&mode=").append(mode)
-                 .append("&time=").append(time)
-                 .append("\n");
-            } else {
-                d.append(m3u8l).append("\n");
-            }
-        }
-
-        return newFixedLengthResponse(Status.OK, "application/vnd.apple.mpegurl", d.toString());
-    }
-
-    private Response handleLiveChannelRequest(Map<String, String> params) throws Exception {
-        String channelId = params.get("channel-id");
-        String contentId = params.get("Contentid");
-        String stbId = params.get("stbId");
-        String playseek = params.get("playseek");
-        String yw = params.get("yw");
-        String mode = params.get("mode");
-        String hostip = params.get("hostip");
-        String hostipa = params.getOrDefault("hostipa", "39.135.97.80");
-        String hostipb = params.getOrDefault("hostipb", "39.135.238.209");
-        long time = System.currentTimeMillis() / 1000;
-
-        String domainId = getDomainId(channelId);
-
-        String url1;
-        if (playseek != null && !playseek.isEmpty()) {
-            String[] tArr = (playseek.replace("-", ".0") + ".0").split("(?<=\\G.{8})");
-            String starttime = tArr[0] + "T" + tArr[1] + "0Z";
-            String endtime = tArr[2] + "T" + tArr[3] + "0Z";
-            url1 = "http://gslbserv.itv.cmvideo.cn/index.m3u8?channel-id=" + channelId + 
-                  "&Contentid=" + contentId + "&livemode=4&stbId=" + stbId + 
-                  "&starttime=" + starttime + "&endtime=" + endtime;
-        } else {
-            url1 = "http://gslbserv.itv.cmvideo.cn/index.m3u8?channel-id=" + channelId + 
-                  "&Contentid=" + contentId + "&livemode=1&stbId=" + stbId;
-        }
-
-        String url2 = getRedirectUrl(url1, Arrays.asList("User-Agent: okhttp/3.12.3"), 3);
-        if (url2 == null || url2.isEmpty()) {
-            url2 = getRedirectUrl(url1.replace("gslbserv.itv.cmvideo.cn", "221.181.100.64"), 
-                    Arrays.asList("User-Agent: okhttp/3.12.3", "Host: gslbserv.itv.cmvideo.cn"), 3);
-        }
-
-        if (url2 != null && !url2.contains("cache.ott")) {
-            int position = url2.indexOf("/", 8);
-            if (position != -1) {
-                String str = url2.substring(position);
-                url2 = "http://cache.ott." + domainId + ".itv.cmvideo.cn" + str;
-            }
-        }
-
-        if ("3".equals(mode)) {
-            return newFixedLengthResponse(Status.OK, "text/plain", url2);
-        }
-
-        if (hostip == null || hostip.isEmpty()) {
-            String[] ips = getRandomIps(channelId, yw, time);
-            hostip = ips[0];
-            hostipa = ips[1];
-            hostipb = ips[2];
-        }
-
-        String url3 = URLEncoder.encode(url2, StandardCharsets.UTF_8.toString());
-        String url4 = "http://127.0.0.1:" + PORT + "/?u=" + url3 + 
-                      "&hostip=" + hostip + "&hostipa=" + hostipa + 
-                      "&hostipb=" + hostipb + "&mode=" + mode + "&time=" + time;
-
-        Response response = newFixedLengthResponse(Status.TEMPORARY_REDIRECT, "text/plain", "");
-        response.addHeader("Location", url4);
-        return response;
-    }
-
-    private String getDomainId(String channelId) {
-        switch (channelId) {
-            case "bestzb":
-                return "bestlive";
-            case "wasusyt":
-                return "wasulive";
-            case "FifastbLive":
-                return "fifalive";
-            default:
-                return channelId;
-        }
-    }
-
-    private String[] getRandomIps(String channelId, String yw, long time) {
-        try {
-            String jsonFileName = "1".equals(yw) ? HOSTIP_YW_JSON_FILE : HOSTIP_JSON_FILE;
-            File jsonFile = new File(context.getFilesDir(), "json/yditv/" + jsonFileName);
-            
-            if (jsonFile.exists()) {
-                long lastModified = jsonFile.lastModified() / 1000;
-                if (time - lastModified > 3600) {
-                    downloadJsonFile("1".equals(yw) ? HOSTIP_YW_JSON_URL : HOSTIP_JSON_URL, jsonFile);
-                }
-            } else {
-                downloadJsonFile("1".equals(yw) ? HOSTIP_YW_JSON_URL : HOSTIP_JSON_URL, jsonFile);
-            }
-            
-            JsonObject jsonObj;
-            try (FileReader reader = new FileReader(jsonFile)) {
-                jsonObj = gson.fromJson(reader, JsonObject.class);
-            }
-            
-            JsonObject ipsArray = jsonObj.getAsJsonObject("ipsArray");
-            JsonArray ips = ipsArray != null ? ipsArray.getAsJsonArray(channelId) : null;
-            
-            if (ips == null || ips.size() == 0) {
-                return new String[]{"39.134.95.33", "39.135.97.80", "39.135.238.209"};
-            }
-
-            Random random = new Random();
-            int size = ips.size();
-            
-            if (size < 3) {
-                String ip = ips.get(random.nextInt(size)).getAsString();
-                return new String[]{ip, ip, ip};
-            } else {
-                int a = size / 3;
-                int b = a * 2;
-                return new String[]{
-                    ips.get(random.nextInt(a)).getAsString(),
-                    ips.get(random.nextInt(b - a) + a).getAsString(),
-                    ips.get(random.nextInt(size - b) + b).getAsString()
-                };
-            }
-        } catch (Exception e) {
-            Log.e("ItvDns", "获取随机IP时出错", e);
-            return new String[]{"39.134.95.33", "39.135.97.80", "39.135.238.209"};
-        }
-    }
-
-    private String getHostIpFromJson(String channelId, String yw) {
-        try {
-            String[] ips = getRandomIps(channelId, yw, System.currentTimeMillis() / 1000);
-            return ips[0];
-        } catch (Exception e) {
-            Log.e("ItvDns", "从JSON获取IP时出错", e);
-            return "39.134.95.33";
-        }
-    }
-
-    private Response getTsResponse(String url, List<String> headers) throws Exception {
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        for (String header : headers) {
-            String[] parts = header.split(": ");
-            connection.setRequestProperty(parts[0], parts[1]);
-        }
-        connection.setRequestMethod("GET");
-        connection.setConnectTimeout(2000);
-        connection.setReadTimeout(2000);
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (InputStream in = connection.getInputStream()) {
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-            while ((bytesRead = in.read(buffer)) != -1) {
-                out.write(buffer, 0, bytesRead);
-            }
-        }
-        byte[] data = out.toByteArray();
-        return newFixedLengthResponse(Status.OK, "video/mp2t", new ByteArrayInputStream(data), data.length);
-    }
-
-    private String get(String url, List<String> headers, int timeout) throws Exception {
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        for (String header : headers) {
-            String[] parts = header.split(": ");
-            connection.setRequestProperty(parts[0], parts[1]);
-        }
-        connection.setRequestMethod("GET");
-        connection.setConnectTimeout(2000);
-        if (timeout > 0) {
-            connection.setReadTimeout(timeout * 1000);
-        }
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (InputStream in = connection.getInputStream()) {
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-            while ((bytesRead = in.read(buffer)) != -1) {
-                out.write(buffer, 0, bytesRead);
-            }
-        }
-        return out.toString(StandardCharsets.UTF_8.name());
-    }
-
-    private String getRedirectUrl(String url, List<String> headers, int timeout) throws Exception {
-        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-        for (String header : headers) {
-            String[] parts = header.split(": ");
-            connection.setRequestProperty(parts[0], parts[1]);
-        }
-        connection.setRequestMethod("GET");
-        connection.setConnectTimeout(2000);
-        if (timeout > 0) {
-            connection.setReadTimeout(timeout * 1000);
-        }
-        connection.setInstanceFollowRedirects(false);
-        
-        int responseCode = connection.getResponseCode();
-        if (responseCode == HttpURLConnection.HTTP_MOVED_TEMP || 
-            responseCode == HttpURLConnection.HTTP_MOVED_PERM) {
-            return connection.getHeaderField("Location");
-        }
-        return null;
     }
 }
