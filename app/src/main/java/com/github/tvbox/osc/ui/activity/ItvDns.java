@@ -166,7 +166,7 @@ public class ItvDns extends NanoHTTPD {
         );
 
         // 如果是模式1或者时间在20秒内，直接获取TS
-        if ("1".equals(mode) || (System.currentTimeMillis() / 1000 - Long.parseLong(time) < 20) {
+        if ("1".equals(mode) || (System.currentTimeMillis() / 1000 - Long.parseLong(time) < 20)) {
             return getTsResponse(url, headers);
         }
 
