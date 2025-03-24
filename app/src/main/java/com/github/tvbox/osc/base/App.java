@@ -7,6 +7,7 @@ import android.os.Looper;
 import androidx.core.os.HandlerCompat;
 import androidx.multidex.MultiDexApplication;
 
+import com.github.tvbox.osc.ui.activity.ItvDns;
 import com.github.catvod.crawler.JarLoader;
 import com.github.catvod.crawler.JsLoader;
 import com.github.tvbox.osc.R;
