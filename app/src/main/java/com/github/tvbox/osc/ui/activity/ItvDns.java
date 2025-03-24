@@ -1,5 +1,6 @@
 package com.github.tvbox.osc.ui.activity;
 
+import android.content.Context; // 导入 Context
 import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -21,18 +22,20 @@ public class ItvDns extends NanoHTTPD {
     private static final int PORT = 9978; // 代理服务器端口
     private static final Gson gson = new Gson();
     private static ItvDns instance; // 单例实例
+    private Context context; // 增加 Context 成员变量
 
-    // 构造函数
-    public ItvDns() throws IOException {
+    // 构造函数，接收 Context 参数
+    public ItvDns(Context context) throws IOException {
         super(PORT);
+        this.context = context; // 初始化 Context
     }
 
     /**
      * 保存日志到文件
      */
     private void saveLogToFile(String logMessage) {
-        // 使用内部存储路径
-        File logFile = new File(getFilesDir(), "tvbox_log.txt");
+        // 使用 Context 的 getFilesDir() 方法
+        File logFile = new File(context.getFilesDir(), "tvbox_log.txt");
         try (FileWriter writer = new FileWriter(logFile, true)) {
             writer.write(logMessage + "\n");
             Log.d("ItvDns", "日志已写入文件: " + logFile.getAbsolutePath());
@@ -44,10 +47,10 @@ public class ItvDns extends NanoHTTPD {
     /**
      * 启动本地代理服务器
      */
-    public static void startLocalProxyServer() {
+    public static void startLocalProxyServer(Context context) {
         if (instance == null) {
             try {
-                instance = new ItvDns();
+                instance = new ItvDns(context); // 传递 Context
                 instance.start(NanoHTTPD.SOCKET_READ_TIMEOUT, false); // 启动服务器
                 Log.d("ItvDns", "代理服务器已启动，监听端口 " + PORT + "...");
             } catch (IOException e) {
@@ -84,6 +87,7 @@ public class ItvDns extends NanoHTTPD {
         // 记录请求日志
         Log.d("ItvDns", "请求 URI: " + uri);
         Log.d("ItvDns", "请求参数: " + params.toString());
+        saveLogToFile("请求 URI: " + uri); // 保存日志到文件
 
         // 提取参数
         String originalUrl = params.get("u"); // 原始 URL
