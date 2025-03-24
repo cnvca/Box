@@ -51,6 +51,23 @@ public class ItvDns extends NanoHTTPD {
         }
     }
 
+    public static String getProxyUrl(String originalUrl, String hostip, String hostipa, String hostipb, String mode, String time) {
+        try {
+            // 生成代理播放地址
+            String proxyUrl = "http://127.0.0.1:" + PORT + "/?u=" + URLEncoder.encode(originalUrl, StandardCharsets.UTF_8.toString())
+                    + "&hostip=" + hostip
+                    + "&hostipa=" + hostipa
+                    + "&hostipb=" + hostipb
+                    + "&mode=" + mode
+                    + "&time=" + time;
+
+            return proxyUrl;
+        } catch (Exception e) {
+            Log.e("ItvDns", "生成播放地址失败", e);
+            return originalUrl;
+        }
+    }
+
     private void initJsonFiles() {
         // 创建目录
         File jsonDir = new File(context.getFilesDir(), "json/yditv");
@@ -165,12 +182,10 @@ public class ItvDns extends NanoHTTPD {
                 "Host: " + decodedUrl.getHost()
         );
 
-        // 如果是模式1或者时间在20秒内，直接获取TS
-        if ("1".equals(mode) || (System.currentTimeMillis() / 1000 - Long.parseLong(time) < 20)) {
+        if ("1".equals(mode) || (System.currentTimeMillis() / 1000 - Long.parseLong(time) < 20) {
             return getTsResponse(url, headers);
         }
 
-        // 否则尝试多个备用IP
         Response response = tryMultipleTsUrls(decodedUts, decodedUrl.getHost(), headers);
         if (response != null) {
             return response;
@@ -180,7 +195,7 @@ public class ItvDns extends NanoHTTPD {
     }
 
     private Response tryMultipleTsUrls(String originalUrl, String originalHost, List<String> headers) throws Exception {
-        String hostip = getHostIpFromJson("", "0"); // 获取默认IP
+        String hostip = getHostIpFromJson("", "0");
         String hostipa = "39.135.97.80";
         String hostipb = "39.135.238.209";
 
@@ -202,8 +217,8 @@ public class ItvDns extends NanoHTTPD {
     private Response handleM3u8Request(Map<String, String> params) throws Exception {
         String u = params.get("u");
         String hostip = params.get("hostip");
-        String hostipa = params.get("hostipa");
-        String hostipb = params.get("hostipb");
+        String hostipa = params.getOrDefault("hostipa", "39.135.97.80");
+        String hostipb = params.getOrDefault("hostipb", "39.135.238.209");
         String mode = params.get("mode");
         String time = params.get("time");
 
@@ -261,8 +276,8 @@ public class ItvDns extends NanoHTTPD {
         String yw = params.get("yw");
         String mode = params.get("mode");
         String hostip = params.get("hostip");
-        String hostipa = params.get("hostipa", "39.135.97.80");
-        String hostipb = params.get("hostipb", "39.135.238.209");
+        String hostipa = params.getOrDefault("hostipa", "39.135.97.80");
+        String hostipb = params.getOrDefault("hostipb", "39.135.238.209");
         long time = System.currentTimeMillis() / 1000;
 
         String domainId = getDomainId(channelId);
@@ -333,17 +348,15 @@ public class ItvDns extends NanoHTTPD {
             String jsonFileName = "1".equals(yw) ? HOSTIP_YW_JSON_FILE : HOSTIP_JSON_FILE;
             File jsonFile = new File(context.getFilesDir(), "json/yditv/" + jsonFileName);
             
-            // 检查文件是否需要更新（1小时更新一次）
             if (jsonFile.exists()) {
                 long lastModified = jsonFile.lastModified() / 1000;
-                if (time - lastModified > 3600) { // 超过1小时
+                if (time - lastModified > 3600) {
                     downloadJsonFile("1".equals(yw) ? HOSTIP_YW_JSON_URL : HOSTIP_JSON_URL, jsonFile);
                 }
             } else {
                 downloadJsonFile("1".equals(yw) ? HOSTIP_YW_JSON_URL : HOSTIP_JSON_URL, jsonFile);
             }
             
-            // 读取JSON文件
             JsonObject jsonObj;
             try (FileReader reader = new FileReader(jsonFile)) {
                 jsonObj = gson.fromJson(reader, JsonObject.class);
@@ -356,7 +369,6 @@ public class ItvDns extends NanoHTTPD {
                 return new String[]{"39.134.95.33", "39.135.97.80", "39.135.238.209"};
             }
 
-            // 随机选择IP
             Random random = new Random();
             int size = ips.size();
             
@@ -368,8 +380,8 @@ public class ItvDns extends NanoHTTPD {
                 int b = a * 2;
                 return new String[]{
                     ips.get(random.nextInt(a)).getAsString(),
-                    ips.get(random.nextInt(a, b)).getAsString(),
-                    ips.get(random.nextInt(b, size)).getAsString()
+                    ips.get(random.nextInt(b - a) + a).getAsString(),
+                    ips.get(random.nextInt(size - b) + b).getAsString()
                 };
             }
         } catch (Exception e) {
