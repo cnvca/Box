@@ -182,7 +182,7 @@ public class ItvDns extends NanoHTTPD {
                 "Host: " + decodedUrl.getHost()
         );
 
-        if ("1".equals(mode) || (System.currentTimeMillis() / 1000 - Long.parseLong(time) < 20) {
+        if ("1".equals(mode) || (System.currentTimeMillis() / 1000 - Long.parseLong(time) < 20)) {
             return getTsResponse(url, headers);
         }
 
