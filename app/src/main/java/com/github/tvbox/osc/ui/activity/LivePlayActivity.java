@@ -964,7 +964,7 @@ public class LivePlayActivity extends BaseActivity {
     }
 
     // 设置播放地址
-        mVideoView.setUrl(playUrl, setPlayHeaders(currentLiveChannelItem.getUrl()));
+        mVideoView.setUrl(playUrl, setPlayHeaders(currentLiveChannelItem.getUrl(),
  //       mVideoView.setUrl(currentLiveChannelItem.getUrl(),  
 
 		setPlayHeaders(currentLiveChannelItem.getUrl()));
