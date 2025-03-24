@@ -164,22 +164,47 @@ public Response serve(IHTTPSession session) {
         return "39.134.95.33"; // 默认 IP
     }
 
-    private String generatePlayUrl(String originalUrl, String hostip, String hostipa, String hostipb, String mode, String time) {
-        try {
-            // 直接生成播放地址
-            String playUrl = originalUrl
-                    + "&hostip=" + hostip
-                    + "&hostipa=" + hostipa
-                    + "&hostipb=" + hostipb
-                    + "&mode=" + mode
-                    + "&time=" + time;
+    private String generatePlayUrl(String channelId, String contentId, String mode, String yw, String hostip) {
+    try {
+        // 生成原始播放地址
+        String originalUrl = "http://gslbserv.itv.cmvideo.cn/index.m3u8?channel-id=" + channelId + "&Contentid=" + contentId + "&livemode=1&stbId=toShengfen";
 
-            return playUrl;
-        } catch (Exception e) {
-            Log.e("ItvDns", "生成播放地址失败", e);
-            return "";
+        // 获取原始播放地址的内容
+        String url2 = get(originalUrl, Arrays.asList("User-Agent: okhttp/3.12.3"), 3);
+        if (url2 == null || url2.isEmpty()) {
+            // 如果获取失败，尝试替换 host
+            originalUrl = originalUrl.replace("gslbserv.itv.cmvideo.cn", "36.155.98.21");
+            url2 = get(originalUrl, Arrays.asList("User-Agent: okhttp/3.12.3", "Host: gslbserv.itv.cmvideo.cn"), 3);
         }
+
+        // 如果 url2 不包含 cache.ott，则替换为 cache.ott
+        if (url2 != null && !url2.contains("cache.ott")) {
+            int position = url2.indexOf("/", 8);
+            if (position != -1) {
+                String str = url2.substring(position);
+                url2 = "http://cache.ott." + channelId + ".itv.cmvideo.cn" + str;
+            }
+        }
+
+        // 如果 mode 为 3，直接返回 url2
+        if ("3".equals(mode)) {
+            return url2;
+        }
+
+        // 生成代理播放地址
+        String proxyUrl = "http://127.0.0.1:" + PORT + "/?u=" + URLEncoder.encode(url2, StandardCharsets.UTF_8.toString())
+                + "&hostip=" + hostip
+                + "&hostipa=" + hostip
+                + "&hostipb=" + hostip
+                + "&mode=" + mode
+                + "&time=" + (System.currentTimeMillis() / 1000);
+
+        return proxyUrl;
+    } catch (Exception e) {
+        Log.e("ItvDns", "生成播放地址失败", e);
+        return "";
     }
+}
 
     private String get(String url, List<String> headers, int timeout) {
         try {
