@@ -31,13 +31,19 @@ public class ItvDns extends NanoHTTPD {
      * 保存日志到文件
      */
     private void saveLogToFile(String logMessage) {
-        String logFilePath = "/sdcard/tvbox_log.txt"; // 日志文件路径
-        try (FileWriter writer = new FileWriter(logFilePath, true)) {
-            writer.write(logMessage + "\n");
-        } catch (IOException e) {
-            Log.e("ItvDns", "保存日志到文件失败", e);
-        }
+    // 使用内部存储路径
+    File logFile = new File(getFilesDir(), "tvbox_log.txt");
+    try (FileWriter writer = new FileWriter(logFile, true)) {
+        writer.write(logMessage + "\n");
+        Log.d("ItvDns", "日志已写入文件: " + logFile.getAbsolutePath());
+    } catch (IOException e) {
+        Log.e("ItvDns", "保存日志到文件失败", e);
     }
+}
+
+   // 调用示例
+   Log.d("ItvDns", "准备保存日志: 测试日志");
+   saveLogToFile("测试日志");
 
     /**
      * 启动本地代理服务器
