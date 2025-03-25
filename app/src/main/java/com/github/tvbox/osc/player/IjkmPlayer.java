@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.text.TextUtils;
 
-import com.github.tvbox.osc.ui.activity.ItvDns;
 import com.github.tvbox.osc.api.ApiConfig;
 import com.github.tvbox.osc.bean.IJKCode;
 import com.github.tvbox.osc.util.FileUtils;
@@ -15,6 +14,7 @@ import com.github.tvbox.osc.util.PlayerHelper;
 import com.orhanobut.hawk.Hawk;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.LinkedHashMap;
@@ -36,7 +36,7 @@ public class IjkmPlayer extends IjkPlayer {
     public IjkmPlayer(Context context, IJKCode codec) {
         super(context);
         this.codec = codec;
-		 // 初始化时设置代理
+        // 初始化时设置代理
         setProxyOptions();
     }
 
@@ -49,8 +49,7 @@ public class IjkmPlayer extends IjkPlayer {
         mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT,
              "protocol_whitelist", "http,https,rtmp,rtsp");
     }
-	
-	
+    
     @Override
     public void setOptions() {
         IJKCode codecTmp = this.codec == null ? ApiConfig.get().getCurrentIJKCode() : this.codec;
@@ -72,8 +71,6 @@ public class IjkmPlayer extends IjkPlayer {
      
         //开启内置字幕
         mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "subtitle", 1);
-  //      mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_clear", 1);
-  //      mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_timeout", -1);
         mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT,"safe",0);
         super.setOptions();
     }
@@ -105,6 +102,19 @@ public class IjkmPlayer extends IjkPlayer {
                 }
             }
             setDataSourceHeader(headers);
+        } catch (Exception e) {
+            mPlayerEventListener.onError(-1, PlayerHelper.getRootCauseMessage(e));
+        }
+        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "protocol_whitelist", "ijkio,ffio,async,cache,crypto,file,http,https,ijkhttphook,ijkinject,ijklivehook,ijklongurl,ijksegment,ijktcphook,pipe,rtp,tcp,tls,udp,ijkurlhook,data,concat,subfile,ffconcat");
+
+        String finalPath = PlayerHelper.rewriteProxyUrl(path);
+    
+        if (finalPath.contains("127.0.0.1:9978")) {
+            mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, 
+                "http_proxy", "127.0.0.1:9978");
+        }
+        
+        super.setDataSource(finalPath, headers);
         } catch (Exception e) {
             mPlayerEventListener.onError(-1, PlayerHelper.getRootCauseMessage(e));
         }
