@@ -63,12 +63,10 @@ public class App extends MultiDexApplication {
     public void onCreate() {
         super.onCreate();
 		
-		// 按需启动代理
-        PlayerManager.setProxyListener(url -> {
-            if (ProxyUrlHelper.isProxyUrl(url) && !ItvDns.isRunning()) {
-                ItvDns.startLocalProxyServer(this);
-            }
-        });
+		// 改为在播放时直接检查：
+        if (url.contains("127.0.0.1:9978") && !ItvDns.isRunning()) {
+            ItvDns.startLocalProxyServer(this);
+        }
 		
         SubtitleHelper.initSubtitleColor(this);
         initParams();
