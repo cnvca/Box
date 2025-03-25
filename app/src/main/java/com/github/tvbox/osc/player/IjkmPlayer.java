@@ -35,8 +35,19 @@ public class IjkmPlayer extends IjkPlayer {
     public IjkmPlayer(Context context, IJKCode codec) {
         super(context);
         this.codec = codec;
+		 // 初始化时设置代理
+        setProxyOptions();
     }
 
+    private void setProxyOptions() {
+        // 强制使用ItvDns代理
+        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http_proxy", "127.0.0.1:" + ItvDns.PROXY_PORT);
+        // 禁用DNS缓存
+        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_clear", 1);
+        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_timeout", -1);
+    }
+	
+	
     @Override
     public void setOptions() {
         IJKCode codecTmp = this.codec == null ? ApiConfig.get().getCurrentIJKCode() : this.codec;
@@ -58,8 +69,8 @@ public class IjkmPlayer extends IjkPlayer {
      
         //开启内置字幕
         mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "subtitle", 1);
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_clear", 1);
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_timeout", -1);
+  //      mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_clear", 1);
+  //      mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_timeout", -1);
         mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT,"safe",0);
         super.setOptions();
     }
