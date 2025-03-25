@@ -25,7 +25,7 @@ import fi.iki.elonen.NanoHTTPD.Response.Status;
 import fi.iki.elonen.NanoHTTPD.IHTTPSession;
 
 public class ItvDns extends NanoHTTPD {
-    private static final int PORT = 9978;
+    public static final int PORT = 9978;
     private static final Gson gson = new Gson();
     private static ItvDns instance;
     private Context context;
