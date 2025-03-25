@@ -116,6 +116,14 @@ public class IjkmPlayer extends IjkPlayer {
 //        } catch (Exception ignored) {
 //
 //        }
+
+        String finalPath = UrlRewriter.rewriteProxyUrl(path);
+    
+    if (finalPath.contains("127.0.0.1:9978")) {
+        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, 
+            "http_proxy", "127.0.0.1:9978");
+    }
+	
         super.setDataSource(path, headers);
     }
 
