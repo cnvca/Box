@@ -3,6 +3,7 @@ package com.github.tvbox.osc.player;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.text.TextUtils;
+import java.io.File; // 导入 File 类
 
 import com.github.tvbox.osc.api.ApiConfig;
 import com.github.tvbox.osc.bean.IJKCode;
@@ -62,7 +63,7 @@ public class IjkmPlayer extends IjkPlayer {
     }
 
     @Override
-    public void setDataSource(String path, Map<String, String> headers) throws IOException {
+    public void setDataSource(String path, Map<String, String> headers) {
         try {
             if (path != null && !TextUtils.isEmpty(path)) {
                 if (path.startsWith("rtsp")) {
@@ -89,11 +90,16 @@ public class IjkmPlayer extends IjkPlayer {
             }
             setDataSourceHeader(headers);
         } catch (Exception e) {
-            throw new IOException("Failed to set data source", e);
+            // 可以根据具体情况处理异常，这里简单打印日志
+            LOG.e("Failed to set data source", e);
         }
 
         String finalPath = PlayerHelper.rewriteProxyUrl(path);
-        super.setDataSource(finalPath, headers);
+        try {
+            super.setDataSource(finalPath, headers);
+        } catch (IOException e) {
+            LOG.e("Error setting data source in super class", e);
+        }
     }
 
     private void setDataSourceHeader(Map<String, String> headers) {
