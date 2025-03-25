@@ -41,11 +41,13 @@ public class IjkmPlayer extends IjkPlayer {
     }
 
     private void setProxyOptions() {
-        // 强制使用ItvDns代理
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http_proxy", "127.0.0.1:" + ItvDns.PORT);
-        // 禁用DNS缓存
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_clear", 1);
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_timeout", -1);
+        // 强制所有HTTP请求经过本地代理
+        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, 
+            "http_proxy", "127.0.0.1:9978");
+    
+        // 允许原始地址通过
+        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT,
+             "protocol_whitelist", "http,https,rtmp,rtsp");
     }
 	
 	
