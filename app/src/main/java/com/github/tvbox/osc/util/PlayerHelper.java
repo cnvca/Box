@@ -1,7 +1,6 @@
 package com.github.tvbox.osc.util;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.blankj.utilcode.util.ToastUtils;
 import com.github.tvbox.osc.api.ApiConfig;
@@ -14,6 +13,7 @@ import com.orhanobut.hawk.Hawk;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.net.URLEncoder;
 
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
@@ -33,24 +33,11 @@ public class PlayerHelper {
         try {
             if (url != null && url.startsWith("http://127.0.0.1:9978/?channel-id=")) {
                 String realUrl = url.split("channel-id=")[1];
-                Log.d(TAG, "Rewriting proxy URL: " + url + " -> " + realUrl);
                 return realUrl;
             }
             return url;
         } catch (Exception e) {
-            Log.e(TAG, "URL rewrite error", e);
             return url;
-        }
-    }
-
-    // 生成代理地址（供外部调用）
-    public static String buildProxyUrl(String originalUrl) {
-        try {
-            return "http://127.0.0.1:9978/?channel-id=" + 
-                   URLEncoder.encode(originalUrl, "UTF-8");
-        } catch (Exception e) {
-            Log.e(TAG, "Build proxy URL error", e);
-            return originalUrl;
         }
     }
 
@@ -80,14 +67,12 @@ public class PlayerHelper {
             playerFactory = new PlayerFactory<IjkmPlayer>() {
                 @Override
                 public IjkmPlayer createPlayer(Context context) {
-                    IjkmPlayer player = new IjkmPlayer(context, codec);
-                    // 设置IJK代理
-                    player.getIjkMediaPlayer().setOption(
-                        IjkMediaPlayer.OPT_CATEGORY_FORMAT, 
-                        "http_proxy", 
-                        "127.0.0.1:9978"
-                    );
-                    return player;
+                    return new IjkmPlayer(context, codec) {
+                        @Override
+                        public void setDataSource(String path) throws IOException {
+                            super.setDataSource(rewriteProxyUrl(path));
+                        }
+                    };
                 }
             };
         } else if (playerType == 2) {
@@ -130,12 +115,6 @@ public class PlayerHelper {
 
     public static void init() {
         IjkMediaPlayer.loadLibrariesOnce(null);
-        // IJK全局代理设置（会被具体播放器覆盖）
-        IjkMediaPlayer.setOption(
-            IjkMediaPlayer.OPT_CATEGORY_FORMAT, 
-            "http_proxy", 
-            "127.0.0.1:9978"
-        );
     }
 	
 	
