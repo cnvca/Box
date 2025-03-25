@@ -22,6 +22,7 @@ import java.util.*;
 import fi.iki.elonen.NanoHTTPD;
 import fi.iki.elonen.NanoHTTPD.Response;
 import fi.iki.elonen.NanoHTTPD.Response.Status;
+import fi.iki.elonen.NanoHTTPD.Response.IStatus;
 import fi.iki.elonen.NanoHTTPD.IHTTPSession;
 
 public class ItvDns extends NanoHTTPD {
@@ -85,7 +86,11 @@ public class ItvDns extends NanoHTTPD {
         }
         return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", "Invalid request");
     }
-
+    
+	private Response newErrorResponse(Exception e) {
+        return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
+    }
+	
     private Response handleTsRequest(Map<String, String> params) throws Exception {
         String ts = params.get("ts");
         String hostip = params.get("hostip");
