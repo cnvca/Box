@@ -93,19 +93,6 @@ public class PlayerHelper {
         videoView.setScreenScaleType(scale);
     }
 	
-    public static synchronized OkHttpClient getExoOkHttpClient() {
-        if (exoOkHttpClient == null) {
-            OkHttpClient.Builder builder = new OkHttpClient.Builder()
-                .connectTimeout(10, TimeUnit.SECONDS)
-                .readTimeout(10, TimeUnit.SECONDS)
-                .writeTimeout(10, TimeUnit.SECONDS)
-                .protocols(Arrays.asList(Protocol.HTTP_1_1))
-                .proxy(ItvDns.getGlobalProxy()); // 使用ItvDns代理
-
-            exoOkHttpClient = builder.build();
-        }
-        return exoOkHttpClient;
-    }
 	
     public static void updateCfg(VideoView videoView) {
         int playType = Hawk.get(HawkConfig.PLAY_TYPE, 0);
