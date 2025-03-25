@@ -8,11 +8,18 @@ import com.github.tvbox.osc.bean.IJKCode;
 import com.github.tvbox.osc.player.EXOmPlayer;
 import com.github.tvbox.osc.player.IjkmPlayer;
 import com.github.tvbox.osc.player.render.SurfaceRenderViewFactory;
+import com.github.tvbox.osc.ui.activity.ItvDns;
 import com.orhanobut.hawk.Hawk;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.Proxy;
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 import xyz.doikki.videoplayer.aliplayer.AliyunMediaPlayerFactory;
 import xyz.doikki.videoplayer.player.AndroidMediaPlayerFactory;
@@ -141,8 +148,14 @@ public class PlayerHelper {
     public static void init() {
         IjkMediaPlayer.loadLibrariesOnce(null);
 		// 初始化IJK播放器代理设置
-        IjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http_proxy", "127.0.0.1:" + ItvDns.PROXY_PORT);
-        IjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_clear", 1);
+        try {
+            IjkMediaPlayer ijkMediaPlayer = new IjkMediaPlayer();
+            ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http_proxy", "127.0.0.1:" + ItvDns.PORT);
+            ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_clear", 1);
+            ijkMediaPlayer.release();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static String getPlayerName(int playType) {
