@@ -56,19 +56,29 @@ public class ItvDns extends NanoHTTPD {
 
     @Override
     public Response serve(IHTTPSession session) {
-        Map<String, String> params = session.getParms();
-        if (params.containsKey("channel-id")) {
-            String originalUrl = new String(
-                Base64.decode(params.get("channel-id"), Base64.URL_SAFE));
-        
-            // 添加原始域名到Header
-            URL url = new URL(originalUrl);
-            Map<String, String> headers = new HashMap<>();
-            headers.put("X-Original-Host", url.getHost());
-        
-            return proxyService.handleRequest(originalUrl, headers);
-    }
-        return newFixedLengthResponse(Status.BAD_REQUEST, "text/plain", "Invalid proxy request");
+        String uri = session.getUri();
+        if (uri.startsWith("/?channel-id=")) {
+            String originalUrl = uri.split("channel-id=")[1];
+            try {
+                URL url = new URL(originalUrl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            
+                // 复制请求头
+                for (String key : session.getHeaders().keySet()) {
+                    conn.setRequestProperty(key, session.getHeaders().get(key));
+                }
+            
+                return newFixedLengthResponse(
+                    Response.Status.lookup(conn.getResponseCode()),
+                    conn.getContentType(),
+                    conn.getInputStream(),
+                    conn.getContentLength()
+               );
+           } catch (Exception e) {
+               return newErrorResponse(e);
+           }
+        }
+        return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", "Invalid request");
     }
 
     private Response handleTsRequest(Map<String, String> params) throws Exception {
