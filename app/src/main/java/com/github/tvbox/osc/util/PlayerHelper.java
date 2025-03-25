@@ -80,7 +80,7 @@ public class PlayerHelper {
                 @Override
                 public EXOmPlayer createPlayer(Context context) {
  //                   return new EXOmPlayer(context);
-                    return new EXOmPlayer(context, getExoOkHttpClient());
+                    return new EXOmPlayer(context);
                 }
             };
         } else if (playerType == 3) {
