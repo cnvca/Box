@@ -23,6 +23,8 @@ import xyz.doikki.videoplayer.render.RenderViewFactory;
 import xyz.doikki.videoplayer.render.TextureRenderViewFactory;
 
 public class PlayerHelper {
+    private static OkHttpClient exoOkHttpClient;
+	
     public static void updateCfg(VideoView videoView, JSONObject playerCfg) {
         updateCfg(videoView, playerCfg, -1);
     }
@@ -55,7 +57,8 @@ public class PlayerHelper {
             playerFactory = new PlayerFactory<EXOmPlayer>() {
                 @Override
                 public EXOmPlayer createPlayer(Context context) {
-                    return new EXOmPlayer(context);
+ //                   return new EXOmPlayer(context);
+                    return new EXOmPlayer(context, getExoOkHttpClient());
                 }
             };
         } else if (playerType == 3) {
@@ -82,7 +85,21 @@ public class PlayerHelper {
         videoView.setRenderViewFactory(renderViewFactory);
         videoView.setScreenScaleType(scale);
     }
+	
+    public static synchronized OkHttpClient getExoOkHttpClient() {
+        if (exoOkHttpClient == null) {
+            OkHttpClient.Builder builder = new OkHttpClient.Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(10, TimeUnit.SECONDS)
+                .writeTimeout(10, TimeUnit.SECONDS)
+                .protocols(Arrays.asList(Protocol.HTTP_1_1))
+                .proxy(ItvDns.getGlobalProxy()); // 使用ItvDns代理
 
+            exoOkHttpClient = builder.build();
+        }
+        return exoOkHttpClient;
+    }
+	
     public static void updateCfg(VideoView videoView) {
         int playType = Hawk.get(HawkConfig.PLAY_TYPE, 0);
         PlayerFactory playerFactory;
@@ -123,6 +140,9 @@ public class PlayerHelper {
 
     public static void init() {
         IjkMediaPlayer.loadLibrariesOnce(null);
+		// 初始化IJK播放器代理设置
+        IjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http_proxy", "127.0.0.1:" + ItvDns.PROXY_PORT);
+        IjkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_clear", 1);
     }
 
     public static String getPlayerName(int playType) {
