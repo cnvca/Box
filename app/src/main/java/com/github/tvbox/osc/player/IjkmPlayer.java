@@ -1,192 +1,143 @@
-package com.github.tvbox.osc.player;
+package com.github.tvbox.osc.util;
 
 import android.content.Context;
-import android.content.res.AssetFileDescriptor;
-import android.text.TextUtils;
 
 import com.github.tvbox.osc.api.ApiConfig;
 import com.github.tvbox.osc.bean.IJKCode;
-import com.github.tvbox.osc.util.FileUtils;
-import com.github.tvbox.osc.util.HawkConfig;
-import com.github.tvbox.osc.util.LOG;
-import com.github.tvbox.osc.util.MD5;
-import com.github.tvbox.osc.util.PlayerHelper;
+import com.github.tvbox.osc.player.EXOmPlayer;
+import com.github.tvbox.osc.player.IjkmPlayer;
+import com.github.tvbox.osc.player.render.SurfaceRenderViewFactory;
+import com.github.tvbox.osc.ui.activity.ItvDns;
 import com.orhanobut.hawk.Hawk;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
-import tv.danmaku.ijk.media.player.misc.ITrackInfo;
-import tv.danmaku.ijk.media.player.misc.IjkTrackInfo;
-import xyz.doikki.videoplayer.ijk.IjkPlayer;
-import xyz.doikki.videoplayer.ijk.RawDataSourceProvider;
+import xyz.doikki.videoplayer.aliplayer.AliyunMediaPlayerFactory;
+import xyz.doikki.videoplayer.player.AndroidMediaPlayerFactory;
+import xyz.doikki.videoplayer.player.PlayerFactory;
+import xyz.doikki.videoplayer.player.VideoView;
+import xyz.doikki.videoplayer.render.PlayerViewRenderViewFactory;
+import xyz.doikki.videoplayer.render.RenderViewFactory;
+import xyz.doikki.videoplayer.render.TextureRenderViewFactory;
 
-public class IjkmPlayer extends IjkPlayer {
+public class PlayerHelper {
+    private static final String TAG = "PlayerHelper";
 
-    private IJKCode codec = null;
-
-    public IjkmPlayer(Context context, IJKCode codec) {
-        super(context);
-        this.codec = codec;
-        setProxyOptions();
-    }
-
-    private void setProxyOptions() {
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http_proxy", "127.0.0.1:9978");
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "protocol_whitelist", "http,https,rtmp,rtsp");
-    }
-
-    @Override
-    public void setOptions() {
-        IJKCode codecTmp = this.codec == null ? ApiConfig.get().getCurrentIJKCode() : this.codec;
-        LinkedHashMap<String, String> options = codecTmp.getOption();
-        if (options != null) {
-            for (String key : options.keySet()) {
-                String value = options.get(key);
-                String[] opt = key.split("\\|");
-                int category = Integer.parseInt(opt[0].trim());
-                String name = opt[1].trim();
-                try {
-                    long valLong = Long.parseLong(value);
-                    mMediaPlayer.setOption(category, name, valLong);
-                } catch (Exception e) {
-                    mMediaPlayer.setOption(category, name, value);
-                }
-            }
-        }
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "subtitle", 1);
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "safe", 0);
-        super.setOptions();
-    }
-
-    @Override
-    public void setDataSource(String path, Map<String, String> headers) {
+    public static String rewriteProxyUrl(String url) {
         try {
-            if (path != null && !TextUtils.isEmpty(path)) {
-                if (path.startsWith("rtsp")) {
-                    mMediaPlayer.setOption(1, "infbuf", 1);
-                    mMediaPlayer.setOption(1, "rtsp_transport", "tcp");
-                    mMediaPlayer.setOption(1, "rtsp_flags", "prefer_tcp");
-                } else if (!path.contains(".m3u8") && (path.contains(".mp4") || path.contains(".mkv") || path.contains(".avi"))) {
-                    if (Hawk.get(HawkConfig.IJK_CACHE_PLAY, false)) {
-                        String cachePath = FileUtils.getExternalCachePath() + "/ijkcaches/";
-                        String cacheMapPath = cachePath;
-                        File cacheFile = new File(cachePath);
-                        if (!cacheFile.exists()) cacheFile.mkdirs();
-                        String tmpMd5 = MD5.string2MD5(path);
-                        cachePath += tmpMd5 + ".file";
-                        cacheMapPath += tmpMd5 + ".map";
-                        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "cache_file_path", cachePath);
-                        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "cache_map_path", cacheMapPath);
-                        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "parse_cache_map", 1);
-                        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "auto_save_map", 1);
-                        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "cache_max_capacity", 60 * 1024 * 1024);
-                        path = "ijkio:cache:ffio:" + path;
-                    }
-                }
+            if (url != null && url.startsWith("http://127.0.0.1:9978/?channel-id=")) {
+                return url.split("channel-id=")[1];
             }
-            setDataSourceHeader(headers);
+            return url;
         } catch (Exception e) {
-            mPlayerEventListener.onError(-1, PlayerHelper.getRootCauseMessage(e));
+            return url;
         }
+    }
 
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "protocol_whitelist", 
-            "ijkio,ffio,async,cache,crypto,file,http,https,ijkhttphook,ijkinject,ijklivehook,ijklongurl,ijksegment,ijktcphook,pipe,rtp,tcp,tls,udp,ijkurlhook,data,concat,subfile,ffconcat");
+    public static void updateCfg(VideoView videoView, JSONObject playerCfg) {
+        updateCfg(videoView, playerCfg, -1);
+    }
 
-        String finalPath = PlayerHelper.rewriteProxyUrl(path);
-        if (finalPath.contains("127.0.0.1:9978")) {
-            mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http_proxy", "127.0.0.1:9978");
-        }
-
+    public static void updateCfg(VideoView videoView, JSONObject playerCfg, int forcePlayerType) {
+        int playerType = Hawk.get(HawkConfig.PLAY_TYPE, 0);
+        int renderType = Hawk.get(HawkConfig.PLAY_RENDER, 0);
+        String ijkCode = Hawk.get(HawkConfig.IJK_CODEC, "软解码");
+        int scale = Hawk.get(HawkConfig.PLAY_SCALE, 0);
+        
         try {
-            super.setDataSource(finalPath, headers);
-        } catch (Exception e) {
-            mPlayerEventListener.onError(-1, PlayerHelper.getRootCauseMessage(e));
+            playerType = playerCfg.getInt("pl");
+            ijkCode = playerCfg.getString("ijk");
+            scale = playerCfg.getInt("sc");
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
-    }
-
-    private String encodeSpaceChinese(String str) throws UnsupportedEncodingException {
-        Pattern p = Pattern.compile("[\u4e00-\u9fa5 ]+");
-        Matcher m = p.matcher(str);
-        StringBuffer b = new StringBuffer();
-        while (m.find()) m.appendReplacement(b, URLEncoder.encode(m.group(0), "UTF-8"));
-        m.appendTail(b);
-        return b.toString();
-    }
-
-    @Override
-    public void setDataSource(AssetFileDescriptor fd) {
-        try {
-            mMediaPlayer.setDataSource(new RawDataSourceProvider(fd));
-        } catch (Exception e) {
-            mPlayerEventListener.onError(-1, PlayerHelper.getRootCauseMessage(e));
-        }
-    }
-
-    private void setDataSourceHeader(Map<String, String> headers) {
-        if (headers != null && !headers.isEmpty()) {
-            String userAgent = headers.get("User-Agent");
-            if (!TextUtils.isEmpty(userAgent)) {
-                mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "user_agent", userAgent);
-                headers.remove("User-Agent");
-            }
-            if (!headers.isEmpty()) {
-                StringBuilder sb = new StringBuilder();
-                for (Map.Entry<String, String> entry : headers.entrySet()) {
-                    sb.append(entry.getKey())
-                      .append(":")
-                      .append(entry.getValue())
-                      .append("\r\n");
+        
+        if (forcePlayerType >= 0) playerType = forcePlayerType;
+        IJKCode codec = ApiConfig.get().getIJKCodec(ijkCode);
+        
+        PlayerFactory playerFactory;
+        if (playerType == 1) {
+            playerFactory = new PlayerFactory<IjkmPlayer>() {
+                @Override
+                public IjkmPlayer createPlayer(Context context) {
+                    return new IjkmPlayer(context, codec);
                 }
-                mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "headers", sb.toString());
+            };
+        } else if (playerType == 2) {
+            playerFactory = new PlayerFactory<EXOmPlayer>() {
+                @Override
+                public EXOmPlayer createPlayer(Context context) {
+                    return new EXOmPlayer(context);
+                }
+            };
+        } else if (playerType == 3) {
+            playerFactory = AliyunMediaPlayerFactory.create();
+        } else {
+            playerFactory = AndroidMediaPlayerFactory.create();
+        }
+
+        RenderViewFactory renderViewFactory = null;
+        if (playerType == 2) {
+            renderViewFactory = PlayerViewRenderViewFactory.create(renderType);
+        } else {
+            switch (renderType) {
+                case 0:
+                default:
+                    renderViewFactory = TextureRenderViewFactory.create();
+                    break;
+                case 1:
+                    renderViewFactory = SurfaceRenderViewFactory.create();
+                    break;
             }
+        }
+
+        videoView.setPlayerFactory(playerFactory);
+        videoView.setRenderViewFactory(renderViewFactory);
+        videoView.setScreenScaleType(scale);
+    }
+
+    public static void init() {
+        IjkMediaPlayer.loadLibrariesOnce(null);
+        System.setProperty("http.proxyHost", "127.0.0.1");
+        System.setProperty("http.proxyPort", String.valueOf(ItvDns.PORT));
+        System.setProperty("https.proxyHost", "127.0.0.1");
+        System.setProperty("https.proxyPort", String.valueOf(ItvDns.PORT));
+    }
+
+    public static String getPlayerName(int playType) {
+        switch (playType) {
+            case 1: return "IJK";
+            case 2: return "Exo";
+            case 3: return "阿里";
+            case 10: return "MX";
+            case 11: return "Reex";
+            case 12: return "Kodi";
+            default: return "系统";
         }
     }
 
-    public TrackInfo getTrackInfo() {
-        IjkTrackInfo[] trackInfo = mMediaPlayer.getTrackInfo();
-        if (trackInfo == null) return null;
-        TrackInfo data = new TrackInfo();
-        int subtitleSelected = mMediaPlayer.getSelectedTrack(ITrackInfo.MEDIA_TRACK_TYPE_TIMEDTEXT);
-        int audioSelected = mMediaPlayer.getSelectedTrack(ITrackInfo.MEDIA_TRACK_TYPE_AUDIO);
-        int index = 0;
-        for (IjkTrackInfo info : trackInfo) {
-            if (info.getTrackType() == ITrackInfo.MEDIA_TRACK_TYPE_AUDIO) {
-                String trackName = (data.getAudio().size() + 1) + "：" + info.getInfoInline();
-                TrackInfoBean t = new TrackInfoBean();
-                t.name = trackName;
-                t.language = info.getLanguage();
-                t.trackId = index;
-                t.selected = index == audioSelected;
-                data.addAudio(t);
-            }
-            if (info.getTrackType() == ITrackInfo.MEDIA_TRACK_TYPE_TIMEDTEXT) {
-                String trackName = (data.getSubtitle().size() + 1) + "：" + info.getInfoInline();
-                TrackInfoBean t = new TrackInfoBean();
-                t.name = trackName;
-                t.language = info.getLanguage();
-                t.trackId = index;
-                t.selected = index == subtitleSelected;
-                data.addSubtitle(t);
-            }
-            index++;
+    public static String getRenderName(int renderType) {
+        return renderType == 1 ? "SurfaceView" : "TextureView";
+    }
+
+    public static String getScaleName(int screenScaleType) {
+        switch (screenScaleType) {
+            case VideoView.SCREEN_SCALE_DEFAULT: return "默认";
+            case VideoView.SCREEN_SCALE_16_9: return "16:9";
+            case VideoView.SCREEN_SCALE_4_3: return "4:3";
+            case VideoView.SCREEN_SCALE_MATCH_PARENT: return "填充";
+            case VideoView.SCREEN_SCALE_ORIGINAL: return "原始";
+            case VideoView.SCREEN_SCALE_CENTER_CROP: return "裁剪";
+            default: return "默认";
         }
-        return data;
     }
 
-    public void setTrack(int trackIndex) {
-        mMediaPlayer.selectTrack(trackIndex);
-    }
-
-    public void setOnTimedTextListener(IMediaPlayer.OnTimedTextListener listener) {
-        mMediaPlayer.setOnTimedTextListener(listener);
+    public static String getRootCauseMessage(Throwable th) {
+        for (int i = 0; i < 10 && th.getCause() != null; i++) {
+            th = th.getCause();
+        }
+        return th.getLocalizedMessage();
     }
 }
