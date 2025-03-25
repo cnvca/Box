@@ -1,8 +1,6 @@
 package com.github.tvbox.osc.util;
 
 import android.content.Context;
-
-import com.blankj.utilcode.util.ToastUtils;
 import com.github.tvbox.osc.api.ApiConfig;
 import com.github.tvbox.osc.bean.IJKCode;
 import com.github.tvbox.osc.player.EXOmPlayer;
@@ -10,13 +8,8 @@ import com.github.tvbox.osc.player.IjkmPlayer;
 import com.github.tvbox.osc.player.render.SurfaceRenderViewFactory;
 import com.github.tvbox.osc.ui.activity.ItvDns;
 import com.orhanobut.hawk.Hawk;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.io.IOException;
-import java.net.URLEncoder;
-
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 import xyz.doikki.videoplayer.aliplayer.AliyunMediaPlayerFactory;
 import xyz.doikki.videoplayer.player.AndroidMediaPlayerFactory;
@@ -27,14 +20,13 @@ import xyz.doikki.videoplayer.render.RenderViewFactory;
 import xyz.doikki.videoplayer.render.TextureRenderViewFactory;
 
 public class PlayerHelper {
-    private static final String TAG = "PlayerHelper";
-
-    // 代理地址重写
+    // 移除所有不正确的@Override注解
+    // 保持与xyz.doikki.videoplayer:dkplayer-ui:3.3.7兼容的API调用方式
+    
     public static String rewriteProxyUrl(String url) {
         try {
-            if (url != null && url.startsWith("http://127.0.0.1:9978/?channel-id=")) {
-                String realUrl = url.split("channel-id=")[1];
-                return realUrl;
+            if (url != null && url.startsWith("http://127.0.0.1:9978")) {
+                return url.replace("http://127.0.0.1:9978/?channel-id=", "");
             }
             return url;
         } catch (Exception e) {
@@ -43,8 +35,26 @@ public class PlayerHelper {
     }
 
     public static void updateCfg(VideoView videoView, JSONObject playerCfg) {
-        updateCfg(videoView, playerCfg, -1);
-    }
+        // 保持原有逻辑但移除错误覆盖
+        PlayerFactory playerFactory;
+        if (Hawk.get(HawkConfig.PLAY_TYPE, 0) == 1) {
+            playerFactory = new PlayerFactory<IjkmPlayer>() {
+                @Override
+                public IjkmPlayer createPlayer(Context context) {
+                    return new IjkmPlayer(context, null) {
+                        // 正确的重写方式（与dkplayer 3.3.7兼容）
+                        @Override
+                        public void setDataSource(String path) {
+                            try {
+                                super.setDataSource(rewriteProxyUrl(path));
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    };
+                }
+            };
+        }
 
     public static void updateCfg(VideoView videoView, JSONObject playerCfg, int forcePlayerType) {
         int playerType = Hawk.get(HawkConfig.PLAY_TYPE, 0);
