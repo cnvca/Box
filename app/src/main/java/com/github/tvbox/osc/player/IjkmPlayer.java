@@ -3,7 +3,7 @@ package com.github.tvbox.osc.player;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.text.TextUtils;
-import java.io.File; // 导入 File 类
+import java.io.File;
 
 import com.github.tvbox.osc.api.ApiConfig;
 import com.github.tvbox.osc.bean.IJKCode;
@@ -90,14 +90,13 @@ public class IjkmPlayer extends IjkPlayer {
             }
             setDataSourceHeader(headers);
         } catch (Exception e) {
-            // 可以根据具体情况处理异常，这里简单打印日志
             LOG.e("Failed to set data source", e);
         }
 
         String finalPath = PlayerHelper.rewriteProxyUrl(path);
         try {
             super.setDataSource(finalPath, headers);
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOG.e("Error setting data source in super class", e);
         }
     }
@@ -132,6 +131,7 @@ public class IjkmPlayer extends IjkPlayer {
             }
         }
     }
+
     public TrackInfo getTrackInfo() {
         IjkTrackInfo[] trackInfo = mMediaPlayer.getTrackInfo();
         if (trackInfo == null) return null;
