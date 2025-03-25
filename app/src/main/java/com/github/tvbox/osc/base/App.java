@@ -62,6 +62,14 @@ public class App extends MultiDexApplication {
     @Override
     public void onCreate() {
         super.onCreate();
+		
+		// 按需启动代理
+        PlayerManager.setProxyListener(url -> {
+            if (ProxyUrlHelper.isProxyUrl(url) && !ItvDns.isRunning()) {
+                ItvDns.startLocalProxyServer(this);
+            }
+        });
+		
         SubtitleHelper.initSubtitleColor(this);
         initParams();
         // takagen99 : Initialize Locale
@@ -74,7 +82,7 @@ public class App extends MultiDexApplication {
         EpgUtil.init();
         // 初始化Web服务器
         ControlManager.init(this);
-        ItvDns.startLocalProxyServer(this);
+
         //初始化数据库
         AppDataManager.init();
         LoadSir.beginBuilder()
