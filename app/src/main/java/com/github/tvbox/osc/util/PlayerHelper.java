@@ -150,14 +150,10 @@ public class PlayerHelper {
     public static void init() {
         IjkMediaPlayer.loadLibrariesOnce(null);
 		// 初始化IJK播放器代理设置
-        try {
-            IjkMediaPlayer ijkMediaPlayer = new IjkMediaPlayer();
-            ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http_proxy", "127.0.0.1:" + ItvDns.PORT);
-            ijkMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_clear", 1);
-            ijkMediaPlayer.release();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+       System.setProperty("http.proxyHost", "127.0.0.1");
+        System.setProperty("http.proxyPort", String.valueOf(ItvDns.PORT));
+        System.setProperty("https.proxyHost", "127.0.0.1");
+        System.setProperty("https.proxyPort", String.valueOf(ItvDns.PORT));
     }
 
     public static String getPlayerName(int playType) {
