@@ -3,6 +3,9 @@ package com.github.tvbox.osc.ui.activity;
 import android.content.Context;
 import android.util.Log;
 
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
