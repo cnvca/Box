@@ -150,7 +150,7 @@ public class IjkmPlayer extends IjkPlayer {
             }
         }
     }
-    }
+
     public TrackInfo getTrackInfo() {
         IjkTrackInfo[] trackInfo = mMediaPlayer.getTrackInfo();
         if (trackInfo == null) return null;
@@ -159,7 +159,7 @@ public class IjkmPlayer extends IjkPlayer {
         int audioSelected = mMediaPlayer.getSelectedTrack(ITrackInfo.MEDIA_TRACK_TYPE_AUDIO);
         int index = 0;
         for (IjkTrackInfo info : trackInfo) {
-            if (info.getTrackType() == ITrackInfo.MEDIA_TRACK_TYPE_AUDIO) {//音轨信息
+            if (info.getTrackType() == ITrackInfo.MEDIA_TRACK_TYPE_AUDIO) {
                 String trackName = (data.getAudio().size() + 1) + "：" + info.getInfoInline();
                 TrackInfoBean t = new TrackInfoBean();
                 t.name = trackName;
@@ -168,7 +168,7 @@ public class IjkmPlayer extends IjkPlayer {
                 t.selected = index == audioSelected;
                 data.addAudio(t);
             }
-            if (info.getTrackType() == ITrackInfo.MEDIA_TRACK_TYPE_TIMEDTEXT) {//内置字幕
+            if (info.getTrackType() == ITrackInfo.MEDIA_TRACK_TYPE_TIMEDTEXT) {
                 String trackName = (data.getSubtitle().size() + 1) + "：" + info.getInfoInline();
                 TrackInfoBean t = new TrackInfoBean();
                 t.name = trackName;
@@ -189,5 +189,4 @@ public class IjkmPlayer extends IjkPlayer {
     public void setOnTimedTextListener(IMediaPlayer.OnTimedTextListener listener) {
         mMediaPlayer.setOnTimedTextListener(listener);
     }
-
 }
