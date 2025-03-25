@@ -36,20 +36,14 @@ public class IjkmPlayer extends IjkPlayer {
     public IjkmPlayer(Context context, IJKCode codec) {
         super(context);
         this.codec = codec;
-        // 初始化时设置代理
         setProxyOptions();
     }
 
     private void setProxyOptions() {
-        // 强制所有HTTP请求经过本地代理
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, 
-            "http_proxy", "127.0.0.1:9978");
-    
-        // 允许原始地址通过
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT,
-             "protocol_whitelist", "http,https,rtmp,rtsp");
+        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http_proxy", "127.0.0.1:9978");
+        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "protocol_whitelist", "http,https,rtmp,rtsp");
     }
-    
+
     @Override
     public void setOptions() {
         IJKCode codecTmp = this.codec == null ? ApiConfig.get().getCurrentIJKCode() : this.codec;
@@ -68,10 +62,8 @@ public class IjkmPlayer extends IjkPlayer {
                 }
             }
         }
-     
-        //开启内置字幕
         mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "subtitle", 1);
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT,"safe",0);
+        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "safe", 0);
         super.setOptions();
     }
 
@@ -79,7 +71,7 @@ public class IjkmPlayer extends IjkPlayer {
     public void setDataSource(String path, Map<String, String> headers) {
         try {
             if (path != null && !TextUtils.isEmpty(path)) {
-                if(path.startsWith("rtsp")){
+                if (path.startsWith("rtsp")) {
                     mMediaPlayer.setOption(1, "infbuf", 1);
                     mMediaPlayer.setOption(1, "rtsp_transport", "tcp");
                     mMediaPlayer.setOption(1, "rtsp_flags", "prefer_tcp");
@@ -105,36 +97,20 @@ public class IjkmPlayer extends IjkPlayer {
         } catch (Exception e) {
             mPlayerEventListener.onError(-1, PlayerHelper.getRootCauseMessage(e));
         }
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "protocol_whitelist", "ijkio,ffio,async,cache,crypto,file,http,https,ijkhttphook,ijkinject,ijklivehook,ijklongurl,ijksegment,ijktcphook,pipe,rtp,tcp,tls,udp,ijkurlhook,data,concat,subfile,ffconcat");
+
+        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "protocol_whitelist", 
+            "ijkio,ffio,async,cache,crypto,file,http,https,ijkhttphook,ijkinject,ijklivehook,ijklongurl,ijksegment,ijktcphook,pipe,rtp,tcp,tls,udp,ijkurlhook,data,concat,subfile,ffconcat");
 
         String finalPath = PlayerHelper.rewriteProxyUrl(path);
-    
         if (finalPath.contains("127.0.0.1:9978")) {
-            mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, 
-                "http_proxy", "127.0.0.1:9978");
+            mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http_proxy", "127.0.0.1:9978");
         }
-        
-        super.setDataSource(finalPath, headers);
+
+        try {
+            super.setDataSource(finalPath, headers);
         } catch (Exception e) {
             mPlayerEventListener.onError(-1, PlayerHelper.getRootCauseMessage(e));
         }
-        //mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "protocol_whitelist", "ijkio,ffio,async,cache,crypto,file,http,https,ijkhttphook,ijkinject,ijklivehook,ijklongurl,ijksegment,ijktcphook,pipe,rtp,tcp,tls,udp,ijkurlhook,data");
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "protocol_whitelist", "ijkio,ffio,async,cache,crypto,file,http,https,ijkhttphook,ijkinject,ijklivehook,ijklongurl,ijksegment,ijktcphook,pipe,rtp,tcp,tls,udp,ijkurlhook,data,concat,subfile,ffconcat");
-        //mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "packet-buffering", 0L);
-//        try {
-//            path = encodeSpaceChinese(path);//会导致本地文件无法播放，故注释掉
-//        } catch (Exception ignored) {
-//
-//        }
-
-        String finalPath = UrlRewriter.rewriteProxyUrl(path);
-    
-    if (finalPath.contains("127.0.0.1:9978")) {
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, 
-            "http_proxy", "127.0.0.1:9978");
-    }
-	
-        super.setDataSource(path, headers);
     }
 
     private String encodeSpaceChinese(String str) throws UnsupportedEncodingException {
@@ -154,27 +130,26 @@ public class IjkmPlayer extends IjkPlayer {
             mPlayerEventListener.onError(-1, PlayerHelper.getRootCauseMessage(e));
         }
     }
+
     private void setDataSourceHeader(Map<String, String> headers) {
         if (headers != null && !headers.isEmpty()) {
             String userAgent = headers.get("User-Agent");
             if (!TextUtils.isEmpty(userAgent)) {
                 mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "user_agent", userAgent);
-                // 移除header中的User-Agent，防止重复
                 headers.remove("User-Agent");
             }
-            if (headers.size() > 0) {
+            if (!headers.isEmpty()) {
                 StringBuilder sb = new StringBuilder();
                 for (Map.Entry<String, String> entry : headers.entrySet()) {
-                    sb.append(entry.getKey());
-                    sb.append(":");
-                    String value = entry.getValue();
-                    if (!TextUtils.isEmpty(value))
-                        sb.append(entry.getValue());
-                    sb.append("\r\n");
-                    mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "headers", sb.toString());
+                    sb.append(entry.getKey())
+                      .append(":")
+                      .append(entry.getValue())
+                      .append("\r\n");
                 }
+                mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "headers", sb.toString());
             }
         }
+    }
     }
     public TrackInfo getTrackInfo() {
         IjkTrackInfo[] trackInfo = mMediaPlayer.getTrackInfo();
