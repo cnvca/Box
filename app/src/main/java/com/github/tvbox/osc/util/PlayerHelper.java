@@ -8,6 +8,7 @@ import com.github.tvbox.osc.bean.IJKCode;
 import com.github.tvbox.osc.player.EXOmPlayer;
 import com.github.tvbox.osc.player.IjkmPlayer;
 import com.github.tvbox.osc.player.render.SurfaceRenderViewFactory;
+import com.github.tvbox.osc.ui.activity.ItvDns;
 import com.orhanobut.hawk.Hawk;
 
 import org.json.JSONException;
@@ -115,51 +116,8 @@ public class PlayerHelper {
 
     public static void init() {
         IjkMediaPlayer.loadLibrariesOnce(null);
-    }
-	
-	
-    public static void updateCfg(VideoView videoView) {
-        int playType = Hawk.get(HawkConfig.PLAY_TYPE, 0);
-        PlayerFactory playerFactory;
-        if (playType == 1) {
-            playerFactory = new PlayerFactory<IjkmPlayer>() {
-                @Override
-                public IjkmPlayer createPlayer(Context context) {
-                    return new IjkmPlayer(context, null);
-                }
-            };
-
-        } else if (playType == 2) {
-            playerFactory = new PlayerFactory<EXOmPlayer>() {
-                @Override
-                public EXOmPlayer createPlayer(Context context) {
-                    return new EXOmPlayer(context);
-                }
-            };
-        } else if (playType == 3) {
-            playerFactory = AliyunMediaPlayerFactory.create();
-        } else {
-            playerFactory = AndroidMediaPlayerFactory.create();
-        }
-        int renderType = Hawk.get(HawkConfig.PLAY_RENDER, 0);
-        RenderViewFactory renderViewFactory = null;
-        switch (renderType) {
-            case 0:
-            default:
-                renderViewFactory = TextureRenderViewFactory.create();
-                break;
-            case 1:
-                renderViewFactory = SurfaceRenderViewFactory.create();
-                break;
-        }
-        videoView.setPlayerFactory(playerFactory);
-        videoView.setRenderViewFactory(renderViewFactory);
-    }
-
-    public static void init() {
-        IjkMediaPlayer.loadLibrariesOnce(null);
-		// 初始化IJK播放器代理设置
-       System.setProperty("http.proxyHost", "127.0.0.1");
+        // 初始化IJK播放器代理设置
+        System.setProperty("http.proxyHost", "127.0.0.1");
         System.setProperty("http.proxyPort", String.valueOf(ItvDns.PORT));
         System.setProperty("https.proxyHost", "127.0.0.1");
         System.setProperty("https.proxyPort", String.valueOf(ItvDns.PORT));
@@ -223,5 +181,4 @@ public class PlayerHelper {
         }
         return th.getLocalizedMessage();
     }
-
 }
