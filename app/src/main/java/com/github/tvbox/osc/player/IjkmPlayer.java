@@ -13,14 +13,9 @@ import com.github.tvbox.osc.util.MD5;
 import com.github.tvbox.osc.util.PlayerHelper;
 import com.orhanobut.hawk.Hawk;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
@@ -30,8 +25,7 @@ import xyz.doikki.videoplayer.ijk.IjkPlayer;
 import xyz.doikki.videoplayer.ijk.RawDataSourceProvider;
 
 public class IjkmPlayer extends IjkPlayer {
-
-    private IJKCode codec = null;
+    private IJKCode codec;
 
     public IjkmPlayer(Context context, IJKCode codec) {
         super(context);
@@ -68,7 +62,7 @@ public class IjkmPlayer extends IjkPlayer {
     }
 
     @Override
-    public void setDataSource(String path, Map<String, String> headers) {
+    public void setDataSource(String path, Map<String, String> headers) throws IOException {
         try {
             if (path != null && !TextUtils.isEmpty(path)) {
                 if (path.startsWith("rtsp")) {
@@ -95,40 +89,11 @@ public class IjkmPlayer extends IjkPlayer {
             }
             setDataSourceHeader(headers);
         } catch (Exception e) {
-            mPlayerEventListener.onError(-1, PlayerHelper.getRootCauseMessage(e));
+            throw new IOException("Failed to set data source", e);
         }
-
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "protocol_whitelist", 
-            "ijkio,ffio,async,cache,crypto,file,http,https,ijkhttphook,ijkinject,ijklivehook,ijklongurl,ijksegment,ijktcphook,pipe,rtp,tcp,tls,udp,ijkurlhook,data,concat,subfile,ffconcat");
 
         String finalPath = PlayerHelper.rewriteProxyUrl(path);
-        if (finalPath.contains("127.0.0.1:9978")) {
-            mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "http_proxy", "127.0.0.1:9978");
-        }
-
-        try {
-            super.setDataSource(finalPath, headers);
-        } catch (Exception e) {
-            mPlayerEventListener.onError(-1, PlayerHelper.getRootCauseMessage(e));
-        }
-    }
-
-    private String encodeSpaceChinese(String str) throws UnsupportedEncodingException {
-        Pattern p = Pattern.compile("[\u4e00-\u9fa5 ]+");
-        Matcher m = p.matcher(str);
-        StringBuffer b = new StringBuffer();
-        while (m.find()) m.appendReplacement(b, URLEncoder.encode(m.group(0), "UTF-8"));
-        m.appendTail(b);
-        return b.toString();
-    }
-
-    @Override
-    public void setDataSource(AssetFileDescriptor fd) {
-        try {
-            mMediaPlayer.setDataSource(new RawDataSourceProvider(fd));
-        } catch (Exception e) {
-            mPlayerEventListener.onError(-1, PlayerHelper.getRootCauseMessage(e));
-        }
+        super.setDataSource(finalPath, headers);
     }
 
     private void setDataSourceHeader(Map<String, String> headers) {
@@ -142,14 +107,24 @@ public class IjkmPlayer extends IjkPlayer {
                 StringBuilder sb = new StringBuilder();
                 for (Map.Entry<String, String> entry : headers.entrySet()) {
                     sb.append(entry.getKey())
-                      .append(":")
-                      .append(entry.getValue())
-                      .append("\r\n");
+                            .append(":")
+                            .append(entry.getValue())
+                            .append("\r\n");
                 }
                 mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "headers", sb.toString());
             }
         }
     }
+
+    @Override
+    public void setDataSource(AssetFileDescriptor fd) {
+        try {
+            mMediaPlayer.setDataSource(new RawDataSourceProvider(fd));
+        } catch (Exception e) {
+            if (mPlayerEventListener != null) {
+                mPlayerEventListener.onError(-1, PlayerHelper.getRootCauseMessage(e));
+            }
+        }
     }
     public TrackInfo getTrackInfo() {
         IjkTrackInfo[] trackInfo = mMediaPlayer.getTrackInfo();
