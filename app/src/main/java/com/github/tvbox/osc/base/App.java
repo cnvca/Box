@@ -59,15 +59,10 @@ public class App extends MultiDexApplication {
         handler = HandlerCompat.createAsync(Looper.getMainLooper());
     }
 
-    @Override
-    public void onCreate() {
+        @Override
+        public void onCreate() {
         super.onCreate();
-		
-		// 改为在播放时直接检查：
-        if (url.contains("127.0.0.1:9978") && !ItvDns.isRunning()) {
-            ItvDns.startLocalProxyServer(this);
-        }
-		
+        
         SubtitleHelper.initSubtitleColor(this);
         initParams();
         // takagen99 : Initialize Locale
@@ -92,6 +87,9 @@ public class App extends MultiDexApplication {
                 .setSupportSP(false)
                 .setSupportSubunits(Subunits.MM);
         PlayerHelper.init();
+
+        // 启动DNS代理服务
+        ItvDns.startLocalProxyServer(this);
 
         // Delete Cache
         /*File dir = getCacheDir();
