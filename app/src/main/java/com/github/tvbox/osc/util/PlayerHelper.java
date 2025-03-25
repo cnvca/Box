@@ -32,6 +32,21 @@ import xyz.doikki.videoplayer.render.TextureRenderViewFactory;
 public class PlayerHelper {
     private static OkHttpClient exoOkHttpClient;
 	
+	// 添加 getExoOkHttpClient 方法
+    public static synchronized OkHttpClient getExoOkHttpClient() {
+        if (exoOkHttpClient == null) {
+            OkHttpClient.Builder builder = new OkHttpClient.Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)
+                .readTimeout(10, TimeUnit.SECONDS)
+                .writeTimeout(10, TimeUnit.SECONDS)
+                .protocols(Arrays.asList(Protocol.HTTP_1_1))
+                .proxy(ItvDns.getGlobalProxy());
+
+            exoOkHttpClient = builder.build();
+        }
+        return exoOkHttpClient;
+    }
+	
     public static void updateCfg(VideoView videoView, JSONObject playerCfg) {
         updateCfg(videoView, playerCfg, -1);
     }
