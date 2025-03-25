@@ -1,6 +1,7 @@
 package com.github.tvbox.osc.util;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.blankj.utilcode.util.ToastUtils;
 import com.github.tvbox.osc.api.ApiConfig;
@@ -8,18 +9,13 @@ import com.github.tvbox.osc.bean.IJKCode;
 import com.github.tvbox.osc.player.EXOmPlayer;
 import com.github.tvbox.osc.player.IjkmPlayer;
 import com.github.tvbox.osc.player.render.SurfaceRenderViewFactory;
-import com.github.tvbox.osc.ui.activity.ItvDns;
 import com.orhanobut.hawk.Hawk;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.net.Proxy;
-import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
+import java.net.URLEncoder;
 
-import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 import xyz.doikki.videoplayer.aliplayer.AliyunMediaPlayerFactory;
 import xyz.doikki.videoplayer.player.AndroidMediaPlayerFactory;
@@ -30,16 +26,34 @@ import xyz.doikki.videoplayer.render.RenderViewFactory;
 import xyz.doikki.videoplayer.render.TextureRenderViewFactory;
 
 public class PlayerHelper {
-    private static OkHttpClient exoOkHttpClient;
-	
-	// 添加 getExoOkHttpClient 方法
-    private static OkHttpClient buildExoClient() {
-    return new OkHttpClient.Builder()
-        .addInterceptor(new ProxyInterceptor())
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .build();
+    private static final String TAG = "PlayerHelper";
+
+    // 代理地址重写
+    public static String rewriteProxyUrl(String url) {
+        try {
+            if (url != null && url.startsWith("http://127.0.0.1:9978/?channel-id=")) {
+                String realUrl = url.split("channel-id=")[1];
+                Log.d(TAG, "Rewriting proxy URL: " + url + " -> " + realUrl);
+                return realUrl;
+            }
+            return url;
+        } catch (Exception e) {
+            Log.e(TAG, "URL rewrite error", e);
+            return url;
+        }
     }
-	
+
+    // 生成代理地址（供外部调用）
+    public static String buildProxyUrl(String originalUrl) {
+        try {
+            return "http://127.0.0.1:9978/?channel-id=" + 
+                   URLEncoder.encode(originalUrl, "UTF-8");
+        } catch (Exception e) {
+            Log.e(TAG, "Build proxy URL error", e);
+            return originalUrl;
+        }
+    }
+
     public static void updateCfg(VideoView videoView, JSONObject playerCfg) {
         updateCfg(videoView, playerCfg, -1);
     }
@@ -49,31 +63,43 @@ public class PlayerHelper {
         int renderType = Hawk.get(HawkConfig.PLAY_RENDER, 0);
         String ijkCode = Hawk.get(HawkConfig.IJK_CODEC, "软解码");
         int scale = Hawk.get(HawkConfig.PLAY_SCALE, 0);
+        
         try {
             playerType = playerCfg.getInt("pl");
-            //就我遇到的问题是 Exo 在 TextureView 黑屏 调整设置中的渲染模式无法生效
-            //renderType = playerCfg.getInt("pr");//该值无法修改，一旦确认该值后续无法进行修改 就是在设置选的 类型无法应用
             ijkCode = playerCfg.getString("ijk");
             scale = playerCfg.getInt("sc");
         } catch (JSONException e) {
             e.printStackTrace();
         }
+        
         if (forcePlayerType >= 0) playerType = forcePlayerType;
         IJKCode codec = ApiConfig.get().getIJKCodec(ijkCode);
+        
         PlayerFactory playerFactory;
         if (playerType == 1) {
             playerFactory = new PlayerFactory<IjkmPlayer>() {
                 @Override
                 public IjkmPlayer createPlayer(Context context) {
-                    return new IjkmPlayer(context, codec);
+                    IjkmPlayer player = new IjkmPlayer(context, codec);
+                    // 设置IJK代理
+                    player.getIjkMediaPlayer().setOption(
+                        IjkMediaPlayer.OPT_CATEGORY_FORMAT, 
+                        "http_proxy", 
+                        "127.0.0.1:9978"
+                    );
+                    return player;
                 }
             };
         } else if (playerType == 2) {
             playerFactory = new PlayerFactory<EXOmPlayer>() {
                 @Override
                 public EXOmPlayer createPlayer(Context context) {
- //                   return new EXOmPlayer(context);
-                    return new EXOmPlayer(context);
+                    return new EXOmPlayer(context) {
+                        @Override
+                        public void setDataSource(String path) {
+                            super.setDataSource(rewriteProxyUrl(path));
+                        }
+                    };
                 }
             };
         } else if (playerType == 3) {
@@ -81,10 +107,11 @@ public class PlayerHelper {
         } else {
             playerFactory = AndroidMediaPlayerFactory.create();
         }
+
         RenderViewFactory renderViewFactory = null;
-        if (playerType==2){
+        if (playerType == 2) {
             renderViewFactory = PlayerViewRenderViewFactory.create(renderType);
-        }else{
+        } else {
             switch (renderType) {
                 case 0:
                 default:
@@ -99,6 +126,16 @@ public class PlayerHelper {
         videoView.setPlayerFactory(playerFactory);
         videoView.setRenderViewFactory(renderViewFactory);
         videoView.setScreenScaleType(scale);
+    }
+
+    public static void init() {
+        IjkMediaPlayer.loadLibrariesOnce(null);
+        // IJK全局代理设置（会被具体播放器覆盖）
+        IjkMediaPlayer.setOption(
+            IjkMediaPlayer.OPT_CATEGORY_FORMAT, 
+            "http_proxy", 
+            "127.0.0.1:9978"
+        );
     }
 	
 	
