@@ -400,4 +400,18 @@ public class ItvDns extends NanoHTTPD {
             return originalUrl;
         }
     }
+	
+	/**
+     * 获取全局代理配置
+     */
+    public static Proxy getGlobalProxy() {
+        return new Proxy(Proxy.Type.HTTP, new InetSocketAddress("127.0.0.1", PORT));
+    }
+
+    /**
+     * 检查代理服务器是否运行
+     */
+    public static boolean isProxyAvailable() {
+        return instance != null && instance.isAlive();
+    }
 }
