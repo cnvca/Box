@@ -56,24 +56,19 @@ public class ItvDns extends NanoHTTPD {
 
     @Override
     public Response serve(IHTTPSession session) {
-        String uri = session.getUri();
         Map<String, String> params = session.getParms();
+        if (params.containsKey("channel-id")) {
+            String originalUrl = new String(
+                Base64.decode(params.get("channel-id"), Base64.URL_SAFE));
         
-        Log.d("ItvDns", "处理请求: " + uri);
-        Log.d("ItvDns", "请求参数: " + params);
-
-        try {
-            if (params.containsKey("ts")) {
-                return handleTsRequest(params);
-            } else if (params.containsKey("u")) {
-                return handleM3u8Request(params);
-            } else if (params.containsKey("channel-id")) {
-                return handleLiveChannelRequest(params);
-            }
-        } catch (Exception e) {
-            Log.e("ItvDns", "处理请求出错", e);
-        }
-        return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", "Not Found");
+            // 添加原始域名到Header
+            URL url = new URL(originalUrl);
+            Map<String, String> headers = new HashMap<>();
+            headers.put("X-Original-Host", url.getHost());
+        
+            return proxyService.handleRequest(originalUrl, headers);
+    }
+        return newFixedLengthResponse(Status.BAD_REQUEST, "text/plain", "Invalid proxy request");
     }
 
     private Response handleTsRequest(Map<String, String> params) throws Exception {
