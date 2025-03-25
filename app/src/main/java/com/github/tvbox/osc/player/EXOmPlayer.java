@@ -22,26 +22,12 @@ import xyz.doikki.videoplayer.exo.ExoMediaPlayer;
 
 public class EXOmPlayer extends ExoMediaPlayer {
     private String audioId = "";
-    private String subtitleId = "";
-    private OkHttpClient okHttpClient;  // 添加这行
+    private String subtitleId = "";  
 
     public EXOmPlayer(Context context) {
         super(context);
     }
 	
-    // 新增带OkHttpClient的构造函数
-    public EXOmPlayer(Context context, OkHttpClient okHttpClient) {
-        super(context);
-        this.okHttpClient = okHttpClient;
-        initDataSourceFactory();
-    }
-
-    private void initDataSourceFactory() {
-        if (okHttpClient != null) {
-            // 使用自定义的OkHttpClient创建DataSourceFactory
-            setDataSourceFactory(new OkHttpDataSource.Factory(okHttpClient));
-        }
-    }
 
     @SuppressLint("UnsafeOptInUsageError")
     public TrackInfo getTrackInfo() {
