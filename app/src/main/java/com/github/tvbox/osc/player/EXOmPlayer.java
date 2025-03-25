@@ -23,7 +23,20 @@ public class EXOmPlayer extends ExoMediaPlayer {
     public EXOmPlayer(Context context) {
         super(context);
     }
+	
+    // 新增带OkHttpClient的构造函数
+    public EXOmPlayer(Context context, OkHttpClient okHttpClient) {
+        super(context);
+        this.okHttpClient = okHttpClient;
+        initDataSourceFactory();
+    }
 
+    private void initDataSourceFactory() {
+        if (okHttpClient != null) {
+            // 使用自定义的OkHttpClient创建DataSourceFactory
+            setDataSourceFactory(new OkHttpDataSource.Factory(okHttpClient));
+        }
+    }
 
     @SuppressLint("UnsafeOptInUsageError")
     public TrackInfo getTrackInfo() {
