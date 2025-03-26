@@ -953,7 +953,20 @@ public class LivePlayActivity extends BaseActivity {
         mVideoView.start();
         return true;
     }
-
+     
+	public void onUserSelectedSource(int selectedIndex) {
+        runOnUiThread(() -> {
+            if (currentLiveChannelItem != null) {
+                // 设置用户已选择标志
+                currentLiveChannelItem.setUserSelected(true);
+                // 直接使用用户选择的源播放
+                currentLiveChannelItem.setSourceIndex(selectedIndex);
+                playChannelInternal();
+            }
+        });
+    }
+	
+	
     //节目播放
 // 替换现有的 playChannel 方法
 private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
@@ -999,15 +1012,6 @@ if (currentLiveChannelItem.getSourceNum() > 1) {
     playChannelInternal();
 }
 
-    // 当用户手动选择播放源时调用这个方法
-    public void onUserSelectedSource(int selectedIndex) {
-    // 设置用户已选择标志
-    currentLiveChannelItem.setUserSelected(true);
-    // 直接使用用户选择的源播放
-    currentLiveChannelItem.setSourceIndex(selectedIndex);
-    playChannelInternal();
-    }
-}
         // takagen99 : Moved update of Channel Info here before getting EPG (no dependency on EPG)
         mHandler.post(tv_sys_timeRunnable);
 
@@ -1064,6 +1068,35 @@ private void playChannelInternal() {
     mVideoView.start();
 }
 
+    // 新增测试源速度方法（确保在类作用域内）
+    private void testSourceSpeed(LiveChannelItem channelItem, int sourceIndex, OnSpeedTestListener listener) {
+        String url = channelItem.getChannelUrls().get(sourceIndex);
+        long startTime = System.currentTimeMillis();
+
+        OkGo.<String>get(url)
+            .execute(new AbsCallback<String>() {
+                @Override
+                public void onSuccess(Response<String> response) {
+                    long latency = System.currentTimeMillis() - startTime;
+                    listener.onSpeedTestResult(sourceIndex, latency);
+                }
+
+                @Override
+                public void onError(Response<String> response) {
+                    listener.onSpeedTestResult(sourceIndex, Long.MAX_VALUE);
+                }
+
+                @Override
+                public String convertResponse(okhttp3.Response response) throws Throwable {
+                    return response.body().string();
+                }
+            });
+    }
+
+    // 定义测速回调接口（确保在类作用域内）
+    interface OnSpeedTestListener {
+        void onSpeedTestResult(int sourceIndex, long latency);
+    }
 
     private void playNext() {
         if (!isCurrentLiveChannelValid()) return;
