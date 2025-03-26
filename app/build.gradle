@@ -131,8 +131,11 @@ dependencies {
     implementation 'com.github.alidili:FlowLayout:v1.5'
     implementation 'androidx.room:room-runtime:2.6.1'
     implementation 'androidx.multidex:multidex:2.0.1'
-    implementation 'com.squareup.okhttp3:okhttp:3.12.11'
-    implementation 'com.squareup.okio:okio:3.3.0'
+    
+    // 修改为 OkHttp 3.x 版本
+    implementation 'com.squareup.okhttp3:okhttp:3.12.13'
+    implementation 'com.squareup.okio:okio:1.17.5'
+    
     implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.49-androidx'
     implementation 'com.kingja.loadsir:loadsir:1.3.8'
     implementation 'com.google.code.gson:gson:2.10.1'
@@ -160,7 +163,6 @@ dependencies {
     implementation "androidx.media3:media3-session:$media3_version"
     implementation "androidx.media3:media3-decoder:$media3_version"
     implementation "androidx.media3:media3-extractor:$media3_version"
-    implementation "androidx.media3:media3-datasource-okhttp:$media3_version"
     
     implementation "com.github.anilbeesetti.nextlib:nextlib-media3ext:0.7.1"
     implementation "com.aliyun.sdk.android:AliyunPlayer:5.5.2.0-full"
