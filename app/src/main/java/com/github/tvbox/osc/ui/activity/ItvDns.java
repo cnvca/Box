@@ -80,6 +80,13 @@ public class ItvDns extends NanoHTTPD {
                     conn.getInputStream(),
                     conn.getContentLength()
                );
+			   
+			   // 添加CORS头
+            response.addHeader("Access-Control-Allow-Origin", "*");
+            response.addHeader("Access-Control-Allow-Methods", "GET");
+            response.addHeader("Access-Control-Allow-Headers", "Content-Type");
+            
+            return response;
            } catch (Exception e) {
                return newErrorResponse(e);
            }
@@ -312,9 +319,20 @@ public class ItvDns extends NanoHTTPD {
             String[] parts = header.split(": ");
             conn.setRequestProperty(parts[0], parts[1]);
         }
-        conn.setConnectTimeout(2000);
-        conn.setReadTimeout(2000);
-
+        conn.setConnectTimeout(5000);
+        conn.setReadTimeout(10000);
+        
+		// 处理重定向
+        conn.setInstanceFollowRedirects(true);
+	    
+		// 直接返回输入流，避免内存拷贝
+        return newFixedLengthResponse(
+            Response.Status.lookup(conn.getResponseCode()),
+            conn.getContentType(),
+            conn.getInputStream(),
+            conn.getContentLength()
+        );
+	
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try (InputStream in = conn.getInputStream()) {
             byte[] buffer = new byte[4096];
