@@ -155,7 +155,6 @@ dependencies {
     implementation "com.google.android.exoplayer:exoplayer-hls:2.19.1"
     implementation "com.google.android.exoplayer:exoplayer-dash:2.19.1"
     implementation "com.google.android.exoplayer:exoplayer-rtsp:2.19.1"
-    implementation "com.google.android.exoplayer:exoplayer-upstream:2.19.1" // 替代 data-source
     implementation "com.google.android.exoplayer:exoplayer-common:2.19.1"
 
     // 移除冲突的 media3 依赖
