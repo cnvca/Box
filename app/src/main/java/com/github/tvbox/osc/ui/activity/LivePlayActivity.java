@@ -469,7 +469,7 @@ public class LivePlayActivity extends BaseActivity {
                         break;
                     case KeyEvent.KEYCODE_DPAD_RIGHT:
                         if (!isVOD) {
-			    showChannelInfo(); // 显式调用 showChannelInfo()
+						    showChannelInfo(); // 显式调用 showChannelInfo()
                             playNextSource();
                         } else {
                             showChannelInfo();
@@ -953,20 +953,7 @@ public class LivePlayActivity extends BaseActivity {
         mVideoView.start();
         return true;
     }
-     
-	public void onUserSelectedSource(int selectedIndex) {
-        runOnUiThread(() -> {
-            if (currentLiveChannelItem != null) {
-                // 设置用户已选择标志
-                currentLiveChannelItem.setUserSelected(true);
-                // 直接使用用户选择的源播放
-                currentLiveChannelItem.setSourceIndex(selectedIndex);
-                playChannelInternal();
-            }
-        });
-    }
-	
-	
+
     //节目播放
 // 替换现有的 playChannel 方法
 private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
@@ -989,28 +976,26 @@ private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean
     currentLiveChannelItem.setinclude_back(currentLiveChannelItem.getUrl().indexOf("PLTV/8888") != -1);
 
     // 测速并选择最快的源
-if (currentLiveChannelItem.getSourceNum() > 1) {
-    // 使用 final 变量来存储最快的源索引
-    final int[] fastestSourceIndex = {0};
-    final LiveChannelItem finalChannelItem = currentLiveChannelItem; // 将 currentLiveChannelItem 转为 final
+    if (currentLiveChannelItem.getSourceNum() > 1) {
+        // 使用 final 变量来存储最快的源索引
+        final int[] fastestSourceIndex = {0};
+        final LiveChannelItem finalChannelItem = currentLiveChannelItem; // 将 currentLiveChannelItem 转为 final
 
-    for (int i = 0; i < currentLiveChannelItem.getSourceNum(); i++) {
-        testSourceSpeed(currentLiveChannelItem, i, (sourceIndex, latency) -> {
-            finalChannelItem.setSourceLatency(sourceIndex, latency);
+        for (int i = 0; i < currentLiveChannelItem.getSourceNum(); i++) {
+            testSourceSpeed(currentLiveChannelItem, i, (sourceIndex, latency) -> {
+                finalChannelItem.setSourceLatency(sourceIndex, latency);
 
-            // 如果所有源都测速完成，且用户没有手动选择过源，才自动选择最快的源
-            if (sourceIndex == finalChannelItem.getSourceNum() - 1) {
-                if (!finalChannelItem.isUserSelected()) { // 新增用户选择状态判断
+                // 如果所有源都测速完成，选择最快的源进行播放
+                if (sourceIndex == finalChannelItem.getSourceNum() - 1) {
                     fastestSourceIndex[0] = finalChannelItem.getFastestSourceIndex();
                     finalChannelItem.setSourceIndex(fastestSourceIndex[0]);
                     playChannelInternal();
                 }
-            }
-        });
+            });
+        }
+    } else {
+        playChannelInternal();
     }
-} else {
-    playChannelInternal();
-}
 
         // takagen99 : Moved update of Channel Info here before getting EPG (no dependency on EPG)
         mHandler.post(tv_sys_timeRunnable);
@@ -1068,35 +1053,6 @@ private void playChannelInternal() {
     mVideoView.start();
 }
 
-    // 新增测试源速度方法（确保在类作用域内）
-    private void testSourceSpeed(LiveChannelItem channelItem, int sourceIndex, OnSpeedTestListener listener) {
-        String url = channelItem.getChannelUrls().get(sourceIndex);
-        long startTime = System.currentTimeMillis();
-
-        OkGo.<String>get(url)
-            .execute(new AbsCallback<String>() {
-                @Override
-                public void onSuccess(Response<String> response) {
-                    long latency = System.currentTimeMillis() - startTime;
-                    listener.onSpeedTestResult(sourceIndex, latency);
-                }
-
-                @Override
-                public void onError(Response<String> response) {
-                    listener.onSpeedTestResult(sourceIndex, Long.MAX_VALUE);
-                }
-
-                @Override
-                public String convertResponse(okhttp3.Response response) throws Throwable {
-                    return response.body().string();
-                }
-            });
-    }
-
-    // 定义测速回调接口（确保在类作用域内）
-    interface OnSpeedTestListener {
-        void onSpeedTestResult(int sourceIndex, long latency);
-    }
 
     private void playNext() {
         if (!isCurrentLiveChannelValid()) return;
