@@ -469,7 +469,7 @@ public class LivePlayActivity extends BaseActivity {
                         break;
                     case KeyEvent.KEYCODE_DPAD_RIGHT:
                         if (!isVOD) {
-						    showChannelInfo(); // 显式调用 showChannelInfo()
+//						    showChannelInfo(); // 显式调用 showChannelInfo()
                             playNextSource();
                         } else {
                             showChannelInfo();
@@ -976,26 +976,37 @@ private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean
     currentLiveChannelItem.setinclude_back(currentLiveChannelItem.getUrl().indexOf("PLTV/8888") != -1);
 
     // 测速并选择最快的源
-    if (currentLiveChannelItem.getSourceNum() > 1) {
-        // 使用 final 变量来存储最快的源索引
-        final int[] fastestSourceIndex = {0};
-        final LiveChannelItem finalChannelItem = currentLiveChannelItem; // 将 currentLiveChannelItem 转为 final
+if (currentLiveChannelItem.getSourceNum() > 1) {
+    // 使用 final 变量来存储最快的源索引
+    final int[] fastestSourceIndex = {0};
+    final LiveChannelItem finalChannelItem = currentLiveChannelItem; // 将 currentLiveChannelItem 转为 final
 
-        for (int i = 0; i < currentLiveChannelItem.getSourceNum(); i++) {
-            testSourceSpeed(currentLiveChannelItem, i, (sourceIndex, latency) -> {
-                finalChannelItem.setSourceLatency(sourceIndex, latency);
+    for (int i = 0; i < currentLiveChannelItem.getSourceNum(); i++) {
+        testSourceSpeed(currentLiveChannelItem, i, (sourceIndex, latency) -> {
+            finalChannelItem.setSourceLatency(sourceIndex, latency);
 
-                // 如果所有源都测速完成，选择最快的源进行播放
-                if (sourceIndex == finalChannelItem.getSourceNum() - 1) {
+            // 如果所有源都测速完成，且用户没有手动选择过源，才自动选择最快的源
+            if (sourceIndex == finalChannelItem.getSourceNum() - 1) {
+                if (!finalChannelItem.isUserSelected()) { // 新增用户选择状态判断
                     fastestSourceIndex[0] = finalChannelItem.getFastestSourceIndex();
                     finalChannelItem.setSourceIndex(fastestSourceIndex[0]);
                     playChannelInternal();
                 }
-            });
-        }
-    } else {
-        playChannelInternal();
+            }
+        });
     }
+} else {
+    playChannelInternal();
+}
+
+// 当用户手动选择播放源时调用这个方法
+public void onUserSelectedSource(int selectedIndex) {
+    // 设置用户已选择标志
+    currentLiveChannelItem.setUserSelected(true);
+    // 直接使用用户选择的源播放
+    currentLiveChannelItem.setSourceIndex(selectedIndex);
+    playChannelInternal();
+}
 
         // takagen99 : Moved update of Channel Info here before getting EPG (no dependency on EPG)
         mHandler.post(tv_sys_timeRunnable);
