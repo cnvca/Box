@@ -32,12 +32,12 @@ public class ItvDns extends NanoHTTPD {
     public static boolean isRunning() {
         return instance != null && instance.isAlive();
     }
-	
+
     public static final int PORT = 9978;
     private static final Gson gson = new Gson();
     private static ItvDns instance;
     private Context context;
-    
+
     // JSON配置
     private static final String HOSTIP_JSON_URL = "https://api.wheiss.com/json/yditv/hostip.json";
     private static final String HOSTIP_YW_JSON_URL = "http://611594.lovexyz.cc/live/hostip_yw";
@@ -46,7 +46,7 @@ public class ItvDns extends NanoHTTPD {
 
     public ItvDns(Context context) throws IOException {
         super(PORT);
-        this.context = context.getApplicationContext();
+        this.context = context.getApplicationContext(); // 使用 ApplicationContext
         initJsonFiles();
     }
 
@@ -61,16 +61,7 @@ public class ItvDns extends NanoHTTPD {
             }
         }
     }
-    
-	public class ItvDns {
-        public Map<String, String> someMethod() {
-            Map<String, String> response = new HashMap<>(); // 定义并初始化 response 变量
-            response.addHeader("Access-Control-Allow-Origin", "*");
-            response.addHeader("Access-Control-Allow-Methods", "GET");
-            response.addHeader("Access-Control-Allow-Headers", "Content-Type");
-            return response;
-        }
-    }
+
     @Override
     public Response serve(IHTTPSession session) {
         String uri = session.getUri();
@@ -79,36 +70,40 @@ public class ItvDns extends NanoHTTPD {
             try {
                 URL url = new URL(originalUrl);
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            
+
                 // 复制请求头
                 for (String key : session.getHeaders().keySet()) {
                     conn.setRequestProperty(key, session.getHeaders().get(key));
                 }
-            
-                return newFixedLengthResponse(
-                    Response.Status.lookup(conn.getResponseCode()),
-                    conn.getContentType(),
-                    conn.getInputStream(),
-                    conn.getContentLength()
-               );
-			   
-			   // 添加CORS头
-            response.addHeader("Access-Control-Allow-Origin", "*");
-            response.addHeader("Access-Control-Allow-Methods", "GET");
-            response.addHeader("Access-Control-Allow-Headers", "Content-Type");
-            
-            return response;
-           } catch (Exception e) {
-               return newErrorResponse(e);
-           }
+
+                // 设置重定向策略
+                conn.setInstanceFollowRedirects(true);
+
+                // 创建响应对象
+                Response response = newFixedLengthResponse(
+                        Response.Status.lookup(conn.getResponseCode()),
+                        conn.getContentType(),
+                        conn.getInputStream(),
+                        conn.getContentLength()
+                );
+
+                // 添加 CORS 头
+                response.addHeader("Access-Control-Allow-Origin", "*");
+                response.addHeader("Access-Control-Allow-Methods", "GET");
+                response.addHeader("Access-Control-Allow-Headers", "Content-Type");
+
+                return response;
+            } catch (Exception e) {
+                return newErrorResponse(e);
+            }
         }
         return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", "Invalid request");
     }
-    
-	private Response newErrorResponse(Exception e) {
+
+    private Response newErrorResponse(Exception e) {
         return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", e.getMessage());
     }
-	
+
     private Response handleTsRequest(Map<String, String> params) throws Exception {
         String ts = params.get("ts");
         String hostip = params.get("hostip");
@@ -126,8 +121,8 @@ public class ItvDns extends NanoHTTPD {
         String url = decodedUts.replace(decodedUrl.getHost(), hostip);
 
         List<String> headers = Arrays.asList(
-            "User-Agent: okhttp/3.12.3",
-            "Host: " + decodedUrl.getHost()
+                "User-Agent: okhttp/3.12.3",
+                "Host: " + decodedUrl.getHost()
         );
 
         if ("1".equals(mode) || (System.currentTimeMillis()/1000 - Long.parseLong(time)) < 20) {
@@ -164,17 +159,17 @@ public class ItvDns extends NanoHTTPD {
 
         URL originalUrl = new URL(decodedU);
         String[] testUrls = {
-            decodedU.replace(originalUrl.getHost(), hostip),
-            decodedU.replace(originalUrl.getHost(), hostipa),
-            decodedU.replace(originalUrl.getHost(), hostipb)
+                decodedU.replace(originalUrl.getHost(), hostip),
+                decodedU.replace(originalUrl.getHost(), hostipa),
+                decodedU.replace(originalUrl.getHost(), hostipb)
         };
 
         String m3u8Content = null;
         for (String testUrl : testUrls) {
             try {
                 m3u8Content = getUrlContent(testUrl, Arrays.asList(
-                    "User-Agent: okhttp/3.12.3",
-                    "Host: " + originalUrl.getHost()
+                        "User-Agent: okhttp/3.12.3",
+                        "Host: " + originalUrl.getHost()
                 ));
                 if (m3u8Content != null && m3u8Content.contains("EXTM3U")) {
                     break;
@@ -191,19 +186,19 @@ public class ItvDns extends NanoHTTPD {
         StringBuilder result = new StringBuilder();
         for (String line : m3u8Content.split("\n")) {
             if (line.trim().isEmpty()) continue;
-            
+
             if (line.contains(".ts")) {
                 if (!line.startsWith("http")) {
                     line = urlPath + line;
                 }
                 result.append(proxyUrl)
-                     .append(URLEncoder.encode(line, StandardCharsets.UTF_8.name()))
-                     .append("&hostip=").append(hostip)
-                     .append("&hostipa=").append(hostipa)
-                     .append("&hostipb=").append(hostipb)
-                     .append("&mode=").append(mode)
-                     .append("&time=").append(time)
-                     .append("\n");
+                        .append(URLEncoder.encode(line, StandardCharsets.UTF_8.name()))
+                        .append("&hostip=").append(hostip)
+                        .append("&hostipa=").append(hostipa)
+                        .append("&hostipb=").append(hostipb)
+                        .append("&mode=").append(mode)
+                        .append("&time=").append(time)
+                        .append("\n");
             } else {
                 result.append(line).append("\n");
             }
@@ -221,7 +216,7 @@ public class ItvDns extends NanoHTTPD {
         String playseek = params.get("playseek");
         String yw = params.get("yw");
         String mode = params.get("mode");
-        
+
         String[] ips = getBestIps(channelId, yw);
         String hostip = ips[0];
         String hostipa = ips[1];
@@ -229,18 +224,18 @@ public class ItvDns extends NanoHTTPD {
 
         String originalUrl = buildOriginalUrl(channelId, contentId, stbId, playseek);
         String finalUrl = getFinalUrl(originalUrl, channelId);
-        
+
         if ("3".equals(mode)) {
             return newFixedLengthResponse(Status.OK, "text/plain", finalUrl);
         }
 
-        String proxyUrl = "http://127.0.0.1:" + PORT + "/?u=" + 
-            URLEncoder.encode(finalUrl, StandardCharsets.UTF_8.name()) + 
-            "&hostip=" + hostip + 
-            "&hostipa=" + hostipa + 
-            "&hostipb=" + hostipb + 
-            "&mode=" + mode + 
-            "&time=" + (System.currentTimeMillis()/1000);
+        String proxyUrl = "http://127.0.0.1:" + PORT + "/?u=" +
+                URLEncoder.encode(finalUrl, StandardCharsets.UTF_8.name()) +
+                "&hostip=" + hostip +
+                "&hostipa=" + hostipa +
+                "&hostipb=" + hostipb +
+                "&mode=" + mode +
+                "&time=" + (System.currentTimeMillis()/1000);
 
         Response response = newFixedLengthResponse(Status.TEMPORARY_REDIRECT, "text/plain", "");
         response.addHeader("Location", proxyUrl);
@@ -248,20 +243,20 @@ public class ItvDns extends NanoHTTPD {
     }
 
     private String[] getBestIps(String channelId, String yw) throws Exception {
-        File jsonFile = new File(context.getFilesDir(), 
-            "json/yditv/" + ("1".equals(yw) ? HOSTIP_YW_JSON_FILE : HOSTIP_JSON_FILE));
-        
-        if (!jsonFile.exists() || 
-            (System.currentTimeMillis() - jsonFile.lastModified()) > 3600000) {
+        File jsonFile = new File(context.getFilesDir(),
+                "json/yditv/" + ("1".equals(yw) ? HOSTIP_YW_JSON_FILE : HOSTIP_JSON_FILE));
+
+        if (!jsonFile.exists() ||
+                (System.currentTimeMillis() - jsonFile.lastModified()) > 3600000) {
             downloadJsonFile(
-                "1".equals(yw) ? HOSTIP_YW_JSON_URL : HOSTIP_JSON_URL, 
-                jsonFile
+                    "1".equals(yw) ? HOSTIP_YW_JSON_URL : HOSTIP_JSON_URL,
+                    jsonFile
             );
         }
 
         JsonObject json = gson.fromJson(new FileReader(jsonFile), JsonObject.class);
         JsonArray ips = json.getAsJsonObject("ipsArray").getAsJsonArray(channelId);
-        
+
         if (ips == null || ips.size() == 0) {
             return new String[]{"39.134.95.33", "39.135.97.80", "39.135.238.209"};
         }
@@ -274,9 +269,9 @@ public class ItvDns extends NanoHTTPD {
         } else {
             int section = size / 3;
             return new String[]{
-                ips.get(random.nextInt(section)).getAsString(),
-                ips.get(random.nextInt(section) + section).getAsString(),
-                ips.get(random.nextInt(size - 2*section) + 2*section).getAsString()
+                    ips.get(random.nextInt(section)).getAsString(),
+                    ips.get(random.nextInt(section) + section).getAsString(),
+                    ips.get(random.nextInt(size - 2*section) + 2*section).getAsString()
             };
         }
     }
@@ -285,13 +280,13 @@ public class ItvDns extends NanoHTTPD {
         if (playseek != null && !playseek.isEmpty()) {
             String[] times = (playseek.replace("-", ".0") + ".0").split("(?<=\\G.{8})");
             return String.format(
-                "http://gslbserv.itv.cmvideo.cn/index.m3u8?channel-id=%s&Contentid=%s&livemode=4&stbId=%s&starttime=%sT%s0Z&endtime=%sT%s0Z",
-                channelId, contentId, stbId, times[0], times[1], times[2], times[3]
+                    "http://gslbserv.itv.cmvideo.cn/index.m3u8?channel-id=%s&Contentid=%s&livemode=4&stbId=%s&starttime=%sT%s0Z&endtime=%sT%s0Z",
+                    channelId, contentId, stbId, times[0], times[1], times[2], times[3]
             );
         } else {
             return String.format(
-                "http://gslbserv.itv.cmvideo.cn/index.m3u8?channel-id=%s&Contentid=%s&livemode=1&stbId=%s",
-                channelId, contentId, stbId
+                    "http://gslbserv.itv.cmvideo.cn/index.m3u8?channel-id=%s&Contentid=%s&livemode=1&stbId=%s",
+                    channelId, contentId, stbId
             );
         }
     }
@@ -300,8 +295,8 @@ public class ItvDns extends NanoHTTPD {
         String url = getRedirectUrl(originalUrl, Arrays.asList("User-Agent: okhttp/3.12.3"));
         if (url == null) {
             url = getRedirectUrl(
-                originalUrl.replace("gslbserv.itv.cmvideo.cn", "221.181.100.64"),
-                Arrays.asList("User-Agent: okhttp/3.12.3", "Host: gslbserv.itv.cmvideo.cn")
+                    originalUrl.replace("gslbserv.itv.cmvideo.cn", "221.181.100.64"),
+                    Arrays.asList("User-Agent: okhttp/3.12.3", "Host: gslbserv.itv.cmvideo.cn")
             );
         }
 
@@ -332,27 +327,17 @@ public class ItvDns extends NanoHTTPD {
         }
         conn.setConnectTimeout(5000);
         conn.setReadTimeout(10000);
-        
-		// 处理重定向
+
+        // 处理重定向
         conn.setInstanceFollowRedirects(true);
-	    
-		// 直接返回输入流，避免内存拷贝
+
+        // 直接返回输入流
         return newFixedLengthResponse(
-            Response.Status.lookup(conn.getResponseCode()),
-            conn.getContentType(),
-            conn.getInputStream(),
-            conn.getContentLength()
+                Response.Status.lookup(conn.getResponseCode()),
+                conn.getContentType(),
+                conn.getInputStream(),
+                conn.getContentLength()
         );
-	
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try (InputStream in = conn.getInputStream()) {
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-            while ((bytesRead = in.read(buffer)) != -1) {
-                out.write(buffer, 0, bytesRead);
-            }
-        }
-        return newFixedLengthResponse(Status.OK, "video/mp2t", new ByteArrayInputStream(out.toByteArray()), out.size());
     }
 
     private String getUrlContent(String url, List<String> headers) throws Exception {
@@ -362,7 +347,7 @@ public class ItvDns extends NanoHTTPD {
             conn.setRequestProperty(parts[0], parts[1]);
         }
         conn.setConnectTimeout(3000);
-        
+
         StringBuilder result = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()))) {
             String line;
@@ -381,7 +366,7 @@ public class ItvDns extends NanoHTTPD {
             conn.setRequestProperty(parts[0], parts[1]);
         }
         conn.setConnectTimeout(2000);
-        
+
         int code = conn.getResponseCode();
         if (code == HttpURLConnection.HTTP_MOVED_TEMP || code == HttpURLConnection.HTTP_MOVED_PERM) {
             return conn.getHeaderField("Location");
@@ -392,10 +377,10 @@ public class ItvDns extends NanoHTTPD {
     private void initJsonFiles() {
         File jsonDir = new File(context.getFilesDir(), "json/yditv");
         if (!jsonDir.exists()) jsonDir.mkdirs();
-        
+
         File hostipFile = new File(jsonDir, HOSTIP_JSON_FILE);
         if (!hostipFile.exists()) downloadJsonFile(HOSTIP_JSON_URL, hostipFile);
-        
+
         File hostipYwFile = new File(jsonDir, HOSTIP_YW_JSON_FILE);
         if (!hostipYwFile.exists()) downloadJsonFile(HOSTIP_YW_JSON_URL, hostipYwFile);
     }
@@ -405,7 +390,7 @@ public class ItvDns extends NanoHTTPD {
             try {
                 HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
                 conn.setConnectTimeout(5000);
-                
+
                 try (InputStream in = conn.getInputStream();
                      FileOutputStream out = new FileOutputStream(outputFile)) {
                     byte[] buffer = new byte[4096];
@@ -436,19 +421,19 @@ public class ItvDns extends NanoHTTPD {
 
     public static String getProxyUrl(String originalUrl, String hostip, String hostipa, String hostipb, String mode, String time) {
         try {
-            return "http://127.0.0.1:" + PORT + "/?u=" + 
-                   URLEncoder.encode(originalUrl, StandardCharsets.UTF_8.name()) + 
-                   "&hostip=" + hostip + 
-                   "&hostipa=" + hostipa + 
-                   "&hostipb=" + hostipb + 
-                   "&mode=" + mode + 
-                   "&time=" + time;
+            return "http://127.0.0.1:" + PORT + "/?u=" +
+                    URLEncoder.encode(originalUrl, StandardCharsets.UTF_8.name()) +
+                    "&hostip=" + hostip +
+                    "&hostipa=" + hostipa +
+                    "&hostipb=" + hostipb +
+                    "&mode=" + mode +
+                    "&time=" + time;
         } catch (Exception e) {
             return originalUrl;
         }
     }
-	
-	/**
+
+    /**
      * 获取全局代理配置
      */
     public static Proxy getGlobalProxy() {
