@@ -1162,6 +1162,19 @@ private void playChannelInternal() {
     };
 
     private void initVideoView() {
+	    // 使用ExoPlayer时的配置
+        if (livePlayerManager.getLivePlayerType() == LivePlayerManager.PLAYER_EXO) {
+            mVideoView.setPlayer(new ExoPlayer.Builder(this)
+                .setTrackSelector(new DefaultTrackSelector(this))
+                .build());
+            mVideoView.setMediaSourceFactory(new DefaultMediaSourceFactory(
+                new DefaultHttpDataSourceFactory("ExoPlayer", null,
+                    DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
+                    DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
+                    true  // 启用重定向
+                )
+           ));
+        }
         controller = new LiveController(this);
         controller.setListener(new LiveController.LiveControlListener() {
             @Override
