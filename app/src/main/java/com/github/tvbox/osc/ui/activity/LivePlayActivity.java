@@ -1170,22 +1170,6 @@ private void playChannelInternal() {
         }
     };
 
-public class LivePlayActivity extends AppCompatActivity {
-
-    private VideoView mVideoView;
-    private LivePlayerManager livePlayerManager;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_live_play);
-
-        mVideoView = findViewById(R.id.video_view);
-        livePlayerManager = new LivePlayerManager();
-        livePlayerManager.init(mVideoView);
-
-        initVideoView();
-    }
 
     private void initVideoView() {
         if (livePlayerManager.getLivePlayerType() == HawkConfig.PLAY_TYPE_EXO) {
