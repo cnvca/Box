@@ -5,6 +5,12 @@ import static xyz.doikki.videoplayer.util.PlayerUtils.stringForTimeVod;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import androidx.media3.ExoPlayer;
+import androidx.media3.source.DefaultMediaSourceFactory;
+import androidx.media3.trackselection.DefaultTrackSelector;
+import androidx.media3.upstream.DefaultHttpDataSource;
+import androidx.media3.upstream.DefaultHttpDataSourceFactory;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -87,14 +93,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TimeZone;
 
-import androidx.appcompat.app.AppCompatActivity;
-import android.os.Bundle;
 
-import androidx.media3.ExoPlayer;
-import androidx.media3.source.DefaultMediaSourceFactory;
-import androidx.media3.trackselection.DefaultTrackSelector;
-import androidx.media3.upstream.DefaultHttpDataSource;
-import androidx.media3.upstream.DefaultHttpDataSourceFactory;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -1171,24 +1170,42 @@ private void playChannelInternal() {
         }
     };
 
+public class LivePlayActivity extends AppCompatActivity {
+
+    private VideoView mVideoView;
+    private LivePlayerManager livePlayerManager;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_live_play);
+
+        mVideoView = findViewById(R.id.video_view);
+        livePlayerManager = new LivePlayerManager();
+        livePlayerManager.init(mVideoView);
+
+        initVideoView();
+    }
+
     private void initVideoView() {
-        
-		// 使用ExoPlayer时的配置
         if (livePlayerManager.getLivePlayerType() == HawkConfig.PLAY_TYPE_EXO) {
-            DefaultTrackSelector trackSelector = new DefaultTrackSelector(this);
+            // 创建 ExoPlayer 实例
             ExoPlayer player = new ExoPlayer.Builder(this)
-                   .setTrackSelector(trackSelector)
-                   .build();
+                .setTrackSelector(new DefaultTrackSelector(this))
+                .build();
             mVideoView.setPlayer(player);
 
+            // 配置数据源工厂
             DefaultHttpDataSourceFactory dataSourceFactory = new DefaultHttpDataSourceFactory(
-                    "ExoPlayer", 
-                    null,
-                    DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
-                    DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
-                    true
+                "ExoPlayer",
+                null,
+                DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
+                DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
+                true
             );
-            DefaultMediaSourceFactory mediaSourceFactory = new DefaultMediaSourceFactory(dataSourceFactory);
+
+            // 创建媒体源工厂
+            MediaSourceFactory mediaSourceFactory = new MediaSourceFactory(dataSourceFactory);
             mVideoView.setMediaSourceFactory(mediaSourceFactory);
         }
 		
