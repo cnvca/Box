@@ -33,6 +33,7 @@ public class HawkConfig {
     // Player Settings
     public static final String SHOW_PREVIEW = "show_preview";
     public static final String IJK_CODEC = "ijk_codec";
+    public static final int PLAY_TYPE_EXO = 2; // 添加 ExoPlayer 类型
     public static final String PLAY_TYPE = "play_type";     //0 系统 1 ijk 2 exo 10 MXPlayer
     public static final String PLAY_RENDER = "play_render"; //0 texture 2
     public static final String PLAY_SCALE = "play_scale";   //
