@@ -6,17 +6,16 @@ repositories {
     google()
     mavenCentral()
     maven { url 'https://jitpack.io' }
-    maven { url 'https://repo1.maven.org/maven2/' } // 添加 Maven 中央仓库
+    maven { url 'https://repo1.maven.org/maven2/' }
 }
-// 定义一个函数来获取当前日期（yyyyMMdd）
+
 def static buildTime() {
     return new Date().format("yyyyMMdd", TimeZone.getTimeZone("GMT+08:00"))
 }
 
 def generateVersionCode() {
     def versionCodeFile = file('versionCode.txt')
-    def versionCode = 1008 // 默认值
-    // 加锁确保文件操作的原子性
+    def versionCode = 1008
     synchronized (this) {
         if (versionCodeFile.exists()) {
             versionCodeFile.withReader { reader ->
@@ -37,19 +36,16 @@ android {
         applicationId 'com.github.tvbox.osc.tk'
         minSdkVersion 21
         targetSdkVersion 33
-        versionCode generateVersionCode() // 每次编译时调用 generateVersionCode()
+        versionCode generateVersionCode()
         versionName "1.0.".concat(buildTime())
         multiDexEnabled true
 
-
-        // 设置 room 的 Schema 的位置
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = ["room.schemaLocation": "$projectDir/schemas".toString()]
             }
         }
     }
-
 
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
@@ -59,7 +55,6 @@ android {
         release {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             minifyEnabled true
-
         }
     }
     flavorDimensions +=[ "abi","brand" ]
@@ -72,7 +67,6 @@ android {
         }
 
         hisense {
-            //海信的
             applicationId 'com.hgys.tv'
             dimension = "brand"
         }
@@ -80,7 +74,6 @@ android {
     applicationVariants.configureEach { variant ->
         variant.outputs.configureEach { output ->
             def flavorNames = variant.productFlavors.collect { it.name }.join('-')
-            // 构建自定义文件名
             def fileName = "TVBox_${variant.buildType.name}-${flavorNames}.apk"
             outputFileName = fileName
         }
@@ -117,7 +110,6 @@ dependencies {
     api fileTree(dir: "libs", include: ['*.jar', '*.aar'])
     implementation 'org.conscrypt:conscrypt-android:2.5.2'
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    // for WebDAV
     implementation('com.github.thegrizzlylabs:sardine-android:0.8') {
         exclude group: 'com.squareup.okhttp3'
     }
@@ -133,10 +125,8 @@ dependencies {
     implementation 'com.google.android.material:material:1.12.0'
     implementation files('libs/thunder.jar')
     implementation project(path: ':quickjs')
-    // Dagger
     implementation 'com.google.dagger:dagger:2.45'
     kapt 'com.google.dagger:dagger-compiler:2.45'
-    
     kapt 'androidx.room:room-compiler:2.6.1'
     implementation 'com.github.alidili:FlowLayout:v1.5'
     implementation 'androidx.room:room-runtime:2.6.1'
@@ -157,25 +147,26 @@ dependencies {
     implementation 'net.sourceforge.streamsupport:android-retrofuture:1.7.4'
     implementation 'androidx.annotation:annotation:1.8.2'
     
-    // 更新 media3 相关依赖到最新版本
-    implementation "androidx.media3:media3-exoplayer:1.3.1"
-    implementation "androidx.media3:media3-ui:1.3.1"
-    implementation "androidx.media3:media3-exoplayer-dash:1.3.1"
-    implementation "androidx.media3:media3-exoplayer-hls:1.3.1"
-    implementation "androidx.media3:media3-exoplayer-rtsp:1.3.1"
-    implementation "androidx.media3:media3-datasource-rtmp:1.3.1"
-    implementation "androidx.media3:media3-datasource:1.3.1"
-    implementation "androidx.media3:media3-common:1.3.1"
-    implementation "androidx.media3:media3-session:1.3.1"
-    implementation "androidx.media3:media3-decoder:1.3.1"
-    implementation "androidx.media3:media3-extractor:1.3.1"
+    // Media3 依赖
+    def media3_version = "1.3.1"
+    implementation "androidx.media3:media3-exoplayer:$media3_version"
+    implementation "androidx.media3:media3-ui:$media3_version"
+    implementation "androidx.media3:media3-exoplayer-dash:$media3_version"
+    implementation "androidx.media3:media3-exoplayer-hls:$media3_version"
+    implementation "androidx.media3:media3-exoplayer-rtsp:$media3_version"
+    implementation "androidx.media3:media3-datasource-rtmp:$media3_version"
+    implementation "androidx.media3:media3-datasource:$media3_version"
+    implementation "androidx.media3:media3-common:$media3_version"
+    implementation "androidx.media3:media3-session:$media3_version"
+    implementation "androidx.media3:media3-decoder:$media3_version"
+    implementation "androidx.media3:media3-extractor:$media3_version"
+    implementation "androidx.media3:media3-datasource-http:$media3_version"
+    
     implementation "com.github.anilbeesetti.nextlib:nextlib-media3ext:0.7.1"
-
     implementation "com.aliyun.sdk.android:AliyunPlayer:5.5.2.0-full"
     implementation 'com.alivc.conan:AlivcConan:0.9.5'
     implementation 'xyz.doikki.android.dkplayer:dkplayer-ui:3.3.7'
     implementation 'xyz.doikki.android.dkplayer:videocache:3.3.7'
-
     implementation 'com.lzy.net:okgo:3.0.4'
     implementation 'com.owen:tv-recyclerview:3.0.0'
     implementation 'com.blankj:utilcodex:1.31.0'
