@@ -1,6 +1,7 @@
 package com.github.tvbox.osc.bean;
-
+// 在文件顶部添加
 import com.google.gson.JsonObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,13 +27,6 @@ public class LiveChannelItem {
     public int sourceIndex = 0;
     public int sourceNum = 0;
     public boolean include_back = false;
-    
-    // 新增用户选择状态标志
-    private boolean isUserSelected = false;
-    private List<Long> sourceLatencies = new ArrayList<>();
-    private String channelId;
-    private String contentId;
-    private String stbId = "toShengfen"; // 默认值
 
     public void setinclude_back(boolean include_back) {
         this.include_back = include_back;
@@ -40,15 +34,6 @@ public class LiveChannelItem {
 
     public boolean getinclude_back() {
         return include_back;
-    }
-
-    // 用户选择状态相关方法
-    public boolean isUserSelected() {
-        return isUserSelected;
-    }
-
-    public void setUserSelected(boolean userSelected) {
-        isUserSelected = userSelected;
     }
 
     public void setChannelIndex(int channelIndex) {
@@ -122,7 +107,42 @@ public class LiveChannelItem {
         return channelSourceNames.get(sourceIndex);
     }
 
-    // 测速相关方法
+    // 在 LiveChannelItem 类中添加以下字段和方法
+    private List<Long> sourceLatencies = new ArrayList<>();
+	
+    private String channelId;
+    private String contentId;
+    private String stbId = "toShengfen"; // 默认值
+
+    // Getter/Setter
+    public String getChannelId() { return channelId; }
+    public String getContentId() { return contentId; }
+    public String getStbId() { return stbId; }
+
+    public void setChannelId(String id) { 
+    // 基础验证
+        this.channelId = (id != null) ? id.trim() : "";
+    }
+
+    public void setContentId(String id) {
+        this.contentId = (id != null) ? id.trim() : "";
+    }
+
+    public void setStbId(String id) {
+        this.stbId = (id != null) ? id : "toShengfen";
+    }
+
+   // 新增：从JSON初始化
+    public void initFromJson(JsonObject json) {
+      if (json != null) {
+        setChannelId(json.get("channelId").getAsString());
+        setContentId(json.get("contentId").getAsString());
+        if (json.has("stbId")) {
+            setStbId(json.get("stbId").getAsString());
+          }
+       }
+    }
+	
     public void setSourceLatency(int sourceIndex, long latency) {
         if (sourceLatencies.size() <= sourceIndex) {
             for (int i = sourceLatencies.size(); i <= sourceIndex; i++) {
@@ -142,33 +162,5 @@ public class LiveChannelItem {
             }
         }
         return fastestIndex;
-    }
-
-    // STB相关方法
-    public String getChannelId() { return channelId; }
-    public String getContentId() { return contentId; }
-    public String getStbId() { return stbId; }
-
-    public void setChannelId(String id) { 
-        this.channelId = (id != null) ? id.trim() : "";
-    }
-
-    public void setContentId(String id) {
-        this.contentId = (id != null) ? id.trim() : "";
-    }
-
-    public void setStbId(String id) {
-        this.stbId = (id != null) ? id : "toShengfen";
-    }
-
-    // JSON初始化方法
-    public void initFromJson(JsonObject json) {
-        if (json != null) {
-            setChannelId(json.get("channelId").getAsString());
-            setContentId(json.get("contentId").getAsString());
-            if (json.has("stbId")) {
-                setStbId(json.get("stbId").getAsString());
-            }
-        }
     }
 }
