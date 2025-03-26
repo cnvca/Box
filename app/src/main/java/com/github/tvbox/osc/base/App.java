@@ -7,7 +7,6 @@ import android.os.Looper;
 import androidx.core.os.HandlerCompat;
 import androidx.multidex.MultiDexApplication;
 
-import com.github.tvbox.osc.ui.activity.ItvDns;
 import com.github.catvod.crawler.JarLoader;
 import com.github.catvod.crawler.JsLoader;
 import com.github.tvbox.osc.R;
@@ -59,10 +58,9 @@ public class App extends MultiDexApplication {
         handler = HandlerCompat.createAsync(Looper.getMainLooper());
     }
 
-        @Override
-        public void onCreate() {
+    @Override
+    public void onCreate() {
         super.onCreate();
-        
         SubtitleHelper.initSubtitleColor(this);
         initParams();
         // takagen99 : Initialize Locale
@@ -75,7 +73,6 @@ public class App extends MultiDexApplication {
         EpgUtil.init();
         // 初始化Web服务器
         ControlManager.init(this);
-
         //初始化数据库
         AppDataManager.init();
         LoadSir.beginBuilder()
@@ -87,9 +84,6 @@ public class App extends MultiDexApplication {
                 .setSupportSP(false)
                 .setSupportSubunits(Subunits.MM);
         PlayerHelper.init();
-
-        // 启动DNS代理服务
-        ItvDns.startLocalProxyServer(this);
 
         // Delete Cache
         /*File dir = getCacheDir();
