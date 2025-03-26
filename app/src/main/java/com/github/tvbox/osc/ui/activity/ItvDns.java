@@ -18,6 +18,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import fi.iki.elonen.NanoHTTPD;
 import fi.iki.elonen.NanoHTTPD.Response;
@@ -59,7 +61,16 @@ public class ItvDns extends NanoHTTPD {
             }
         }
     }
-
+    
+	public class ItvDns {
+        public Map<String, String> someMethod() {
+            Map<String, String> response = new HashMap<>(); // 定义并初始化 response 变量
+            response.addHeader("Access-Control-Allow-Origin", "*");
+            response.addHeader("Access-Control-Allow-Methods", "GET");
+            response.addHeader("Access-Control-Allow-Headers", "Content-Type");
+            return response;
+        }
+    }
     @Override
     public Response serve(IHTTPSession session) {
         String uri = session.getUri();
