@@ -160,7 +160,7 @@ dependencies {
     implementation "androidx.media3:media3-session:$media3_version"
     implementation "androidx.media3:media3-decoder:$media3_version"
     implementation "androidx.media3:media3-extractor:$media3_version"
-    implementation "androidx.media3:media3-datasource-http:$media3_version"
+    implementation "androidx.media3:media3-datasource-okhttp:$media3_version"
     
     implementation "com.github.anilbeesetti.nextlib:nextlib-media3ext:0.7.1"
     implementation "com.aliyun.sdk.android:AliyunPlayer:5.5.2.0-full"
