@@ -86,6 +86,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TimeZone;
 
+import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
+import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
+import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.Map;
@@ -228,7 +233,7 @@ public class LivePlayActivity extends BaseActivity {
         // Getting EPG Address
         epgStringAddress = Hawk.get(HawkConfig.EPG_URL, "");
         if (StringUtils.isBlank(epgStringAddress)) {
-            epgStringAddress = "http://epg.hgys.cc/";
+            epgStringAddress = "http://epg.hgys.cc/kkk";
 //            Hawk.put(HawkConfig.EPG_URL, epgStringAddress);
         }
         // http://epg.aishangtv.top/live_proxy_epg_bc.php
@@ -1162,8 +1167,9 @@ private void playChannelInternal() {
     };
 
     private void initVideoView() {
-	    // 使用ExoPlayer时的配置
-        if (livePlayerManager.getLivePlayerType() == LivePlayerManager.PLAYER_EXO) {
+        
+		// 使用ExoPlayer时的配置
+        if (livePlayerManager.getLivePlayerType() == HawkConfig.PLAY_TYPE_EXO) {
             mVideoView.setPlayer(new ExoPlayer.Builder(this)
                 .setTrackSelector(new DefaultTrackSelector(this))
                 .build());
@@ -1173,8 +1179,9 @@ private void playChannelInternal() {
                     DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
                     true  // 启用重定向
                 )
-           ));
+            ));
         }
+		
         controller = new LiveController(this);
         controller.setListener(new LiveController.LiveControlListener() {
             @Override
