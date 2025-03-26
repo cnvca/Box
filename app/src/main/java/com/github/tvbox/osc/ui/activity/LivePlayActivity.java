@@ -929,22 +929,6 @@ public class LivePlayActivity extends BaseActivity {
         });
     }
 
-    // 在类变量声明部分添加
-    private String getProxyPlayUrl(LiveChannelItem item) {
-        String baseUrl = "http://127.0.0.1:9978/";
-        String channelId = item.getChannelId();
-        String contentId = item.getContentId();
-    
-    // 使用ItvDns提供的标准参数格式
-        return baseUrl + "?channel-id=" + channelId + 
-               "&Contentid=" + contentId + 
-               "&livemode=1" + 
-               "&stbId=toShengfen" +  // 固定值
-               "&mode=0" +            // 默认模式
-               "&yw=1";               // 默认标识
-    }
-	
-	
     private boolean replayChannel() {
         if (mVideoView == null) return true;
         mVideoView.release();
@@ -964,17 +948,7 @@ public class LivePlayActivity extends BaseActivity {
         }
 
         getEpg(new Date());
-		
-		    // 判断播放地址是否为 127.0.0.1:9978
-    String playUrl = currentLiveChannelItem.getUrl();
-    if (playUrl != null && playUrl.startsWith("http://127.0.0.1:9978/")) {
-        playUrl = getProxyPlayUrl(currentLiveChannelItem);
-    }
-
-    // 设置播放地址
-        mVideoView.setUrl(playUrl, setPlayHeaders(currentLiveChannelItem.getUrl()));
- //       mVideoView.setUrl(currentLiveChannelItem.getUrl(),  
-//		setPlayHeaders(currentLiveChannelItem.getUrl()));
+        mVideoView.setUrl(currentLiveChannelItem.getUrl(), setPlayHeaders(currentLiveChannelItem.getUrl()));
         showChannelInfo();
         mVideoView.start();
         return true;
@@ -1060,11 +1034,16 @@ private void playChannelInternal() {
 	
 	// 判断播放地址是否为 127.0.0.1:9978
     String playUrl = currentLiveChannelItem.getUrl();
-    
-    // 判断是否为代理URL（新增更严谨的判断）
-    if (playUrl != null && playUrl.startsWith("http://127.0.0.1:9978/")) {
-        // 直接使用getProxyPlayUrl生成的URL，无需二次处理
-        playUrl = getProxyPlayUrl(currentLiveChannelItem);
+    if (playUrl != null && playUrl.contains("127.0.0.1:9978")) {
+        // 调用 ItvDns 解析播放地址
+        String hostip = ""; // 从播放地址中提取 hostip
+        String hostipa = "39.135.97.80"; // 默认值
+        String hostipb = "39.135.238.209"; // 默认值
+        String mode = "0"; // 默认值
+        String time = String.valueOf(System.currentTimeMillis() / 1000); // 当前时间戳
+
+        // 解析播放地址
+        playUrl = ItvDns.getProxyUrl(playUrl, hostip, hostipa, hostipb, mode, time);
     }
 
     // 设置播放地址
