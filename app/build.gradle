@@ -5,9 +5,13 @@ apply plugin: 'com.yanzhenjie.andserver'
 repositories {
     google()
     mavenCentral()
-    maven { url 'https://jitpack.io' }
-    maven { url 'https://repo1.maven.org/maven2/' } // 添加 Maven 中央仓库
-}
+    // 修改后的 JitPack 配置
+    maven { 
+        url 'https://www.jitpack.io'  // 注意使用 https 协议
+        content {
+            includeGroupByRegex "com\\.github\\..*"  // 只包含 JitPack 依赖
+        }
+    }
 // 定义一个函数来获取当前日期（yyyyMMdd）
 def static buildTime() {
     return new Date().format("yyyyMMdd", TimeZone.getTimeZone("GMT+08:00"))
