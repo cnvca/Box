@@ -86,11 +86,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TimeZone;
 
-import com.google.android.exoplayer2.ExoPlayer;
-import com.google.android.exoplayer2.source.DefaultMediaSourceFactory;
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSource;
-import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+
+import androidx.media3.ExoPlayer;
+import androidx.media3.source.DefaultMediaSourceFactory;
+import androidx.media3.trackselection.DefaultTrackSelector;
+import androidx.media3.upstream.DefaultHttpDataSource;
+import androidx.media3.upstream.DefaultHttpDataSourceFactory;
+
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.Map;
