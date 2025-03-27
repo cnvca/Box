@@ -1173,25 +1173,24 @@ private void playChannelInternal() {
 
     private void initVideoView() {
         if (livePlayerManager.getLivePlayerType() == HawkConfig.PLAY_TYPE_EXO) {
-            // 创建 ExoPlayer 实例
-            ExoPlayer player = new ExoPlayer.Builder(this)
-                .setTrackSelector(new DefaultTrackSelector(this))
-                .build();
-            mVideoView.setPlayer(player);
+        // 创建 ExoPlayer 实例 - 适配 media3 1.3.1
+        DefaultTrackSelector trackSelector = new DefaultTrackSelector(this);
+        ExoPlayer player = new ExoPlayer.Builder(this)
+            .setTrackSelector(trackSelector)
+            .build();
+        mVideoView.setPlayer(player);
 
-            // 配置数据源工厂
-            DefaultHttpDataSourceFactory dataSourceFactory = new DefaultHttpDataSourceFactory(
-                "ExoPlayer",
-                null,
-                DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
-                DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
-                true
-            );
+        // 配置数据源工厂
+        DefaultHttpDataSource.Factory dataSourceFactory = new DefaultHttpDataSource.Factory()
+            .setUserAgent("ExoPlayer")
+            .setConnectTimeoutMs(DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS)
+            .setReadTimeoutMs(DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS)
+            .setAllowCrossProtocolRedirects(true);
 
-            // 创建媒体源工厂
-            MediaSourceFactory mediaSourceFactory = new MediaSourceFactory(dataSourceFactory);
-            mVideoView.setMediaSourceFactory(mediaSourceFactory);
-        }
+        // 创建媒体源工厂
+        DefaultMediaSourceFactory mediaSourceFactory = new DefaultMediaSourceFactory(dataSourceFactory);
+        mVideoView.setMediaSourceFactory(mediaSourceFactory);
+    }
 		
         controller = new LiveController(this);
         controller.setListener(new LiveController.LiveControlListener() {
