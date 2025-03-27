@@ -1318,35 +1318,6 @@ private final Runnable mHideSettingLayoutRun = new Runnable() {
     }
 
 
-    private String enhanceProxyUrl(String originalUrl) {
-        try {
-            Map<String, String> params = new HashMap<>();
-            // 解析原有参数
-            String[] pairs = originalUrl.split("\\?")[1].split("&");
-            for (String pair : pairs) {
-                String[] keyValue = pair.split("=");
-                if (keyValue.length == 2) {
-                    params.put(keyValue[0], URLDecoder.decode(keyValue[1], "UTF-8"));
-                }
-            }
-            
-            // 添加时间戳参数
-            params.put("t", String.valueOf(System.currentTimeMillis()));
-            
-            // 重建URL
-            StringBuilder newUrl = new StringBuilder("http://127.0.0.1:9978/proxy?");
-            for (Map.Entry<String, String> entry : params.entrySet()) {
-                newUrl.append(URLEncoder.encode(entry.getKey(), "UTF-8"))
-                     .append("=")
-                     .append(URLEncoder.encode(entry.getValue(), "UTF-8"))
-                     .append("&");
-            }
-            return newUrl.substring(0, newUrl.length() - 1);
-        } catch (Exception e) {
-            return originalUrl;
-        }
-    }
-
             @Override
             public void changeSource(int direction) {
                 if (direction > 0)
