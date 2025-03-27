@@ -1034,25 +1034,6 @@ public class LivePlayActivity extends BaseActivity {
     }
 	
 
-        // takagen99 : Moved update of Channel Info here before getting EPG (no dependency on EPG)
-        mHandler.post(tv_sys_timeRunnable);
-
-        // Channel Name & No. + Source No.
-        tv_channelname.setText(channel_Name.getChannelName());
-        tv_channelnum.setText("" + channel_Name.getChannelNum());
-        if (channel_Name == null || channel_Name.getSourceNum() <= 0) {
-            tv_source.setText("1/1");
-        } else {
-            tv_source.setText("线路 " + (channel_Name.getSourceIndex() + 1) + "/" + channel_Name.getSourceNum());
-        }
-
-        getEpg(new Date());
-        mVideoView.setUrl(currentLiveChannelItem.getUrl(), setPlayHeaders(currentLiveChannelItem.getUrl()));
-        showChannelInfo();
-        mVideoView.start();
-        return true;
-    }
-
 
     // 在 playChannel 方法之后添加以下方法
     private void playChannelInternal() {
