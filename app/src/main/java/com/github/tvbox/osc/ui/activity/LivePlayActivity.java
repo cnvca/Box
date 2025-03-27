@@ -94,6 +94,9 @@ import xyz.doikki.videoplayer.util.PlayerUtils;
  * @date :2021/1/12
  * @description:
  */
+ 
+
+ 
 public class LivePlayActivity extends BaseActivity {
     private static final String TAG = "LivePlayActivity";
 	
@@ -1070,28 +1073,6 @@ private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean
     }
     if (mVideoView == null) return true;
     
-    // 新增测速逻辑
-    if (currentLiveChannelItem.getSourceNum() > 1 && !changeSource) {
-        final int[] fastestSourceIndex = {0};
-        final LiveChannelItem finalChannelItem = currentLiveChannelItem;
-
-        for (int i = 0; i < currentLiveChannelItem.getSourceNum(); i++) {
-            final int sourceIndex = i;
-            testSourceSpeed(currentLiveChannelItem, i, new OnSpeedTestListener() {
-                @Override
-                public void onSpeedTestResult(int testedSourceIndex, long latency) {
-                    finalChannelItem.setSourceLatency(testedSourceIndex, latency);
-
-                    if (testedSourceIndex == finalChannelItem.getSourceNum() - 1) {
-                        fastestSourceIndex[0] = finalChannelItem.getFastestSourceIndex();
-                        finalChannelItem.setSourceIndex(fastestSourceIndex[0]);
-                        startPlayback();
-                    }
-                }
-            });
-        }
-        return true;
-    }
 
     mVideoView.release();
     if (!changeSource) {
@@ -1149,31 +1130,6 @@ private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean
     }
 	
 	
-    // 修改后的测速逻辑
-    if (currentLiveChannelItem.getSourceNum() > 1 && !changeSource) {
-        final int[] fastestSourceIndex = {0};
-        final LiveChannelItem finalChannelItem = currentLiveChannelItem;
-
-        for (int i = 0; i < currentLiveChannelItem.getSourceNum(); i++) {
-            final int sourceIndex = i; // 需要final的局部变量
-            testSourceSpeed(currentLiveChannelItem, i, new OnSpeedTestListener() {
-                @Override
-                public void onSpeedTestResult(int testedSourceIndex, long latency) {
-                    finalChannelItem.setSourceLatency(testedSourceIndex, latency);
-                    
-                    if (testedSourceIndex == finalChannelItem.getSourceNum() - 1) {
-                        fastestSourceIndex[0] = finalChannelItem.getFastestSourceIndex();
-                        finalChannelItem.setSourceIndex(fastestSourceIndex[0]);
-                        startPlayback();
-                    }
-                }
-            });
-        }
-        return true;
-    } else {
-        return startPlayback();
-    }
-}
 
         // takagen99 : Moved update of Channel Info here before getting EPG (no dependency on EPG)
         mHandler.post(tv_sys_timeRunnable);
@@ -2460,52 +2416,6 @@ private void playChannelInternal() {
         return -1;
     }
 
-//=== 新增测速相关代码开始 ===//
-interface OnSpeedTestListener {
-    void onSpeedTestResult(int sourceIndex, long latency);
-}
-
-private void testSourceSpeed(LiveChannelItem channelItem, int sourceIndex, OnSpeedTestListener listener) {
-    String url = channelItem.getChannelUrls().get(sourceIndex);
-    long startTime = System.currentTimeMillis();
-    
-    OkGo.<String>get(url)
-        .execute(new AbsCallback<String>() {
-            @Override
-            public void onSuccess(Response<String> response) {
-                long latency = System.currentTimeMillis() - startTime;
-                listener.onSpeedTestResult(sourceIndex, latency);
-            }
-
-            @Override
-            public void onError(Response<String> response) {
-                listener.onSpeedTestResult(sourceIndex, Long.MAX_VALUE);
-            }
-
-            @Override
-            public String convertResponse(okhttp3.Response response) throws Throwable {
-                return response.body().string();
-            }
-        });
-}
-
-private boolean startPlayback() {
-    mHandler.post(tv_sys_timeRunnable);
-    tv_channelname.setText(channel_Name.getChannelName());
-    tv_channelnum.setText("" + channel_Name.getChannelNum());
-    if (channel_Name == null || channel_Name.getSourceNum() <= 0) {
-        tv_source.setText("1/1");
-    } else {
-        tv_source.setText("线路 " + (channel_Name.getSourceIndex() + 1) + "/" + channel_Name.getSourceNum());
-    }
-
-    getEpg(new Date());
-    mVideoView.setUrl(currentLiveChannelItem.getUrl(), setPlayHeaders(currentLiveChannelItem.getUrl()));
-    showChannelInfo();
-    mVideoView.start();
-    return true;
-}
-//=== 新增测速相关代码结束 ===//
 
 
     private boolean isCurrentLiveChannelValid() {
