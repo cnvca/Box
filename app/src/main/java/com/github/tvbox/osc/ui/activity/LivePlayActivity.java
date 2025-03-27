@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Base64;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -84,6 +85,7 @@ import java.util.HashMap;
 import java.util.TimeZone;
 
 import kotlin.Pair;
+import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 import xyz.doikki.videoplayer.player.VideoView;
 import xyz.doikki.videoplayer.util.PlayerUtils;
 
@@ -93,7 +95,8 @@ import xyz.doikki.videoplayer.util.PlayerUtils;
  * @description:
  */
 public class LivePlayActivity extends BaseActivity {
-
+    private static final String TAG = "LivePlayActivity";
+	
     // Main View
     private VideoView mVideoView;
     private LiveController controller;
@@ -950,19 +953,29 @@ public class LivePlayActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_live_play);		
         // 原有初始化代码保持不变...
     }
-
+    private void initView() {
+        // 原有视图初始化代码...
+        mVideoView = findViewById(R.id.mVideoView);
+        initVideoView();
+    }
     // 修改播放器初始化方法
+
     private void initVideoView() {
         controller = new LiveController(this);
-        mVideoView = findViewById(R.id.mVideoView);
-        
-        // 保持原有控制器设置
         controller.setListener(new LiveController.LiveControlListener() {
             @Override
             public boolean singleTap(MotionEvent e) {
-                // 保持原有点击逻辑
+                int fiveScreen = PlayerUtils.getScreenWidth(mContext, true) / 5;
+                if (e.getX() > 0 && e.getX() < (fiveScreen * 2)) {
+                    showChannelList();
+                } else if ((e.getX() > (fiveScreen * 2)) && (e.getX() < (fiveScreen * 3))) {
+                    toggleChannelInfo();
+                } else if (e.getX() > (fiveScreen * 3)) {
+                    showSettingGroup();
+                }
                 return true;
             }
 
@@ -996,14 +1009,13 @@ public class LivePlayActivity extends BaseActivity {
             }
         });
         
-        // 新增播放器参数配置
+        // 配置播放器参数
         try {
-            // 使用原有依赖的ijkplayer配置
+            IjkMediaPlayer.loadLibrariesOnce(null);
             mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 1);
             mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "reconnect", 1);
             mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop", 30);
             mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "timeout", 30_000_000);
-            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max-buffer-size", 1024*1024);
         } catch (Exception e) {
             Log.e(TAG, "播放器配置失败", e);
         }
@@ -1011,7 +1023,12 @@ public class LivePlayActivity extends BaseActivity {
         mVideoView.setVideoController(controller);
     }
 
-    // 新增错误处理方法
+    private void updateVideoInfo() {
+        if (mVideoView.getVideoSize().length >= 2) {
+            tv_size.setText(mVideoView.getVideoSize()[0] + " x " + mVideoView.getVideoSize()[1]);
+        }
+    }
+
     private void handlePlayError() {
         mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
         if (Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 2) == 0) {
@@ -1021,7 +1038,6 @@ public class LivePlayActivity extends BaseActivity {
         }
     }
 
-    // 新增缓冲检测方法
     private void startBufferingTimeoutCheck() {
         mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
         if (Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 2) == 0) {
@@ -1237,6 +1253,25 @@ private void playChannelInternal() {
         }
     }
 
+    private final Runnable mHideChannelListRun = new Runnable() {
+        @Override
+        public void run() {
+            if (tvLeftChannelListLayout.getVisibility() == View.VISIBLE) {
+                tvLeftChannelListLayout.animate()
+                    .translationX(-tvLeftChannelListLayout.getWidth() / 2)
+                    .alpha(0.0f)
+                    .setDuration(250)
+                    .setInterpolator(new DecelerateInterpolator())
+                    .setListener(new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            tvLeftChannelListLayout.setVisibility(View.INVISIBLE);
+                        }
+                    });
+            }
+        }
+    };
+	
     private final Runnable mFocusAndShowSettingGroup = new Runnable() {
         @Override
         public void run() {
