@@ -1320,7 +1320,7 @@ private final Runnable mHideSettingLayoutRun = new Runnable() {
                         break;
                 }
             }
-        });
+
         
         mVideoView.setVideoController(controller);
         startPlayStateMonitor();
