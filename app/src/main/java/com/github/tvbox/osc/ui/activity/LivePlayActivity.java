@@ -967,44 +967,47 @@ public class LivePlayActivity extends BaseActivity {
 
 
     //节目播放
-// 替换现有的 playChannel 方法
-private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
-    if ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
-            || (changeSource && currentLiveChannelItem.getSourceNum() == 1)) {
-        showChannelInfo();
-        return true;
-    }
-    if (mVideoView == null) return true;
-    mVideoView.release();
-    if (!changeSource) {
-        currentChannelGroupIndex = channelGroupIndex;
-        currentLiveChannelIndex = liveChannelIndex;
-        currentLiveChannelItem = getLiveChannels(currentChannelGroupIndex).get(currentLiveChannelIndex);
-        Hawk.put(HawkConfig.LIVE_CHANNEL, currentLiveChannelItem.getChannelName());
-        HawkUtils.setLastLiveChannelGroup(liveChannelGroupList.get(currentChannelGroupIndex).getGroupName());
-        livePlayerManager.getLiveChannelPlayer(mVideoView, currentLiveChannelItem.getChannelName());
-    }
-    channel_Name = currentLiveChannelItem;
-    currentLiveChannelItem.setinclude_back(currentLiveChannelItem.getUrl().indexOf("PLTV/8888") != -1);
+    private boolean playChannel(int groupIndex, int channelIndex, boolean changeSource) {
+        if ((groupIndex == currentChannelGroupIndex && channelIndex == currentLiveChannelIndex && !changeSource)
+                || (changeSource && currentLiveChannelItem.getSourceNum() == 1)) {
+            showChannelInfo();
+            return true;
+        }
+        if (mVideoView == null) return true;
+        mVideoView.release();
+        if (!changeSource) {
+            currentChannelGroupIndex = groupIndex;
+            currentLiveChannelIndex = channelIndex;
+            currentLiveChannelItem = getLiveChannels(currentChannelGroupIndex).get(currentLiveChannelIndex);
+            Hawk.put(HawkConfig.LIVE_CHANNEL, currentLiveChannelItem.getChannelName());
+            HawkUtils.setLastLiveChannelGroup(liveChannelGroupList.get(currentChannelGroupIndex).getGroupName());
+            livePlayerManager.getLiveChannelPlayer(mVideoView, currentLiveChannelItem.getChannelName());
+        }
+        channel_Name = currentLiveChannelItem;
+        currentLiveChannelItem.setinclude_back(currentLiveChannelItem.getUrl().contains("PLTV/8888"));
 
-    // 优化播放URL处理
-    String playUrl = currentLiveChannelItem.getUrl();
-    if (playUrl.contains("127.0.0.1:9978")) {
-        playUrl = enhanceProxyUrl(playUrl);
+        // 测速逻辑（修复括号匹配）
+        if (currentLiveChannelItem.getSourceNum() > 1) {
+            final int[] fastestSourceIndex = {0};
+            final LiveChannelItem finalChannelItem = currentLiveChannelItem;
+
+            for (int i = 0; i < currentLiveChannelItem.getSourceNum(); i++) {
+                testSourceSpeed(currentLiveChannelItem, i, (sourceIndex, latency) -> {
+                    finalChannelItem.setSourceLatency(sourceIndex, latency);
+
+                    if (sourceIndex == finalChannelItem.getSourceNum() - 1) {
+                        fastestSourceIndex[0] = finalChannelItem.getFastestSourceIndex();
+                        finalChannelItem.setSourceIndex(fastestSourceIndex[0]);
+                        playChannelInternal();
+                    }
+                });
+            }
+        } else {
+            playChannelInternal();
+        }
+
+        return true; // 确保返回语句在方法体内
     }
-
-    // 更新UI信息
-    mHandler.post(tv_sys_timeRunnable);
-    tv_channelname.setText(channel_Name.getChannelName());
-    tv_channelnum.setText("" + channel_Name.getChannelNum());
-    tv_source.setText("线路 " + (channel_Name.getSourceIndex() + 1) + "/" + channel_Name.getSourceNum());
-
-    // 开始播放
-    mVideoView.setUrl(playUrl, setPlayHeaders(playUrl));
-    showChannelInfo();
-    mVideoView.start();
-    return true;
-}
 
     // 新增代理URL增强方法
     private String enhanceProxyUrl(String originalUrl) {
@@ -1074,40 +1077,26 @@ private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean
 
 
     // 在 playChannel 方法之后添加以下方法
-private void playChannelInternal() {
-    mHandler.post(tv_sys_timeRunnable);
+    private void playChannelInternal() {
+        mHandler.post(tv_sys_timeRunnable);
 
-    // Channel Name & No. + Source No.
-    tv_channelname.setText(channel_Name.getChannelName());
-    tv_channelnum.setText("" + channel_Name.getChannelNum());
-    if (channel_Name == null || channel_Name.getSourceNum() <= 0) {
-        tv_source.setText("1/1");
-    } else {
-        tv_source.setText("线路 " + (channel_Name.getSourceIndex() + 1) + "/" + channel_Name.getSourceNum());
+        tv_channelname.setText(channel_Name.getChannelName());
+        tv_channelnum.setText("" + channel_Name.getChannelNum());
+        if (channel_Name == null || channel_Name.getSourceNum() <= 0) {
+            tv_source.setText("1/1");
+        } else {
+            tv_source.setText("线路 " + (channel_Name.getSourceIndex() + 1) + "/" + channel_Name.getSourceNum());
+        }
+
+        getEpg(new Date());
+        String playUrl = currentLiveChannelItem.getUrl();
+        if (playUrl.contains("127.0.0.1:9978")) {
+            playUrl = enhanceProxyUrl(playUrl);
+        }
+        mVideoView.setUrl(playUrl, setPlayHeaders(playUrl));
+        showChannelInfo();
+        mVideoView.start();
     }
-
-    getEpg(new Date());
-	
-	// 判断播放地址是否为 127.0.0.1:9978
-    String playUrl = currentLiveChannelItem.getUrl();
-    if (playUrl != null && playUrl.contains("127.0.0.1:9978")) {
-        // 调用 ItvDns 解析播放地址
-        String hostip = ""; // 从播放地址中提取 hostip
-        String hostipa = "39.135.97.80"; // 默认值
-        String hostipb = "39.135.238.209"; // 默认值
-        String mode = "0"; // 默认值
-        String time = String.valueOf(System.currentTimeMillis() / 1000); // 当前时间戳
-
-        // 解析播放地址
-        playUrl = ItvDns.getProxyUrl(playUrl, hostip, hostipa, hostipb, mode, time);
-    }
-
-    // 设置播放地址
-    mVideoView.setUrl(playUrl, setPlayHeaders(currentLiveChannelItem.getUrl()));
-//    mVideoView.setUrl(currentLiveChannelItem.getUrl(), setPlayHeaders(currentLiveChannelItem.getUrl()));
-    showChannelInfo();
-    mVideoView.start();
-}
 
 
     private void playNext() {
@@ -1350,18 +1339,6 @@ private final Runnable mHideSettingLayoutRun = new Runnable() {
         }, 3000);
     }
 
-    // 优化播放源处理
-    private void playChannelInternal() {
-        String playUrl = currentLiveChannelItem.getUrl();
-        
-        // 特殊处理代理地址
-        if (playUrl.contains("127.0.0.1:9978")) {
-            playUrl = enhanceProxyUrl(playUrl);
-        }
-        
-        mVideoView.setUrl(playUrl, setPlayHeaders(playUrl));
-        mVideoView.start();
-    }
 
     private String enhanceProxyUrl(String originalUrl) {
         try {
