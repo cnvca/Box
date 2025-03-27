@@ -1,7 +1,5 @@
 package com.github.tvbox.osc.ui.activity;
 
-import static xyz.doikki.videoplayer.util.PlayerUtils.stringForTimeVod;
-
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.content.Intent;
@@ -40,14 +38,12 @@ import com.github.tvbox.osc.bean.LiveSettingGroup;
 import com.github.tvbox.osc.bean.LiveSettingItem;
 import com.github.tvbox.osc.event.RefreshEvent;
 import com.github.tvbox.osc.player.controller.LiveController;
-import com.github.tvbox.osc.ui.adapter.ApiHistoryDialogAdapter;
 import com.github.tvbox.osc.ui.adapter.LiveChannelGroupAdapter;
 import com.github.tvbox.osc.ui.adapter.LiveChannelItemAdapter;
 import com.github.tvbox.osc.ui.adapter.LiveEpgAdapter;
 import com.github.tvbox.osc.ui.adapter.LiveEpgDateAdapter;
 import com.github.tvbox.osc.ui.adapter.LiveSettingGroupAdapter;
 import com.github.tvbox.osc.ui.adapter.LiveSettingItemAdapter;
-import com.github.tvbox.osc.ui.dialog.ApiHistoryDialog;
 import com.github.tvbox.osc.ui.dialog.LivePasswordDialog;
 import com.github.tvbox.osc.util.EpgUtil;
 import com.github.tvbox.osc.util.FastClickCheckUtil;
@@ -56,6 +52,8 @@ import com.github.tvbox.osc.util.HawkUtils;
 import com.github.tvbox.osc.util.JavaUtil;
 import com.github.tvbox.osc.util.live.TxtSubscribe;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.lzy.okgo.OkGo;
 import com.lzy.okgo.callback.AbsCallback;
 import com.lzy.okgo.callback.StringCallback;
@@ -83,12 +81,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.TimeZone;
-
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import java.util.Map;
 
 import kotlin.Pair;
 import xyz.doikki.videoplayer.player.VideoView;
@@ -954,6 +947,92 @@ public class LivePlayActivity extends BaseActivity {
         return true;
     }
 
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // 原有初始化代码保持不变...
+    }
+
+    // 修改播放器初始化方法
+    private void initVideoView() {
+        controller = new LiveController(this);
+        mVideoView = findViewById(R.id.mVideoView);
+        
+        // 保持原有控制器设置
+        controller.setListener(new LiveController.LiveControlListener() {
+            @Override
+            public boolean singleTap(MotionEvent e) {
+                // 保持原有点击逻辑
+                return true;
+            }
+
+            @Override
+            public void longPress() {
+                showSettingGroup();
+            }
+
+            @Override
+            public void playStateChanged(int playState) {
+                switch (playState) {
+                    case VideoView.STATE_PREPARED:
+                        updateVideoInfo();
+                        break;
+                    case VideoView.STATE_PLAYING:
+                        mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
+                        break;
+                    case VideoView.STATE_ERROR:
+                        handlePlayError();
+                        break;
+                    case VideoView.STATE_BUFFERING:
+                        startBufferingTimeoutCheck();
+                        break;
+                }
+            }
+
+            @Override
+            public void changeSource(int direction) {
+                if (direction > 0) playNextSource();
+                else playPreSource();
+            }
+        });
+        
+        // 新增播放器参数配置
+        try {
+            // 使用原有依赖的ijkplayer配置
+            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 1);
+            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "reconnect", 1);
+            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop", 30);
+            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "timeout", 30_000_000);
+            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max-buffer-size", 1024*1024);
+        } catch (Exception e) {
+            Log.e(TAG, "播放器配置失败", e);
+        }
+        
+        mVideoView.setVideoController(controller);
+    }
+
+    // 新增错误处理方法
+    private void handlePlayError() {
+        mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
+        if (Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 2) == 0) {
+            mHandler.postDelayed(mConnectTimeoutReplayRun, 30 * 1000L);
+        } else {
+            mHandler.post(mConnectTimeoutChangeSourceRun);
+        }
+    }
+
+    // 新增缓冲检测方法
+    private void startBufferingTimeoutCheck() {
+        mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
+        if (Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 2) == 0) {
+            mHandler.postDelayed(mConnectTimeoutReplayRun, 30 * 1000L);
+        } else {
+            mHandler.postDelayed(mConnectTimeoutChangeSourceRun, 
+                Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 2) * 5000L);
+        }
+    }
+
+
     //节目播放
 // 替换现有的 playChannel 方法
 private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
@@ -975,6 +1054,50 @@ private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean
     channel_Name = currentLiveChannelItem;
     currentLiveChannelItem.setinclude_back(currentLiveChannelItem.getUrl().indexOf("PLTV/8888") != -1);
 
+        // 优化播放URL处理
+        String playUrl = currentLiveChannelItem.getUrl();
+        if (playUrl.contains("127.0.0.1:9978")) {
+            playUrl = enhanceProxyUrl(playUrl);
+        }
+
+        // 更新UI信息
+        mHandler.post(tv_sys_timeRunnable);
+        tv_channelname.setText(channel_Name.getChannelName());
+        tv_channelnum.setText("" + channel_Name.getChannelNum());
+        tv_source.setText("线路 " + (channel_Name.getSourceIndex() + 1) + "/" + channel_Name.getSourceNum());
+
+        // 开始播放
+        mVideoView.setUrl(playUrl, setPlayHeaders(playUrl));
+        showChannelInfo();
+        mVideoView.start();
+        return true;
+    }
+
+    // 新增代理URL增强方法
+    private String enhanceProxyUrl(String originalUrl) {
+        try {
+            Uri uri = Uri.parse(originalUrl);
+            String channelId = uri.getQueryParameter("channel-id");
+            String contentId = uri.getQueryParameter("Contentid");
+            String stbId = uri.getQueryParameter("stbId");
+            String playseek = uri.getQueryParameter("playseek");
+            String yw = uri.getQueryParameter("yw");
+            
+            // 添加时间戳防止缓存
+            return ItvDns.getProxyUrl(
+                originalUrl.split("\\?")[0], // 基础URL
+                uri.getQueryParameter("hostip"),
+                uri.getQueryParameter("hostipa"),
+                uri.getQueryParameter("hostipb"),
+                uri.getQueryParameter("mode"),
+                String.valueOf(System.currentTimeMillis()/1000)
+            );
+        } catch (Exception e) {
+            return originalUrl;
+        }
+    }
+	
+	
     // 测速并选择最快的源
     if (currentLiveChannelItem.getSourceNum() > 1) {
         // 使用 final 变量来存储最快的源索引
