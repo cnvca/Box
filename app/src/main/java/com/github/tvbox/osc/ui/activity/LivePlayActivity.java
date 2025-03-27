@@ -4,13 +4,6 @@ import static xyz.doikki.videoplayer.util.PlayerUtils.stringForTimeVod;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import androidx.appcompat.app.AppCompatActivity;
-import android.os.Bundle;
-import androidx.media3.exoplayer.ExoPlayer;
-import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
-import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
-import androidx.media3.datasource.DefaultHttpDataSource;
-import androidx.media3.datasource.DefaultHttpDataSourceFactory;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -92,8 +85,6 @@ import java.util.Locale;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TimeZone;
-
-
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -237,7 +228,7 @@ public class LivePlayActivity extends BaseActivity {
         // Getting EPG Address
         epgStringAddress = Hawk.get(HawkConfig.EPG_URL, "");
         if (StringUtils.isBlank(epgStringAddress)) {
-            epgStringAddress = "http://epg.hgys.cc/kkk";
+            epgStringAddress = "http://epg.hgys.cc/";
 //            Hawk.put(HawkConfig.EPG_URL, epgStringAddress);
         }
         // http://epg.aishangtv.top/live_proxy_epg_bc.php
@@ -1170,28 +1161,7 @@ private void playChannelInternal() {
         }
     };
 
-
     private void initVideoView() {
-        if (livePlayerManager.getLivePlayerType() == HawkConfig.PLAY_TYPE_EXO) {
-        // 创建 ExoPlayer 实例 - 适配 media3 1.3.1
-        DefaultTrackSelector trackSelector = new DefaultTrackSelector(this);
-        ExoPlayer player = new ExoPlayer.Builder(this)
-            .setTrackSelector(trackSelector)
-            .build();
-        mVideoView.setPlayer(player);
-
-        // 配置数据源工厂
-        DefaultHttpDataSource.Factory dataSourceFactory = new DefaultHttpDataSource.Factory()
-            .setUserAgent("ExoPlayer")
-            .setConnectTimeoutMs(DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS)
-            .setReadTimeoutMs(DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS)
-            .setAllowCrossProtocolRedirects(true);
-
-        // 创建媒体源工厂
-        DefaultMediaSourceFactory mediaSourceFactory = new DefaultMediaSourceFactory(dataSourceFactory);
-        mVideoView.setMediaSourceFactory(mediaSourceFactory);
-    }
-		
         controller = new LiveController(this);
         controller.setListener(new LiveController.LiveControlListener() {
             @Override
