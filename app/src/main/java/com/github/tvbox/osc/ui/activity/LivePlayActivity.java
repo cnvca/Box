@@ -94,9 +94,6 @@ import xyz.doikki.videoplayer.util.PlayerUtils;
  * @date :2021/1/12
  * @description:
  */
- 
-
- 
 public class LivePlayActivity extends BaseActivity {
     private static final String TAG = "LivePlayActivity";
 	
@@ -928,17 +925,6 @@ public class LivePlayActivity extends BaseActivity {
         });
     }
 
-
-
-// 4. 新增的 startPlayback 方法
-private boolean startPlayback() {
-    // 原有的播放启动逻辑
-    mHandler.post(tv_sys_timeRunnable);
-    tv_channelname.setText(channel_Name.getChannelName());
-    // ... 保持其他播放逻辑不变 ...
-    return true;
-}
-
     private boolean replayChannel() {
         if (mVideoView == null) return true;
         mVideoView.release();
@@ -977,90 +963,7 @@ private boolean startPlayback() {
     }
     // 修改播放器初始化方法
 
-    private void initVideoView() {
-        controller = new LiveController(this);
-        controller.setListener(new LiveController.LiveControlListener() {
-            @Override
-            public boolean singleTap(MotionEvent e) {
-                int fiveScreen = PlayerUtils.getScreenWidth(mContext, true) / 5;
-                if (e.getX() > 0 && e.getX() < (fiveScreen * 2)) {
-                    showChannelList();
-                } else if ((e.getX() > (fiveScreen * 2)) && (e.getX() < (fiveScreen * 3))) {
-                    toggleChannelInfo();
-                } else if (e.getX() > (fiveScreen * 3)) {
-                    showSettingGroup();
-                }
-                return true;
-            }
 
-            @Override
-            public void longPress() {
-                showSettingGroup();
-            }
-
-            @Override
-            public void playStateChanged(int playState) {
-                switch (playState) {
-                    case VideoView.STATE_PREPARED:
-                        updateVideoInfo();
-                        break;
-                    case VideoView.STATE_PLAYING:
-                        mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
-                        break;
-                    case VideoView.STATE_ERROR:
-                        handlePlayError();
-                        break;
-                    case VideoView.STATE_BUFFERING:
-                        startBufferingTimeoutCheck();
-                        break;
-                }
-            }
-
-            @Override
-            public void changeSource(int direction) {
-                if (direction > 0) playNextSource();
-                else playPreSource();
-            }
-        });
-        
-        // 配置播放器参数
-        try {
-            IjkMediaPlayer.loadLibrariesOnce(null);
-            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 1);
-            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "reconnect", 1);
-            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop", 30);
-            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "timeout", 30_000_000);
-        } catch (Exception e) {
-            Log.e(TAG, "播放器配置失败", e);
-        }
-        
-        mVideoView.setVideoController(controller);
-    }
-
-    private void updateVideoInfo() {
-        if (mVideoView.getVideoSize().length >= 2) {
-            tv_size.setText(mVideoView.getVideoSize()[0] + " x " + mVideoView.getVideoSize()[1]);
-        }
-    }
-
-    private void handlePlayError() {
-        mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
-        if (Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 2) == 0) {
-            mHandler.postDelayed(mConnectTimeoutReplayRun, 30 * 1000L);
-        } else {
-            mHandler.post(mConnectTimeoutChangeSourceRun);
-        }
-    }
-
-    private void startBufferingTimeoutCheck() {
-        mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
-        if (Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 2) == 0) {
-            mHandler.postDelayed(mConnectTimeoutReplayRun, 30 * 1000L);
-        } else {
-            mHandler.postDelayed(mConnectTimeoutChangeSourceRun, 
-                Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 2) * 5000L);
-        }
-    }
 
 
     //节目播放
@@ -1072,8 +975,6 @@ private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean
         return true;
     }
     if (mVideoView == null) return true;
-    
-
     mVideoView.release();
     if (!changeSource) {
         currentChannelGroupIndex = channelGroupIndex;
@@ -1086,24 +987,24 @@ private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean
     channel_Name = currentLiveChannelItem;
     currentLiveChannelItem.setinclude_back(currentLiveChannelItem.getUrl().indexOf("PLTV/8888") != -1);
 
-        // 优化播放URL处理
-        String playUrl = currentLiveChannelItem.getUrl();
-        if (playUrl.contains("127.0.0.1:9978")) {
-            playUrl = enhanceProxyUrl(playUrl);
-        }
-
-        // 更新UI信息
-        mHandler.post(tv_sys_timeRunnable);
-        tv_channelname.setText(channel_Name.getChannelName());
-        tv_channelnum.setText("" + channel_Name.getChannelNum());
-        tv_source.setText("线路 " + (channel_Name.getSourceIndex() + 1) + "/" + channel_Name.getSourceNum());
-
-        // 开始播放
-        mVideoView.setUrl(playUrl, setPlayHeaders(playUrl));
-        showChannelInfo();
-        mVideoView.start();
-        return true;
+    // 优化播放URL处理
+    String playUrl = currentLiveChannelItem.getUrl();
+    if (playUrl.contains("127.0.0.1:9978")) {
+        playUrl = enhanceProxyUrl(playUrl);
     }
+
+    // 更新UI信息
+    mHandler.post(tv_sys_timeRunnable);
+    tv_channelname.setText(channel_Name.getChannelName());
+    tv_channelnum.setText("" + channel_Name.getChannelNum());
+    tv_source.setText("线路 " + (channel_Name.getSourceIndex() + 1) + "/" + channel_Name.getSourceNum());
+
+    // 开始播放
+    mVideoView.setUrl(playUrl, setPlayHeaders(playUrl));
+    showChannelInfo();
+    mVideoView.start();
+    return true;
+}
 
     // 新增代理URL增强方法
     private String enhanceProxyUrl(String originalUrl) {
@@ -1130,6 +1031,27 @@ private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean
     }
 	
 	
+    // 测速并选择最快的源
+    if (currentLiveChannelItem.getSourceNum() > 1) {
+        // 使用 final 变量来存储最快的源索引
+        final int[] fastestSourceIndex = {0};
+        final LiveChannelItem finalChannelItem = currentLiveChannelItem; // 将 currentLiveChannelItem 转为 final
+
+        for (int i = 0; i < currentLiveChannelItem.getSourceNum(); i++) {
+            testSourceSpeed(currentLiveChannelItem, i, (sourceIndex, latency) -> {
+                finalChannelItem.setSourceLatency(sourceIndex, latency);
+
+                // 如果所有源都测速完成，选择最快的源进行播放
+                if (sourceIndex == finalChannelItem.getSourceNum() - 1) {
+                    fastestSourceIndex[0] = finalChannelItem.getFastestSourceIndex();
+                    finalChannelItem.setSourceIndex(fastestSourceIndex[0]);
+                    playChannelInternal();
+                }
+            });
+        }
+    } else {
+        playChannelInternal();
+    }
 
         // takagen99 : Moved update of Channel Info here before getting EPG (no dependency on EPG)
         mHandler.post(tv_sys_timeRunnable);
@@ -1292,30 +1214,72 @@ private void playChannelInternal() {
         }
     };
 
-    private final Runnable mHideSettingLayoutRun = new Runnable() {
+private final Runnable mHideSettingLayoutRun = new Runnable() {
+    @Override
+    public void run() {
+        if (tvRightSettingLayout.getVisibility() == View.VISIBLE) {
+            tvRightSettingLayout.animate()
+                    .translationX(tvRightSettingLayout.getWidth() / 2)
+                    .alpha(0.0f)
+                    .setDuration(250)
+                    .setInterpolator(new DecelerateInterpolator())
+                    .setListener(new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            tvRightSettingLayout.setVisibility(View.INVISIBLE);
+                            tvRightSettingLayout.clearAnimation();
+                            liveSettingGroupAdapter.setSelectedGroupIndex(-1);
+                        }
+                    });
+        }
+    }
+};
+
+    // 增加播放器状态监控
+    private final Runnable mPlayStateMonitor = new Runnable() {
         @Override
         public void run() {
-            if (tvRightSettingLayout.getVisibility() == View.VISIBLE) {
-                tvRightSettingLayout.animate()
-                        .translationX(tvRightSettingLayout.getWidth() / 2)
-                        .alpha(0.0f)
-                        .setDuration(250)
-                        .setInterpolator(new DecelerateInterpolator())
-                        .setListener(new AnimatorListenerAdapter() {
-                            @Override
-                            public void onAnimationEnd(Animator animation) {
-                                super.onAnimationEnd(animation);
-                                tvRightSettingLayout.setVisibility(View.INVISIBLE);
-                                tvRightSettingLayout.clearAnimation();
-                                liveSettingGroupAdapter.setSelectedGroupIndex(-1);
-                            }
-                        });
+            if (mVideoView != null) {
+                // 监控缓冲状态
+                if (mVideoView.isBuffering()) {
+                    handleBuffering();
+                }
+                
+                // 更新网速显示
+                long speed = mVideoView.getTcpSpeed();
+                tvNetSpeed.setText(String.format("%.2fKB/s", speed / 1024.0));
+                
+                // 自动切换源逻辑
+                if (speed < 200 * 1024 && mVideoView.isPlaying()) {
+                    playNextSource();
+                }
             }
+            mHandler.postDelayed(this, 2000);
         }
     };
-
+	
     private void initVideoView() {
         controller = new LiveController(this);
+        mVideoView = findViewById(R.id.mVideoView);
+
+        // 配置播放器参数
+        mVideoView.setScreenScaleType(VideoView.SCREEN_SCALE_MATCH_PARENT);
+        mVideoView.setRenderViewFactory(TexureRenderViewFactory.create());
+        
+        // 使用现有依赖的播放器配置
+        try {
+            IjkMediaPlayer.loadLibrariesOnce(null);
+            IjkMediaPlayer.native_profileBegin("libijkplayer.so");
+            
+            // 关键配置参数
+            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 1);
+            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "reconnect", 1);
+            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop", 30);
+            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max-buffer-size", 1024 * 1024);
+            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "timeout", 30_000_000);
+        } catch (Exception e) {
+            Log.e(TAG, "播放器初始化失败", e);
+        }		
         controller.setListener(new LiveController.LiveControlListener() {
             @Override
             public boolean singleTap(MotionEvent e) {
@@ -1342,58 +1306,91 @@ private void playChannelInternal() {
             @Override
             public void playStateChanged(int playState) {
                 switch (playState) {
-                    case VideoView.STATE_IDLE:
-                    case VideoView.STATE_PAUSED:
-                        break;
-                    case VideoView.STATE_PREPARED:
-                        // takagen99 : Retrieve Video Resolution & Retrieve Video Duration
-                        if (mVideoView.getVideoSize().length >= 2) {
-                            tv_size.setText(mVideoView.getVideoSize()[0] + " x " + mVideoView.getVideoSize()[1]);
-                        }
-                        // Show SeekBar if it's a VOD (with duration)
-                        int duration = (int) mVideoView.getDuration();
-                        if (duration > 0) {
-                            isVOD = true;
-                            llSeekBar.setVisibility(View.VISIBLE);
-                            mSeekBar.setProgress(10);
-                            mSeekBar.setMax(duration);
-                            mSeekBar.setProgress(0);
-                            mTotalTime.setText(stringForTimeVod(duration));
-                        } else {
-                            isVOD = false;
-                            llSeekBar.setVisibility(View.GONE);
-                        }
-                        break;
-                    case VideoView.STATE_BUFFERED:
-                    case VideoView.STATE_PLAYING:
-                        currentLiveChangeSourceTimes = 0;
+                    case VideoView.STATE_PREPARING:
                         mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
-                        mHandler.removeCallbacks(mConnectTimeoutReplayRun);
+                        mHandler.postDelayed(mConnectTimeoutChangeSourceRun, 
+                            Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 2) * 5000L);
+                        break;
+                    case VideoView.STATE_PLAYING:
+                        mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
+                        startPlayStateMonitor();
                         break;
                     case VideoView.STATE_ERROR:
-                    case VideoView.STATE_PLAYBACK_COMPLETED:
-                        mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
-                        mHandler.removeCallbacks(mConnectTimeoutReplayRun);
-                        if (Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 2) == 0) {
-                            //缓冲30s重新播放
-                            mHandler.postDelayed(mConnectTimeoutReplayRun, 30 * 1000L);
-                        } else {
-                            mHandler.post(mConnectTimeoutChangeSourceRun);
-                        }
-                        break;
-                    case VideoView.STATE_PREPARING:
-                    case VideoView.STATE_BUFFERING:
-                        mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
-                        mHandler.removeCallbacks(mConnectTimeoutReplayRun);
-                        if (Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 2) == 0) {
-                            //缓冲30s重新播放
-                            mHandler.postDelayed(mConnectTimeoutReplayRun, 30 * 1000L);
-                        } else {
-                            mHandler.postDelayed(mConnectTimeoutChangeSourceRun, (Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 2)) * 5000L);
-                        }
+                        handlePlayError();
                         break;
                 }
             }
+        });
+        
+        mVideoView.setVideoController(controller);
+        startPlayStateMonitor();
+    }
+
+    private void startPlayStateMonitor() {
+        mHandler.removeCallbacks(mPlayStateMonitor);
+        mHandler.post(mPlayStateMonitor);
+    }
+
+    private void handleBuffering() {
+        if (currentLiveChangeSourceTimes < 3) {
+            mHandler.postDelayed(() -> {
+                if (mVideoView.isBuffering()) {
+                    playNextSource();
+                    currentLiveChangeSourceTimes++;
+                }
+            }, 5000);
+        }
+    }
+
+    private void handlePlayError() {
+        mHandler.postDelayed(() -> {
+            if (!isFinishing()) {
+                playNextSource();
+            }
+        }, 3000);
+    }
+
+    // 优化播放源处理
+    private void playChannelInternal() {
+        String playUrl = currentLiveChannelItem.getUrl();
+        
+        // 特殊处理代理地址
+        if (playUrl.contains("127.0.0.1:9978")) {
+            playUrl = enhanceProxyUrl(playUrl);
+        }
+        
+        mVideoView.setUrl(playUrl, setPlayHeaders(playUrl));
+        mVideoView.start();
+    }
+
+    private String enhanceProxyUrl(String originalUrl) {
+        try {
+            Map<String, String> params = new HashMap<>();
+            // 解析原有参数
+            String[] pairs = originalUrl.split("\\?")[1].split("&");
+            for (String pair : pairs) {
+                String[] keyValue = pair.split("=");
+                if (keyValue.length == 2) {
+                    params.put(keyValue[0], URLDecoder.decode(keyValue[1], "UTF-8"));
+                }
+            }
+            
+            // 添加时间戳参数
+            params.put("t", String.valueOf(System.currentTimeMillis()));
+            
+            // 重建URL
+            StringBuilder newUrl = new StringBuilder("http://127.0.0.1:9978/proxy?");
+            for (Map.Entry<String, String> entry : params.entrySet()) {
+                newUrl.append(URLEncoder.encode(entry.getKey(), "UTF-8"))
+                     .append("=")
+                     .append(URLEncoder.encode(entry.getValue(), "UTF-8"))
+                     .append("&");
+            }
+            return newUrl.substring(0, newUrl.length() - 1);
+        } catch (Exception e) {
+            return originalUrl;
+        }
+    }
 
             @Override
             public void changeSource(int direction) {
@@ -1411,6 +1408,39 @@ private void playChannelInternal() {
         mVideoView.setProgressManager(null);
     }
 	
+	// 在 LivePlayActivity 类中添加以下方法
+private void testSourceSpeed(LiveChannelItem channelItem, int sourceIndex, OnSpeedTestListener listener) {
+    String url = channelItem.getChannelUrls().get(sourceIndex);
+    long startTime = System.currentTimeMillis();
+
+    OkGo.<String>get(url)
+        .execute(new AbsCallback<String>() {
+            @Override
+            public void onSuccess(Response<String> response) {
+                // 请求成功时计算延迟
+                long latency = System.currentTimeMillis() - startTime;
+                listener.onSpeedTestResult(sourceIndex, latency);
+            }
+
+            @Override
+            public void onError(Response<String> response) {
+                // 请求失败时返回最大延迟值
+                listener.onSpeedTestResult(sourceIndex, Long.MAX_VALUE);
+            }
+
+            @Override
+            public String convertResponse(okhttp3.Response response) throws Throwable {
+                // 将原始响应转换为字符串
+                return response.body().string();
+            }
+        });
+}
+
+// 定义测速结果回调接口
+interface OnSpeedTestListener {
+    void onSpeedTestResult(int sourceIndex, long latency);
+}
+
 
     private final Runnable mConnectTimeoutChangeSourceRun = new Runnable() {
         @Override
@@ -2415,8 +2445,6 @@ private void playChannelInternal() {
         }
         return -1;
     }
-
-
 
     private boolean isCurrentLiveChannelValid() {
         if (currentLiveChannelItem == null) {
