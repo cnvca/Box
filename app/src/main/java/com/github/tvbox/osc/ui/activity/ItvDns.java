@@ -105,23 +105,36 @@ private Response handleLiveChannelRequest(Map<String, String> params) throws Exc
         ips = defaultIPs;
     }
     
-        String originalUrl = buildOriginalUrl(
-            params.get("channel-id"),
-            params.get("Contentid"),
-            params.get("stbId"),
-            params.get("playseek")
-        );
-        String finalUrl = getFinalUrl(originalUrl, params.get("channel-id"));
-        
-        String proxyUrl = "http://127.0.0.1:" + PORT + "/?u=" +
+    String channelId = params.get("channel-id");
+    String contentId = params.get("Contentid");
+    String stbId = params.get("stbId");
+    String playseek = params.get("playseek");
+    String yw = params.get("yw");
+    String mode = params.get("mode");
+
+    // 获取IP地址
+    String[] ips = getBestIps(channelId, yw);
+    String hostip = ips[0];
+    String hostipa = ips[1];
+    String hostipb = ips[2];
+
+    String originalUrl = buildOriginalUrl(channelId, contentId, stbId, playseek);
+    String finalUrl = getFinalUrl(originalUrl, channelId);
+
+    if ("3".equals(mode)) {
+        return newFixedLengthResponse(Response.Status.OK, "text/plain", finalUrl);
+    }
+
+    String proxyUrl = "http://127.0.0.1:" + PORT + "/?u=" +
             URLEncoder.encode(finalUrl, StandardCharsets.UTF_8.name()) +
             "&hostip=" + hostip +
             "&hostipa=" + hostipa +
             "&hostipb=" + hostipb +
-            "&mode=" + params.getOrDefault("mode", "0") +
+            "&mode=" + mode +
             "&time=" + (System.currentTimeMillis()/1000);
 
-        return newFixedLengthResponse(Response.Status.TEMPORARY_REDIRECT, "text/plain", "")
+    // 修正Response构建方式
+    return newFixedLengthResponse(Response.Status.TEMPORARY_REDIRECT, "text/plain", "")
             .addHeader("Location", proxyUrl);
 }
 
