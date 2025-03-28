@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.util.Base64;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -72,6 +73,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -91,6 +93,8 @@ import com.google.gson.JsonObject;
 import java.util.Map;
 
 import kotlin.Pair;
+import xyz.doikki.videoplayer.ijk.IjkMediaPlayer;
+import xyz.doikki.videoplayer.render.TextureRenderViewFactory;
 import xyz.doikki.videoplayer.player.VideoView;
 import xyz.doikki.videoplayer.util.PlayerUtils;
 
@@ -1199,7 +1203,12 @@ private void playChannelInternal() {
         }
 
         controller.setListener(new LiveController.LiveControlListener() {
-		
+
+            @Override
+            public void longPress() {
+                // 实现长按逻辑或留空
+            }		
+			
             @Override
             public void changeSource(int direction) {
                 if (direction > 0) playNextSource();
