@@ -34,6 +34,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import fi.iki.elonen.NanoHTTPD;
+import static fi.iki.elonen.NanoHTTPD.Response.Status;
 
 public class ItvDns extends NanoHTTPD {
     private static final int PORT = 9978; // 添加端口常量    
@@ -84,7 +85,7 @@ public Response serve(IHTTPSession session) {
             return handleTsRequest(params);
         }
     } catch (Exception e) {
-        Log.e("ItvDns", "处理请求异常: " + e.getMessage());
+
         return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", "Server Error");
     }
     return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", "Not Found");
@@ -104,19 +105,26 @@ private Response handleLiveChannelRequest(Map<String, String> params) throws Exc
         ips = defaultIPs;
     }
     
-    // 构建代理URL时增加随机参数避免缓存
-    String timeParam = String.valueOf(System.currentTimeMillis()/1000);
-    String proxyUrl = "http://127.0.0.1:" + PORT + "/?u=" + 
-        URLEncoder.encode(buildFinalUrl(params), "UTF-8") +
-        "&hostip=" + ips[0] +
-        "&hostipa=" + ips[1] +
-        "&hostipb=" + ips[2] +
-        "&mode=" + params.getOrDefault("mode", "0") +
-        "&time=" + timeParam;
-    
-    return newFixedLengthResponse(Status.TEMPORARY_REDIRECT, "text/plain", "")
-        .addHeader("Location", proxyUrl);
+        String originalUrl = buildOriginalUrl(
+            params.get("channel-id"),
+            params.get("Contentid"),
+            params.get("stbId"),
+            params.get("playseek")
+        );
+        String finalUrl = getFinalUrl(originalUrl, params.get("channel-id"));
+        
+        String proxyUrl = "http://127.0.0.1:" + PORT + "/?u=" +
+            URLEncoder.encode(finalUrl, StandardCharsets.UTF_8.name()) +
+            "&hostip=" + hostip +
+            "&hostipa=" + hostipa +
+            "&hostipb=" + hostipb +
+            "&mode=" + params.getOrDefault("mode", "0") +
+            "&time=" + (System.currentTimeMillis()/1000);
+
+        return newFixedLengthResponse(Response.Status.TEMPORARY_REDIRECT, "text/plain", "")
+            .addHeader("Location", proxyUrl);
 }
+
 
     private Response handleM3u8Proxy(String url) throws Exception {
         HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
