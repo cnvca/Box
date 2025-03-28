@@ -128,8 +128,7 @@ private Response handleLiveChannelRequest(Map<String, String> params) throws Exc
             "&time=" + (System.currentTimeMillis()/1000);
 
     // 修正Response构建方式（确保单行链式调用）
-    return newFixedLengthResponse(Response.Status.TEMPORARY_REDIRECT, "text/plain", "")
-        .addHeader("Location", proxyUrl);
+    return newFixedLengthResponse(Response.Status.TEMPORARY_REDIRECT, "text/plain", "").addHeader("Location", proxyUrl);
 }
 
 
