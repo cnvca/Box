@@ -93,7 +93,7 @@ import com.google.gson.JsonObject;
 import java.util.Map;
 
 import kotlin.Pair;
-import xyz.doikki.videoplayer.ijk.IjkMediaPlayer;
+import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 import xyz.doikki.videoplayer.render.TextureRenderViewFactory;
 import xyz.doikki.videoplayer.player.VideoView;
 import xyz.doikki.videoplayer.util.PlayerUtils;
@@ -1192,22 +1192,19 @@ private void playChannelInternal() {
         mVideoView.setScreenScaleType(VideoView.SCREEN_SCALE_MATCH_PARENT);
         mVideoView.setRenderViewFactory(TextureRenderViewFactory.create());
         
-        // 使用现有依赖的播放器配置
-        try {
-            IjkMediaPlayer.loadLibrariesOnce(null);
-            IjkMediaPlayer.native_profileBegin("libijkplayer.so");
-            
-
-        } catch (Exception e) {
-            Log.e("LivePlay", "播放器初始化失败", e);
-        }
-
         controller.setListener(new LiveController.LiveControlListener() {
 
             @Override
             public void longPress() {
                 // 实现长按逻辑或留空
             }		
+
+            // 新增缺失的接口方法
+            @Override
+            public void singleTap(MotionEvent event) {
+               // 单击事件处理（根据需求实现）
+               toggleChannelInfo();
+            }
 			
             @Override
             public void changeSource(int direction) {
