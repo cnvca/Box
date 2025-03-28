@@ -91,7 +91,6 @@ import com.google.gson.JsonObject;
 import java.util.Map;
 
 import kotlin.Pair;
-import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 import xyz.doikki.videoplayer.player.VideoView;
 import xyz.doikki.videoplayer.util.PlayerUtils;
 
@@ -102,6 +101,8 @@ import xyz.doikki.videoplayer.util.PlayerUtils;
  */
 public class LivePlayActivity extends BaseActivity {
 
+    private static final String TAG = "LivePlayActivity";
+	
     // Main View
     private VideoView mVideoView;
     private LiveController controller;
@@ -1035,24 +1036,16 @@ private void playChannelInternal() {
 	
 	// 判断播放地址是否为 127.0.0.1:9978
     String playUrl = currentLiveChannelItem.getUrl();
-    if (playUrl != null && playUrl.contains("127.0.0.1:9978")) {
-        // 调用 ItvDns 解析播放地址
-        String hostip = ""; // 从播放地址中提取 hostip
-        String hostipa = "39.135.97.80"; // 默认值
-        String hostipb = "39.135.238.209"; // 默认值
-        String mode = "0"; // 默认值
-        String time = String.valueOf(System.currentTimeMillis() / 1000); // 当前时间戳
-
-        // 解析播放地址
-        playUrl = ItvDns.getProxyUrl(playUrl, hostip, hostipa, hostipb, mode, time);
-    }
-
-    // 设置播放地址
-    mVideoView.setUrl(playUrl, setPlayHeaders(currentLiveChannelItem.getUrl()));
+        // 特殊处理代理地址
+        if (playUrl.contains("127.0.0.1:9978")) {
+            playUrl = enhanceProxyUrl(playUrl);
+        }
+        
+        mVideoView.setUrl(playUrl, setPlayHeaders(playUrl));
 //    mVideoView.setUrl(currentLiveChannelItem.getUrl(), setPlayHeaders(currentLiveChannelItem.getUrl()));
-    showChannelInfo();
-    mVideoView.start();
-}
+        showChannelInfo();
+        mVideoView.start();
+    }
 
 
     private void playNext() {
@@ -1147,7 +1140,7 @@ private void playChannelInternal() {
         public void run() {
             if (mVideoView != null) {
                 // 监控缓冲状态
-                if (mVideoView.isBuffering()) {
+                if (mVideoView.isPlaying() && mVideoView.getCurrentPosition() == 0) {
                     handleBuffering();
                 }
                 
@@ -1193,24 +1186,26 @@ private void playChannelInternal() {
 
         // 配置播放器参数
         mVideoView.setScreenScaleType(VideoView.SCREEN_SCALE_MATCH_PARENT);
-        mVideoView.setRenderViewFactory(TexureRenderViewFactory.create());
+        mVideoView.setRenderViewFactory(TextureRenderViewFactory.create());
         
         // 使用现有依赖的播放器配置
         try {
             IjkMediaPlayer.loadLibrariesOnce(null);
             IjkMediaPlayer.native_profileBegin("libijkplayer.so");
             
-            // 关键配置参数
-            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 1);
-            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "reconnect", 1);
-            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop", 30);
-            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max-buffer-size", 1024 * 1024);
-            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "timeout", 30_000_000);
+
         } catch (Exception e) {
-            Log.e(TAG, "播放器初始化失败", e);
+            Log.e("LivePlay", "播放器初始化失败", e);
         }
 
         controller.setListener(new LiveController.LiveControlListener() {
+		
+            @Override
+            public void changeSource(int direction) {
+                if (direction > 0) playNextSource();
+                else playPreSource();
+            }
+			
             @Override
             public void playStateChanged(int playState) {
                 switch (playState) {
@@ -1242,7 +1237,7 @@ private void playChannelInternal() {
     private void handleBuffering() {
         if (currentLiveChangeSourceTimes < 3) {
             mHandler.postDelayed(() -> {
-                if (mVideoView.isBuffering()) {
+                if (mVideoView.isPlaying() && mVideoView.getCurrentPosition() == 0) {
                     playNextSource();
                     currentLiveChangeSourceTimes++;
                 }
@@ -1257,20 +1252,6 @@ private void playChannelInternal() {
             }
         }, 3000);
     }
-
-    // 优化播放源处理
-    private void playChannelInternal() {
-        String playUrl = currentLiveChannelItem.getUrl();
-        
-        // 特殊处理代理地址
-        if (playUrl.contains("127.0.0.1:9978")) {
-            playUrl = enhanceProxyUrl(playUrl);
-        }
-        
-        mVideoView.setUrl(playUrl, setPlayHeaders(playUrl));
-        mVideoView.start();
-    }
-
 
 
 
