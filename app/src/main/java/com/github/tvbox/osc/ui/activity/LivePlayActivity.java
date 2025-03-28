@@ -91,6 +91,7 @@ import com.google.gson.JsonObject;
 import java.util.Map;
 
 import kotlin.Pair;
+import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 import xyz.doikki.videoplayer.player.VideoView;
 import xyz.doikki.videoplayer.util.PlayerUtils;
 
@@ -228,7 +229,7 @@ public class LivePlayActivity extends BaseActivity {
         // Getting EPG Address
         epgStringAddress = Hawk.get(HawkConfig.EPG_URL, "");
         if (StringUtils.isBlank(epgStringAddress)) {
-            epgStringAddress = "http://epg.hgys.cc/kkk";
+            epgStringAddress = "http://epg.hgys.cc/";
 //            Hawk.put(HawkConfig.EPG_URL, epgStringAddress);
         }
         // http://epg.aishangtv.top/live_proxy_epg_bc.php
@@ -1139,6 +1140,31 @@ private void playChannelInternal() {
         }
     };
 
+
+    // 增加播放器状态监控
+    private final Runnable mPlayStateMonitor = new Runnable() {
+        @Override
+        public void run() {
+            if (mVideoView != null) {
+                // 监控缓冲状态
+                if (mVideoView.isBuffering()) {
+                    handleBuffering();
+                }
+                
+                // 更新网速显示
+                long speed = mVideoView.getTcpSpeed();
+                tvNetSpeed.setText(String.format("%.2fKB/s", speed / 1024.0));
+                
+                // 自动切换源逻辑
+                if (speed < 200 * 1024 && mVideoView.isPlaying()) {
+                    playNextSource();
+                }
+            }
+            mHandler.postDelayed(this, 2000);
+        }
+    };
+	
+	
     private final Runnable mHideSettingLayoutRun = new Runnable() {
         @Override
         public void run() {
@@ -1163,100 +1189,120 @@ private void playChannelInternal() {
 
     private void initVideoView() {
         controller = new LiveController(this);
+        mVideoView = findViewById(R.id.mVideoView);
+
+        // 配置播放器参数
+        mVideoView.setScreenScaleType(VideoView.SCREEN_SCALE_MATCH_PARENT);
+        mVideoView.setRenderViewFactory(TexureRenderViewFactory.create());
+        
+        // 使用现有依赖的播放器配置
+        try {
+            IjkMediaPlayer.loadLibrariesOnce(null);
+            IjkMediaPlayer.native_profileBegin("libijkplayer.so");
+            
+            // 关键配置参数
+            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "start-on-prepared", 1);
+            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "reconnect", 1);
+            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "framedrop", 30);
+            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "max-buffer-size", 1024 * 1024);
+            mVideoView.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "timeout", 30_000_000);
+        } catch (Exception e) {
+            Log.e(TAG, "播放器初始化失败", e);
+        }
+
         controller.setListener(new LiveController.LiveControlListener() {
-            @Override
-            public boolean singleTap(MotionEvent e) {
-                int fiveScreen = PlayerUtils.getScreenWidth(mContext, true) / 5;
-
-                if (e.getX() > 0 && e.getX() < (fiveScreen * 2)) {
-                    // left side <<<<<
-                    showChannelList();
-                } else if ((e.getX() > (fiveScreen * 2)) && (e.getX() < (fiveScreen * 3))) {
-                    // middle screen
-                    toggleChannelInfo();
-                } else if (e.getX() > (fiveScreen * 3)) {
-                    // right side >>>>>
-                    showSettingGroup();
-                }
-                return true;
-            }
-
-            @Override
-            public void longPress() {
-                showSettingGroup();
-            }
-
             @Override
             public void playStateChanged(int playState) {
                 switch (playState) {
-                    case VideoView.STATE_IDLE:
-                    case VideoView.STATE_PAUSED:
-                        break;
-                    case VideoView.STATE_PREPARED:
-                        // takagen99 : Retrieve Video Resolution & Retrieve Video Duration
-                        if (mVideoView.getVideoSize().length >= 2) {
-                            tv_size.setText(mVideoView.getVideoSize()[0] + " x " + mVideoView.getVideoSize()[1]);
-                        }
-                        // Show SeekBar if it's a VOD (with duration)
-                        int duration = (int) mVideoView.getDuration();
-                        if (duration > 0) {
-                            isVOD = true;
-                            llSeekBar.setVisibility(View.VISIBLE);
-                            mSeekBar.setProgress(10);
-                            mSeekBar.setMax(duration);
-                            mSeekBar.setProgress(0);
-                            mTotalTime.setText(stringForTimeVod(duration));
-                        } else {
-                            isVOD = false;
-                            llSeekBar.setVisibility(View.GONE);
-                        }
-                        break;
-                    case VideoView.STATE_BUFFERED:
-                    case VideoView.STATE_PLAYING:
-                        currentLiveChangeSourceTimes = 0;
+                    case VideoView.STATE_PREPARING:
                         mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
-                        mHandler.removeCallbacks(mConnectTimeoutReplayRun);
+                        mHandler.postDelayed(mConnectTimeoutChangeSourceRun, 
+                            Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 2) * 5000L);
+                        break;
+                    case VideoView.STATE_PLAYING:
+                        mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
+                        startPlayStateMonitor();
                         break;
                     case VideoView.STATE_ERROR:
-                    case VideoView.STATE_PLAYBACK_COMPLETED:
-                        mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
-                        mHandler.removeCallbacks(mConnectTimeoutReplayRun);
-                        if (Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 2) == 0) {
-                            //缓冲30s重新播放
-                            mHandler.postDelayed(mConnectTimeoutReplayRun, 30 * 1000L);
-                        } else {
-                            mHandler.post(mConnectTimeoutChangeSourceRun);
-                        }
-                        break;
-                    case VideoView.STATE_PREPARING:
-                    case VideoView.STATE_BUFFERING:
-                        mHandler.removeCallbacks(mConnectTimeoutChangeSourceRun);
-                        mHandler.removeCallbacks(mConnectTimeoutReplayRun);
-                        if (Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 2) == 0) {
-                            //缓冲30s重新播放
-                            mHandler.postDelayed(mConnectTimeoutReplayRun, 30 * 1000L);
-                        } else {
-                            mHandler.postDelayed(mConnectTimeoutChangeSourceRun, (Hawk.get(HawkConfig.LIVE_CONNECT_TIMEOUT, 2)) * 5000L);
-                        }
+                        handlePlayError();
                         break;
                 }
             }
-
-            @Override
-            public void changeSource(int direction) {
-                if (direction > 0)
-                    playNextSource();
-                else
-                    playPreSource();
-            }
         });
-        controller.setCanChangePosition(false);
-        controller.setEnableInNormal(true);
-        controller.setGestureEnabled(true);
-        controller.setDoubleTapTogglePlayEnabled(false);
+        
         mVideoView.setVideoController(controller);
-        mVideoView.setProgressManager(null);
+        startPlayStateMonitor();
     }
+
+    private void startPlayStateMonitor() {
+        mHandler.removeCallbacks(mPlayStateMonitor);
+        mHandler.post(mPlayStateMonitor);
+    }
+
+    private void handleBuffering() {
+        if (currentLiveChangeSourceTimes < 3) {
+            mHandler.postDelayed(() -> {
+                if (mVideoView.isBuffering()) {
+                    playNextSource();
+                    currentLiveChangeSourceTimes++;
+                }
+            }, 5000);
+        }
+    }
+
+    private void handlePlayError() {
+        mHandler.postDelayed(() -> {
+            if (!isFinishing()) {
+                playNextSource();
+            }
+        }, 3000);
+    }
+
+    // 优化播放源处理
+    private void playChannelInternal() {
+        String playUrl = currentLiveChannelItem.getUrl();
+        
+        // 特殊处理代理地址
+        if (playUrl.contains("127.0.0.1:9978")) {
+            playUrl = enhanceProxyUrl(playUrl);
+        }
+        
+        mVideoView.setUrl(playUrl, setPlayHeaders(playUrl));
+        mVideoView.start();
+    }
+
+
+
+
+    private String enhanceProxyUrl(String originalUrl) {
+        try {
+            Map<String, String> params = new HashMap<>();
+            // 解析原有参数
+            String[] pairs = originalUrl.split("\\?")[1].split("&");
+            for (String pair : pairs) {
+                String[] keyValue = pair.split("=");
+                if (keyValue.length == 2) {
+                    params.put(keyValue[0], URLDecoder.decode(keyValue[1], "UTF-8"));
+                }
+            }
+            
+            // 添加时间戳参数
+            params.put("t", String.valueOf(System.currentTimeMillis()));
+            
+            // 重建URL
+            StringBuilder newUrl = new StringBuilder("http://127.0.0.1:9978/proxy?");
+            for (Map.Entry<String, String> entry : params.entrySet()) {
+                newUrl.append(URLEncoder.encode(entry.getKey(), "UTF-8"))
+                     .append("=")
+                     .append(URLEncoder.encode(entry.getValue(), "UTF-8"))
+                     .append("&");
+            }
+            return newUrl.substring(0, newUrl.length() - 1);
+        } catch (Exception e) {
+            return originalUrl;
+        }
+    }
+	
 	
 	// 在 LivePlayActivity 类中添加以下方法
 private void testSourceSpeed(LiveChannelItem channelItem, int sourceIndex, OnSpeedTestListener listener) {
