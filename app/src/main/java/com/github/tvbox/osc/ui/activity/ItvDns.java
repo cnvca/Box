@@ -36,6 +36,7 @@ import com.google.gson.JsonObject;
 import fi.iki.elonen.NanoHTTPD;
 
 public class ItvDns extends NanoHTTPD {
+    private static final int PORT = 9978; // 添加端口常量    
     private static final String TAG = "ItvDns";
     private static ItvDns instance;
     private Context context;
