@@ -98,13 +98,7 @@ private Response handleLiveChannelRequest(Map<String, String> params) throws Exc
     
     // 增加默认IP备用列表
     String[] defaultIPs = {"39.135.97.80", "39.135.238.209", "39.134.95.33"};
-    
-    // 获取最佳IP逻辑优化
-    String[] ips = getBestIps(params.get("channel-id"), params.get("yw"));
-    if (ips == null || ips.length < 3) {
-        ips = defaultIPs;
-    }
-    
+       
     String channelId = params.get("channel-id");
     String contentId = params.get("Contentid");
     String stbId = params.get("stbId");
@@ -133,9 +127,9 @@ private Response handleLiveChannelRequest(Map<String, String> params) throws Exc
             "&mode=" + mode +
             "&time=" + (System.currentTimeMillis()/1000);
 
-    // 修正Response构建方式
+    // 修正Response构建方式（确保单行链式调用）
     return newFixedLengthResponse(Response.Status.TEMPORARY_REDIRECT, "text/plain", "")
-            .addHeader("Location", proxyUrl);
+        .addHeader("Location", proxyUrl);
 }
 
 
