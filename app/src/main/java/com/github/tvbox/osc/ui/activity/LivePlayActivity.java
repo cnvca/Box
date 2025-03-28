@@ -632,32 +632,38 @@ public class LivePlayActivity extends BaseActivity {
         showChannelList();
     }
 
-    private final Runnable mFocusCurrentChannelAndShowChannelList = new Runnable() {
-        @Override
-        public void run() {
-            if (mGroupGridView.isScrolling() || mChannelGridView.isScrolling() || mGroupGridView.isComputingLayout() || mChannelGridView.isComputingLayout()) {
-                mHandler.postDelayed(this, 100);
-            } else {
-                liveChannelGroupAdapter.setSelectedGroupIndex(currentChannelGroupIndex);
-                liveChannelItemAdapter.setSelectedChannelIndex(currentLiveChannelIndex);
-                RecyclerView.ViewHolder holder = mChannelGridView.findViewHolderForAdapterPosition(currentLiveChannelIndex);
-                if (holder != null)
-                    holder.itemView.requestFocus();
-                tvLeftChannelListLayout.setVisibility(View.VISIBLE);
-                tvLeftChannelListLayout.setAlpha(0.0f);
-                tvLeftChannelListLayout.setTranslationX(-tvLeftChannelListLayout.getWidth() / 2);
-                tvLeftChannelListLayout.animate()
-                        .translationX(0)
-                        .alpha(1.0f)
-                        .setDuration(250)
-                        .setInterpolator(new DecelerateInterpolator())
-                        .setListener(null);
-                mHandler.removeCallbacks(mHideChannelListRun);
-                mHandler.postDelayed(mHideChannelListRun, 6000);
-                mHandler.postDelayed(mUpdateLayout, 255);   // Workaround Fix : SurfaceView
-            }
+private final Runnable mFocusCurrentChannelAndShowChannelList = new Runnable() {
+    @Override
+    public void run() {
+        if (mGroupGridView.isScrolling() || mChannelGridView.isScrolling()) {
+            mHandler.postDelayed(this, 100);
+        } else {
+            // 增加焦点请求逻辑
+            mGroupGridView.requestFocus();
+            mChannelGridView.requestFocus();
+            
+            // 优化动画效果
+            tvLeftChannelListLayout.setVisibility(View.VISIBLE);
+            tvLeftChannelListLayout.animate()
+                .translationX(0)
+                .alpha(1.0f)
+                .setDuration(250)
+                .setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        // 确保选中项获得焦点
+                        RecyclerView.ViewHolder holder = mChannelGridView.findViewHolderForAdapterPosition(currentLiveChannelIndex);
+                        if (holder != null) {
+                            holder.itemView.requestFocus();
+                        }
+                    }
+                });
+            
+            mHandler.removeCallbacks(mHideChannelListRun);
+            mHandler.postDelayed(mHideChannelListRun, 6000);
         }
-    };
+    }
+};
 
     private final Runnable mUpdateLayout = new Runnable() {
         @Override
