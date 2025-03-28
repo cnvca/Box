@@ -106,7 +106,6 @@ private Response handleLiveChannelRequest(Map<String, String> params) throws Exc
     String yw = params.get("yw");
     String mode = params.get("mode");
 
-    // 获取IP地址
     String[] ips = getBestIps(channelId, yw);
     String hostip = ips[0];
     String hostipa = ips[1];
@@ -127,8 +126,14 @@ private Response handleLiveChannelRequest(Map<String, String> params) throws Exc
             "&mode=" + mode +
             "&time=" + (System.currentTimeMillis()/1000);
 
-    // 修正Response构建方式（确保单行链式调用）
-    return newFixedLengthResponse(Response.Status.TEMPORARY_REDIRECT, "text/plain", "").addHeader("Location", proxyUrl);
+    // 正确的响应构建方式
+    Response response = newFixedLengthResponse(
+        Response.Status.TEMPORARY_REDIRECT, 
+        "text/plain", 
+        ""
+    );
+    response.addHeader("Location", proxyUrl);
+    return response;
 }
 
 
