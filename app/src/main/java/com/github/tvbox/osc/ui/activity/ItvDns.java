@@ -67,43 +67,56 @@ public class ItvDns extends NanoHTTPD {
     }
 
     @Override
-    public Response serve(IHTTPSession session) {
-        String uri = session.getUri();
+public Response serve(IHTTPSession session) {
+    try {
         Map<String, String> params = session.getParms();
-
-        try {
-            // 处理直播代理请求
-            if (uri.startsWith("/proxy")) {
-                return handleProxyRequest(params);
-            }
-            // 处理M3U8请求
-            else if (params.containsKey("u")) {
-                return handleM3u8Request(params);
-            }
-            // 处理TS片段请求
-            else if (params.containsKey("ts")) {
-                return handleTsRequest(params);
-            }
-            // 处理频道请求
-            else if (params.containsKey("channel-id")) {
-                return handleChannelRequest(params);
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "请求处理失败", e);
-        }
-        return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "无效请求");
-    }
-
-    private Response handleProxyRequest(Map<String, String> params) throws Exception {
-        String type = params.get("type");
-        String ext = params.get("ext");
+        String uri = session.getUri();
         
-        if ("txt".equals(type) && ext != null) {
-            String decodedUrl = new String(Base64.decode(ext, Base64.URL_SAFE), "UTF-8");
-            return handleM3u8Proxy(decodedUrl);
+        // 调试日志
+        Log.d("ItvDns", "Request URI: " + uri);
+        Log.d("ItvDns", "Params: " + params.toString());
+
+        if (uri.contains("/?channel-id=")) {
+            return handleLiveChannelRequest(params);
+        } else if (uri.contains("index.m3u8")) {
+            return handleM3u8Request(params);
+        } else if (uri.contains(".ts")) {
+            return handleTsRequest(params);
         }
-        return newFixedLengthResponse(Response.Status.BAD_REQUEST, "text/plain", "无效的代理请求");
+    } catch (Exception e) {
+        Log.e("ItvDns", "处理请求异常: " + e.getMessage());
+        return newFixedLengthResponse(Status.INTERNAL_ERROR, "text/plain", "Server Error");
     }
+    return newFixedLengthResponse(Status.NOT_FOUND, "text/plain", "Not Found");
+}
+
+// 修改handleLiveChannelRequest方法
+private Response handleLiveChannelRequest(Map<String, String> params) throws Exception {
+    // 强制初始化JSON配置
+    initJsonFiles();
+    
+    // 增加默认IP备用列表
+    String[] defaultIPs = {"39.135.97.80", "39.135.238.209", "39.134.95.33"};
+    
+    // 获取最佳IP逻辑优化
+    String[] ips = getBestIps(params.get("channel-id"), params.get("yw"));
+    if (ips == null || ips.length < 3) {
+        ips = defaultIPs;
+    }
+    
+    // 构建代理URL时增加随机参数避免缓存
+    String timeParam = String.valueOf(System.currentTimeMillis()/1000);
+    String proxyUrl = "http://127.0.0.1:" + PORT + "/?u=" + 
+        URLEncoder.encode(buildFinalUrl(params), "UTF-8") +
+        "&hostip=" + ips[0] +
+        "&hostipa=" + ips[1] +
+        "&hostipb=" + ips[2] +
+        "&mode=" + params.getOrDefault("mode", "0") +
+        "&time=" + timeParam;
+    
+    return newFixedLengthResponse(Status.TEMPORARY_REDIRECT, "text/plain", "")
+        .addHeader("Location", proxyUrl);
+}
 
     private Response handleM3u8Proxy(String url) throws Exception {
         HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
@@ -357,16 +370,35 @@ public class ItvDns extends NanoHTTPD {
         return result.toString();
     }
 
-    private void initJsonFiles() {
-        File jsonDir = new File(context.getFilesDir(), "json/yditv");
-        if (!jsonDir.exists()) jsonDir.mkdirs();
-        
-        File hostipFile = new File(jsonDir, HOSTIP_JSON_FILE);
-        if (!hostipFile.exists()) downloadJsonFile(HOSTIP_JSON_URL, hostipFile);
-        
-        File hostipYwFile = new File(jsonDir, HOSTIP_YW_JSON_FILE);
-        if (!hostipYwFile.exists()) downloadJsonFile(HOSTIP_YW_JSON_URL, hostipYwFile);
+// 修改ITVDNS.java的initJsonFiles方法
+private void initJsonFiles() {
+    File jsonDir = new File(context.getFilesDir(), "json/yditv");
+    if (!jsonDir.exists() && !jsonDir.mkdirs()) {
+        Log.e("ItvDns", "创建目录失败: " + jsonDir.getAbsolutePath());
     }
+
+    File hostipFile = new File(jsonDir, HOSTIP_JSON_FILE);
+    File hostipYwFile = new File(jsonDir, HOSTIP_YW_JSON_FILE);
+
+    // 强制重新下载过期文件
+    if (hostipFile.exists() && 
+        (System.currentTimeMillis() - hostipFile.lastModified()) > 3600000) {
+        downloadJsonFile(HOSTIP_JSON_URL, hostipFile);
+    }
+    
+    if (hostipYwFile.exists() && 
+        (System.currentTimeMillis() - hostipYwFile.lastModified()) > 3600000) {
+        downloadJsonFile(HOSTIP_YW_JSON_URL, hostipYwFile);
+    }
+    
+    // 如果文件不存在则立即下载
+    if (!hostipFile.exists()) {
+        downloadJsonFile(HOSTIP_JSON_URL, hostipFile);
+    }
+    if (!hostipYwFile.exists()) {
+        downloadJsonFile(HOSTIP_YW_JSON_URL, hostipYwFile);
+    }
+}
 
     private void downloadJsonFile(String url, File outputFile) {
         new Thread(() -> {
