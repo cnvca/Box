@@ -1201,9 +1201,10 @@ private void playChannelInternal() {
 
             // 新增缺失的接口方法
             @Override
-            public void singleTap(MotionEvent event) {
+            public boolean singleTap(MotionEvent event) {
                // 单击事件处理（根据需求实现）
                toggleChannelInfo();
+			   return true; // 或者根据实际需要返回true/false
             }
 			
             @Override
