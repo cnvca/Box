@@ -3,6 +3,15 @@ package com.github.tvbox.osc.ui.activity;
 import android.content.Context;
 import android.util.Log;
 
+// 在 ItvDns.java 头部添加
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import android.util.Base64;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
