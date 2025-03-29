@@ -85,7 +85,6 @@ import java.util.Locale;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TimeZone;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -2200,24 +2199,47 @@ interface OnSpeedTestListener {
         dialog.show();
     }
 
-    private void loadChannelGroupDataAndPlay(int groupIndex, int liveChannelIndex) {
-        liveChannelItemAdapter.setNewData(getLiveChannels(groupIndex));
-        if (groupIndex == currentChannelGroupIndex) {
-            if (currentLiveChannelIndex > -1)
-                mChannelGridView.scrollToPosition(currentLiveChannelIndex);
-            liveChannelItemAdapter.setSelectedChannelIndex(currentLiveChannelIndex);
-        } else {
-            mChannelGridView.scrollToPosition(0);
-            liveChannelItemAdapter.setSelectedChannelIndex(-1);
+// 修改 loadChannelGroupDataAndPlay 方法
+private void loadChannelGroupDataAndPlay(int groupIndex, int liveChannelIndex) {
+    // ▼▼▼ 新增空数据检查 ▼▼▼
+    List<LiveChannelItem> channels = getLiveChannels(groupIndex);
+    if (channels == null || channels.isEmpty()) {
+        Toast.makeText(this, "该频道组无可用频道", Toast.LENGTH_SHORT).show();
+        return;
+    }
+
+    // ▼▼▼ 安全设置数据源 ▼▼▼
+    liveChannelItemAdapter.setNewData(channels);
+
+    // ▼▼▼ 重置选中状态 ▼▼▼
+    currentLiveChannelIndex = -1;
+    liveChannelItemAdapter.setSelectedChannelIndex(-1);
+
+    // ▼▼▼ 延迟确保UI渲染 ▼▼▼
+    mHandler.postDelayed(() -> {
+        // ▼▼▼ 自动选中首个频道 ▼▼▼
+        if (liveChannelIndex == -1 && !channels.isEmpty()) {
+            clickLiveChannel(0); // 自动选中第一个频道
+        } else if (liveChannelIndex > -1) {
+            clickLiveChannel(liveChannelIndex);
         }
 
-        if (liveChannelIndex > -1) {
-            clickLiveChannel(liveChannelIndex);
-            mGroupGridView.scrollToPosition(groupIndex);
-            mChannelGridView.scrollToPosition(liveChannelIndex);
-            playChannel(groupIndex, liveChannelIndex, false);
-        }
-    }
+        // ▼▼▼ 强制焦点定位 ▼▼▼
+        mChannelGridView.post(() -> {
+            int targetPos = liveChannelIndex > -1 ? liveChannelIndex : 0;
+            RecyclerView.ViewHolder holder = mChannelGridView.findViewHolderForAdapterPosition(targetPos);
+            if (holder != null) {
+                holder.itemView.requestFocus();
+            } else {
+                mChannelGridView.scrollToPosition(targetPos);
+                mChannelGridView.post(() -> {
+                    RecyclerView.ViewHolder newHolder = mChannelGridView.findViewHolderForAdapterPosition(targetPos);
+                    if (newHolder != null) newHolder.itemView.requestFocus();
+                });
+            }
+        });
+    }, 300); // 适当延长延迟保证渲染完成
+}
 
     private boolean isNeedInputPassword(int groupIndex) {
         return !liveChannelGroupList.get(groupIndex).getGroupPassword().isEmpty()
