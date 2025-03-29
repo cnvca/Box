@@ -1,13 +1,10 @@
 package com.github.tvbox.osc.bean;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-/**
- * @author pj567
- * @date :2021/1/12
- * @description:
- */
 public class LiveChannelItem {
     /**
      * channelIndex : 频道索引号
@@ -25,6 +22,10 @@ public class LiveChannelItem {
     public int sourceIndex = 0;
     public int sourceNum = 0;
     public boolean include_back = false;
+    
+    // ▼▼▼▼▼ 新增测速相关字段 ▼▼▼▼▼
+    private Map<Integer, Long> sourceSpeedMap = new HashMap<>(); // 存储各线路延迟(毫秒)
+    private boolean hasSpeedTested = false; // 是否已完成测速
 
     public void setinclude_back(boolean include_back) {
         this.include_back = include_back;
@@ -105,27 +106,29 @@ public class LiveChannelItem {
         return channelSourceNames.get(sourceIndex);
     }
 
-    // 在 LiveChannelItem 类中添加以下字段和方法
-    private List<Long> sourceLatencies = new ArrayList<>();
-
+    // ▼▼▼▼▼ 新增测速相关方法 ▼▼▼▼▼
     public void setSourceLatency(int sourceIndex, long latency) {
-        if (sourceLatencies.size() <= sourceIndex) {
-            for (int i = sourceLatencies.size(); i <= sourceIndex; i++) {
-                sourceLatencies.add(Long.MAX_VALUE);
-            }
-        }
-        sourceLatencies.set(sourceIndex, latency);
+        sourceSpeedMap.put(sourceIndex, latency);
     }
 
     public int getFastestSourceIndex() {
+        if (sourceSpeedMap.isEmpty()) return 0;
         int fastestIndex = 0;
         long minLatency = Long.MAX_VALUE;
-        for (int i = 0; i < sourceLatencies.size(); i++) {
-            if (sourceLatencies.get(i) < minLatency) {
-                minLatency = sourceLatencies.get(i);
-                fastestIndex = i;
+        for (Map.Entry<Integer, Long> entry : sourceSpeedMap.entrySet()) {
+            if (entry.getValue() < minLatency) {
+                minLatency = entry.getValue();
+                fastestIndex = entry.getKey();
             }
         }
         return fastestIndex;
+    }
+
+    public boolean isHasSpeedTested() {
+        return hasSpeedTested;
+    }
+
+    public void setHasSpeedTested(boolean hasSpeedTested) {
+        this.hasSpeedTested = hasSpeedTested;
     }
 }
