@@ -1651,8 +1651,10 @@ private void selectChannelGroup(int groupIndex, boolean focus, int liveChannelIn
         return;
     }
 	
-        liveChannelItemAdapter.setSelectedChannelIndex(position);
-        currentLiveChannelIndex = position;
+    currentLiveChannelIndex = position;
+    currentChannelGroupIndex = liveChannelGroupAdapter.getSelectedGroupIndex();
+    
+    liveChannelItemAdapter.setSelectedChannelIndex(position);
         // Set default as Today
         epgDateAdapter.setSelectedIndex(6);
 
