@@ -86,6 +86,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import java.util.Map;
@@ -1535,54 +1536,27 @@ interface OnSpeedTestListener {
         });
     }
 
-private void selectChannelGroup(int groupIndex, boolean focus, int liveChannelIndex) {
-    // ▼▼▼ 新增边界检查（防止越界崩溃）▼▼▼
-    if (groupIndex < 0 || groupIndex >= liveChannelGroupList.size()) {
-        return;
-    }
-
-    // ▼▼▼ 记录原选中组索引（用于密码取消时恢复）▼▼▼
-    int previousGroupIndex = liveChannelGroupAdapter.getSelectedGroupIndex();
-
-    if (focus) {
-        liveChannelGroupAdapter.setFocusedGroupIndex(groupIndex);
-        liveChannelItemAdapter.setFocusedChannelIndex(-1);
-    }
-
-    // ▼▼▼ 优化密码验证逻辑 ▼▼▼
-    if (isNeedInputPassword(groupIndex)) {
-        showPasswordDialog(groupIndex, liveChannelIndex);
-        
-        // 密码取消时恢复原状态
-        liveChannelGroupAdapter.setSelectedGroupIndex(previousGroupIndex);
-        liveChannelGroupAdapter.notifyItemChanged(previousGroupIndex); // 刷新UI状态
-        return;
-    }
-
-    // ▼▼▼ 安全切换逻辑 ▼▼▼
-    if (groupIndex != liveChannelGroupAdapter.getSelectedGroupIndex()) {
-        liveChannelGroupAdapter.setSelectedGroupIndex(groupIndex);
-        
-        // ▼▼▼ 异步加载避免卡顿 ▼▼▼
-        mHandler.post(() -> {
+    private void selectChannelGroup(int groupIndex, boolean focus, int liveChannelIndex) {
+        if (focus) {
+            liveChannelGroupAdapter.setFocusedGroupIndex(groupIndex);
+            liveChannelItemAdapter.setFocusedChannelIndex(-1);
+        }
+        if ((groupIndex > -1 && groupIndex != liveChannelGroupAdapter.getSelectedGroupIndex()) || isNeedInputPassword(groupIndex)) {
+            liveChannelGroupAdapter.setSelectedGroupIndex(groupIndex);
+            if (isNeedInputPassword(groupIndex)) {
+                showPasswordDialog(groupIndex, liveChannelIndex);
+                return;
+            }
             loadChannelGroupDataAndPlay(groupIndex, liveChannelIndex);
-            loadAllChannelsEpgForGroup(groupIndex); // EPG加载保持在后台
-            
-            // ▼▼▼ 强制焦点定位 ▼▼▼
-            mChannelGridView.postDelayed(() -> {
-                if (mChannelGridView.getChildCount() > 0) {
-                    mChannelGridView.getChildAt(0).requestFocus();
-                }
-            }, 300);
-        });
+			
+			// 新增：加载当前频道组的所有频道 EPG 信息
+        loadAllChannelsEpgForGroup(groupIndex);
+        }
+        if (tvLeftChannelListLayout.getVisibility() == View.VISIBLE) {
+            mHandler.removeCallbacks(mHideChannelListRun);
+            mHandler.postDelayed(mHideChannelListRun, 6000);
+        }
     }
-
-    // ▼▼▼ 统一处理列表可见性 ▼▼▼
-    if (tvLeftChannelListLayout.getVisibility() == View.VISIBLE) {
-        mHandler.removeCallbacks(mHideChannelListRun);
-        mHandler.postDelayed(mHideChannelListRun, 6000);
-    }
-}
 
     private void loadAllChannelsEpgForGroup(int groupIndex) {
     if (liveChannelGroupList == null || liveChannelGroupList.isEmpty()) return;
@@ -1646,15 +1620,8 @@ private void selectChannelGroup(int groupIndex, boolean focus, int liveChannelIn
     }
 
     private void clickLiveChannel(int position) {
-    // ▼▼▼ 新增有效性检查 ▼▼▼
-    if (position < 0 || position >= liveChannelItemAdapter.getData().size()) {
-        return;
-    }
-	
-    currentLiveChannelIndex = position;
-    currentChannelGroupIndex = liveChannelGroupAdapter.getSelectedGroupIndex();
-    
-    liveChannelItemAdapter.setSelectedChannelIndex(position);
+        liveChannelItemAdapter.setSelectedChannelIndex(position);
+
         // Set default as Today
         epgDateAdapter.setSelectedIndex(6);
 
@@ -2233,34 +2200,24 @@ private void selectChannelGroup(int groupIndex, boolean focus, int liveChannelIn
         dialog.show();
     }
 
-// 修改 loadChannelGroupDataAndPlay 方法
-private void loadChannelGroupDataAndPlay(int groupIndex, int liveChannelIndex) {
-    List<LiveChannelItem> channels = getLiveChannels(groupIndex);
-    if (channels == null || channels.isEmpty()) {
-        Toast.makeText(this, "该频道组无可用频道", Toast.LENGTH_SHORT).show();
-        return;
+    private void loadChannelGroupDataAndPlay(int groupIndex, int liveChannelIndex) {
+        liveChannelItemAdapter.setNewData(getLiveChannels(groupIndex));
+        if (groupIndex == currentChannelGroupIndex) {
+            if (currentLiveChannelIndex > -1)
+                mChannelGridView.scrollToPosition(currentLiveChannelIndex);
+            liveChannelItemAdapter.setSelectedChannelIndex(currentLiveChannelIndex);
+        } else {
+            mChannelGridView.scrollToPosition(0);
+            liveChannelItemAdapter.setSelectedChannelIndex(-1);
+        }
+
+        if (liveChannelIndex > -1) {
+            clickLiveChannel(liveChannelIndex);
+            mGroupGridView.scrollToPosition(groupIndex);
+            mChannelGridView.scrollToPosition(liveChannelIndex);
+            playChannel(groupIndex, liveChannelIndex, false);
+        }
     }
-
-    // 仅更新数据，不触发播放
-    liveChannelItemAdapter.setNewData(channels);
-    
-    // 重置选中状态
-    currentLiveChannelIndex = -1;
-    liveChannelItemAdapter.setSelectedChannelIndex(-1);
-
-    // 焦点定位但不播放
-    mHandler.postDelayed(() -> {
-        mChannelGridView.post(() -> {
-            int targetPos = liveChannelIndex > -1 ? liveChannelIndex : 0;
-            RecyclerView.ViewHolder holder = mChannelGridView.findViewHolderForAdapterPosition(targetPos);
-            if (holder != null) {
-                holder.itemView.requestFocus(); // 仅定位焦点
-            } else {
-                mChannelGridView.scrollToPosition(targetPos);
-            }
-        });
-    }, 300);
-}
 
     private boolean isNeedInputPassword(int groupIndex) {
         return !liveChannelGroupList.get(groupIndex).getGroupPassword().isEmpty()
