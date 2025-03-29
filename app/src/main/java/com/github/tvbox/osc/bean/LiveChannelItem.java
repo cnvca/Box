@@ -2,7 +2,6 @@ package com.github.tvbox.osc.bean;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class LiveChannelItem {
@@ -23,9 +22,9 @@ public class LiveChannelItem {
     public int sourceNum = 0;
     public boolean include_back = false;
     
-    // ▼▼▼▼▼ 新增测速相关字段 ▼▼▼▼▼
-    private Map<Integer, Long> sourceSpeedMap = new HashMap<>(); // 存储各线路延迟(毫秒)
-    private boolean hasSpeedTested = false; // 是否已完成测速
+    // ▼▼▼▼▼ 测速相关字段 ▼▼▼▼▼
+    private final Map<Integer, Long> sourceSpeedMap = new HashMap<>();
+    private boolean hasSpeedTested = false;
 
     public void setinclude_back(boolean include_back) {
         this.include_back = include_back;
@@ -106,9 +105,13 @@ public class LiveChannelItem {
         return channelSourceNames.get(sourceIndex);
     }
 
-    // ▼▼▼▼▼ 新增测速相关方法 ▼▼▼▼▼
+    // ▼▼▼▼▼ 测速相关方法 ▼▼▼▼▼
     public void setSourceLatency(int sourceIndex, long latency) {
         sourceSpeedMap.put(sourceIndex, latency);
+    }
+
+    public Map<Integer, Long> getSourceSpeedMap() {
+        return sourceSpeedMap;
     }
 
     public int getFastestSourceIndex() {
