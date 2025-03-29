@@ -1247,7 +1247,9 @@ private void playChannelInternal() {
 private void testSourceSpeed(LiveChannelItem channelItem, int sourceIndex, OnSpeedTestListener listener) {
     // 如果已经测速过则直接返回
     if (channelItem.isHasSpeedTested()) {
-        listener.onSpeedTestResult(sourceIndex, channelItem.getSourceSpeedMap().get(sourceIndex));
+        long latency = channelItem.getSourceSpeedMap().containsKey(sourceIndex) ? 
+            channelItem.getSourceSpeedMap().get(sourceIndex) : Long.MAX_VALUE;
+        listener.onSpeedTestResult(sourceIndex, latency);
         return;
     }
 
