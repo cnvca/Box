@@ -35,8 +35,8 @@ jobs:
         run: |
           echo '修改 VersionName 和 About Dialog'
           # 修改为 CNVC 前缀
-          sed -i "/versionName/s#[0-9a-zA-Z_\.\'\"-]\+\$#\'CNVC-${{ env.tag }}\'#" ${{ github.workspace }}/app/build.gradle
-          sed -i "/android:text=\"/s#HGTV-[0-9]\{8\}-[0-9]\{4\}#CNVC-${{ env.tag }}#g" ${{ github.workspace }}/app/src/main/res/layout/dialog_about.xml
+          sed -i "/versionName/s#[0-9a-zA-Z_\.\'\"-]\+\$#\'HGTV-${{ env.tag }}\'#" ${{ github.workspace }}/app/build.gradle
+          sed -i "/android:text=\"/s#HGTV-[0-9]\{8\}-[0-9]\{4\}#HGTV-${{ env.tag }}#g" ${{ github.workspace }}/app/src/main/res/layout/dialog_about.xml
 
       - uses: actions/setup-java@v4
         with:
@@ -55,7 +55,7 @@ jobs:
           rm -rf apk/
           mkdir -p apk/
           for file in `find ~ -name "*release*.apk" -print`; do
-            mv "$file" apk/CNVC_${{ env.tag }}.apk  # 修改产物名称
+            mv "$file" apk/HGTV_${{ env.tag }}.apk  # 修改产物名称
           done
 
       - name: Generate Release Notes
@@ -117,9 +117,9 @@ jobs:
           git pull --rebase origin cnvc
 
           # 更新 README.md
-          sed -i "/Updated:/s#Updated: [a-zA-Z0-9-]*#Updated: CNVC-${{ env.tag }}#" README.md
+          sed -i "/Updated:/s#Updated: [a-zA-Z0-9-]*#Updated: HGTV-${{ env.tag }}#" README.md
           git add README.md
-          git commit -m "CNVC-${{ env.tag }}"
+          git commit -m "HGTV-${{ env.tag }}"
 
           # 强制推送到 cnvc 分支
           git push -u -f origin cnvc  # 修改推送目标分支
