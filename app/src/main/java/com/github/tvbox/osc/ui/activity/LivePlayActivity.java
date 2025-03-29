@@ -973,24 +973,29 @@ private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean
     currentLiveChannelItem.setinclude_back(currentLiveChannelItem.getUrl().indexOf("PLTV/8888") != -1);
 
     // 测速并选择最快的源
-    if (currentLiveChannelItem.getSourceNum() > 1) {
-        // 使用 final 变量来存储最快的源索引
-        final int[] fastestSourceIndex = {0};
-        final LiveChannelItem finalChannelItem = currentLiveChannelItem; // 将 currentLiveChannelItem 转为 final
+    if (currentLiveChannelItem.getSourceNum() > 1 && !currentLiveChannelItem.isHasSpeedTested()) {
+        final AtomicInteger completedTests = new AtomicInteger(0);
+        final int totalSources = currentLiveChannelItem.getSourceNum();
 
         for (int i = 0; i < currentLiveChannelItem.getSourceNum(); i++) {
             testSourceSpeed(currentLiveChannelItem, i, (sourceIndex, latency) -> {
-                finalChannelItem.setSourceLatency(sourceIndex, latency);
+                currentLiveChannelItem.setSourceLatency(sourceIndex, latency);
+                completedTests.incrementAndGet();
 
-                // 如果所有源都测速完成，选择最快的源进行播放
-                if (sourceIndex == finalChannelItem.getSourceNum() - 1) {
-                    fastestSourceIndex[0] = finalChannelItem.getFastestSourceIndex();
-                    finalChannelItem.setSourceIndex(fastestSourceIndex[0]);
+                // 当所有源测速完成时
+                if (completedTests.get() == totalSources) {
+                    currentLiveChannelItem.setHasSpeedTested(true);
+                    int fastestIndex = currentLiveChannelItem.getFastestSourceIndex();
+                    currentLiveChannelItem.setSourceIndex(fastestIndex);
                     playChannelInternal();
                 }
             });
         }
     } else {
+        // 已经测速过，直接使用最快源
+        if (!changeSource && currentLiveChannelItem.isHasSpeedTested()) {
+            currentLiveChannelItem.setSourceIndex(currentLiveChannelItem.getFastestSourceIndex());
+        }
         playChannelInternal();
     }
 
@@ -1240,6 +1245,12 @@ private void playChannelInternal() {
 	
 	// 在 LivePlayActivity 类中添加以下方法
 private void testSourceSpeed(LiveChannelItem channelItem, int sourceIndex, OnSpeedTestListener listener) {
+    // 如果已经测速过则直接返回
+    if (channelItem.isHasSpeedTested()) {
+        listener.onSpeedTestResult(sourceIndex, channelItem.getSourceSpeedMap().get(sourceIndex));
+        return;
+    }
+
     String url = channelItem.getChannelUrls().get(sourceIndex);
     long startTime = System.currentTimeMillis();
 
