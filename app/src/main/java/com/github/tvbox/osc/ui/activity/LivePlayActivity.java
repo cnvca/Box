@@ -1535,27 +1535,54 @@ interface OnSpeedTestListener {
         });
     }
 
-    private void selectChannelGroup(int groupIndex, boolean focus, int liveChannelIndex) {
-        if (focus) {
-            liveChannelGroupAdapter.setFocusedGroupIndex(groupIndex);
-            liveChannelItemAdapter.setFocusedChannelIndex(-1);
-        }
-        if ((groupIndex > -1 && groupIndex != liveChannelGroupAdapter.getSelectedGroupIndex()) || isNeedInputPassword(groupIndex)) {
-            liveChannelGroupAdapter.setSelectedGroupIndex(groupIndex);
-            if (isNeedInputPassword(groupIndex)) {
-                showPasswordDialog(groupIndex, liveChannelIndex);
-                return;
-            }
-            loadChannelGroupDataAndPlay(groupIndex, liveChannelIndex);
-			
-			// 新增：加载当前频道组的所有频道 EPG 信息
-        loadAllChannelsEpgForGroup(groupIndex);
-        }
-        if (tvLeftChannelListLayout.getVisibility() == View.VISIBLE) {
-            mHandler.removeCallbacks(mHideChannelListRun);
-            mHandler.postDelayed(mHideChannelListRun, 6000);
-        }
+private void selectChannelGroup(int groupIndex, boolean focus, int liveChannelIndex) {
+    // ▼▼▼ 新增边界检查（防止越界崩溃）▼▼▼
+    if (groupIndex < 0 || groupIndex >= liveChannelGroupList.size()) {
+        return;
     }
+
+    // ▼▼▼ 记录原选中组索引（用于密码取消时恢复）▼▼▼
+    int previousGroupIndex = liveChannelGroupAdapter.getSelectedGroupIndex();
+
+    if (focus) {
+        liveChannelGroupAdapter.setFocusedGroupIndex(groupIndex);
+        liveChannelItemAdapter.setFocusedChannelIndex(-1);
+    }
+
+    // ▼▼▼ 优化密码验证逻辑 ▼▼▼
+    if (isNeedInputPassword(groupIndex)) {
+        showPasswordDialog(groupIndex, liveChannelIndex);
+        
+        // 密码取消时恢复原状态
+        liveChannelGroupAdapter.setSelectedGroupIndex(previousGroupIndex);
+        liveChannelGroupAdapter.notifyItemChanged(previousGroupIndex); // 刷新UI状态
+        return;
+    }
+
+    // ▼▼▼ 安全切换逻辑 ▼▼▼
+    if (groupIndex != liveChannelGroupAdapter.getSelectedGroupIndex()) {
+        liveChannelGroupAdapter.setSelectedGroupIndex(groupIndex);
+        
+        // ▼▼▼ 异步加载避免卡顿 ▼▼▼
+        mHandler.post(() -> {
+            loadChannelGroupDataAndPlay(groupIndex, liveChannelIndex);
+            loadAllChannelsEpgForGroup(groupIndex); // EPG加载保持在后台
+            
+            // ▼▼▼ 强制焦点定位 ▼▼▼
+            mChannelGridView.postDelayed(() -> {
+                if (mChannelGridView.getChildCount() > 0) {
+                    mChannelGridView.getChildAt(0).requestFocus();
+                }
+            }, 300);
+        });
+    }
+
+    // ▼▼▼ 统一处理列表可见性 ▼▼▼
+    if (tvLeftChannelListLayout.getVisibility() == View.VISIBLE) {
+        mHandler.removeCallbacks(mHideChannelListRun);
+        mHandler.postDelayed(mHideChannelListRun, 6000);
+    }
+}
 
     private void loadAllChannelsEpgForGroup(int groupIndex) {
     if (liveChannelGroupList == null || liveChannelGroupList.isEmpty()) return;
@@ -1619,6 +1646,11 @@ interface OnSpeedTestListener {
     }
 
     private void clickLiveChannel(int position) {
+    // ▼▼▼ 新增有效性检查 ▼▼▼
+    if (position < 0 || position >= liveChannelItemAdapter.getData().size()) {
+        return;
+    }
+	
         liveChannelItemAdapter.setSelectedChannelIndex(position);
 
         // Set default as Today
