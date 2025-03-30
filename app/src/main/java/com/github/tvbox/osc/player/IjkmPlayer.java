@@ -2,7 +2,6 @@ package com.github.tvbox.osc.player;
 
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
-import android.net.Uri;
 import android.text.TextUtils;
 
 import com.github.tvbox.osc.api.ApiConfig;
@@ -11,28 +10,17 @@ import com.github.tvbox.osc.util.FileUtils;
 import com.github.tvbox.osc.util.HawkConfig;
 import com.github.tvbox.osc.util.LOG;
 import com.github.tvbox.osc.util.MD5;
-import com.github.tvbox.osc.util.OkGoHelper;
 import com.github.tvbox.osc.util.PlayerHelper;
 import com.orhanobut.hawk.Hawk;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.LinkedHashMap;
 
-import okhttp3.Headers;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
 import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 import tv.danmaku.ijk.media.player.misc.ITrackInfo;
@@ -43,91 +31,44 @@ import xyz.doikki.videoplayer.ijk.RawDataSourceProvider;
 public class IjkmPlayer extends IjkPlayer {
 
     private IJKCode codec = null;
-    private OkHttpClient mOkClient;
-    private Context mContext;
 
     public IjkmPlayer(Context context, IJKCode codec) {
         super(context);
-        this.mContext = context;
         this.codec = codec;
-        this.mOkClient = OkGoHelper.getDefaultClient();
     }
 
-    private boolean needUseOkHttp(String url) {
-        try {
-            Uri uri = Uri.parse(url);
-            String host = uri.getHost();
-            Map<String, String> hosts = ApiConfig.get().getMyHost();
-            if (host == null || hosts == null || hosts.isEmpty()) return false;
-
-            for (Map.Entry<String, String> entry : hosts.entrySet()) {
-                String key = entry.getKey().toLowerCase();
-                if (key.startsWith("*.")) {
-                    String domain = key.substring(2);
-                    if (host.endsWith("." + domain) || host.equals(domain)) {
-                        LOG.i("HOSTS匹配 [通配符] " + key + " => " + host);
-                        return true;
-                    }
-                } else if (host.equalsIgnoreCase(key)) {
-                    LOG.i("HOSTS匹配 [精确] " + key + " => " + host);
-                    return true;
+    @Override
+    public void setOptions() {
+        IJKCode codecTmp = this.codec == null ? ApiConfig.get().getCurrentIJKCode() : this.codec;
+        LinkedHashMap<String, String> options = codecTmp.getOption();
+        if (options != null) {
+            for (String key : options.keySet()) {
+                String value = options.get(key);
+                String[] opt = key.split("\\|");
+                int category = Integer.parseInt(opt[0].trim());
+                String name = opt[1].trim();
+                try {
+                    long valLong = Long.parseLong(value);
+                    mMediaPlayer.setOption(category, name, valLong);
+                } catch (Exception e) {
+                    mMediaPlayer.setOption(category, name, value);
                 }
             }
-        } catch (Exception e) {
-            LOG.e("HOSTS检测异常", e);
         }
-        return false;
+     
+        //开启内置字幕
+        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "subtitle", 1);
+        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_clear", 1);
+        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_timeout", -1);
+        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT,"safe",0);
+        super.setOptions();
     }
 
     @Override
     public void setDataSource(String path, Map<String, String> headers) {
         try {
-            // ================== 智能通道选择逻辑 ================== //
-            boolean useOkHttp = needUseOkHttp(path);
-            
-            if (useOkHttp) {
-                LOG.i("HOSTS映射触发，使用OkHttp通道");
-                try {
-                    Request.Builder builder = new Request.Builder().url(path);
-                    if (headers != null) {
-                        for (Map.Entry<String, String> entry : headers.entrySet()) {
-                            builder.addHeader(entry.getKey(), entry.getValue());
-                        }
-                    }
-                    
-                    try (Response response = mOkClient.newCall(builder.build()).execute()) {
-                        if (!response.isSuccessful()) {
-                            throw new IOException("HTTP错误码: " + response.code());
-                        }
-                        
-                        ResponseBody body = response.body();
-                        if (body == null) throw new IOException("空响应体");
-
-                        // 创建临时文件（自动清理）
-                        File tempFile = File.createTempFile("ijkcache_", ".tmp", mContext.getCacheDir());
-                        try (InputStream is = body.byteStream();
-                             FileOutputStream fos = new FileOutputStream(tempFile)) {
-                            byte[] buffer = new byte[8192];
-                            int bytesRead;
-                            while ((bytesRead = is.read(buffer)) != -1) {
-                                fos.write(buffer, 0, bytesRead);
-                            }
-                        }
-
-                        // 使用文件路径设置源
-                        mMediaPlayer.setDataSource(tempFile.getAbsolutePath());
-                        tempFile.deleteOnExit();
-                        return;
-                    }
-                } catch (Exception e) {
-                    LOG.e("OkHttp通道失败，降级到原生通道", e);
-                }
-            }
-            // ================== 智能通道逻辑结束 ================== //
-
-            // 原始IJK设置逻辑
             if (path != null && !TextUtils.isEmpty(path)) {
-                if (path.startsWith("rtsp")) {
+                if(path.startsWith("rtsp")){
                     mMediaPlayer.setOption(1, "infbuf", 1);
                     mMediaPlayer.setOption(1, "rtsp_transport", "tcp");
                     mMediaPlayer.setOption(1, "rtsp_flags", "prefer_tcp");
@@ -150,42 +91,18 @@ public class IjkmPlayer extends IjkPlayer {
                 }
             }
             setDataSourceHeader(headers);
-            
-            mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, 
-                "protocol_whitelist", 
-                "ijkio,ffio,async,cache,crypto,file,http,https,ijkhttphook,ijkinject,ijklivehook,ijklongurl,ijksegment,ijktcphook,pipe,rtp,tcp,tls,udp,ijkurlhook,data,concat,subfile,ffconcat"
-            );
-            
-            super.setDataSource(path, headers);
         } catch (Exception e) {
             mPlayerEventListener.onError(-1, PlayerHelper.getRootCauseMessage(e));
         }
-    }
-
-    // 以下保持原始方法不变
-    @Override
-    public void setOptions() {
-        IJKCode codecTmp = this.codec == null ? ApiConfig.get().getCurrentIJKCode() : this.codec;
-        LinkedHashMap<String, String> options = codecTmp.getOption();
-        if (options != null) {
-            for (String key : options.keySet()) {
-                String value = options.get(key);
-                String[] opt = key.split("\\|");
-                int category = Integer.parseInt(opt[0].trim());
-                String name = opt[1].trim();
-                try {
-                    long valLong = Long.parseLong(value);
-                    mMediaPlayer.setOption(category, name, valLong);
-                } catch (Exception e) {
-                    mMediaPlayer.setOption(category, name, value);
-                }
-            }
-        }
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "subtitle", 1);
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_clear", 1);
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "dns_cache_timeout", -1);
-        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT,"safe",0);
-        super.setOptions();
+        //mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "protocol_whitelist", "ijkio,ffio,async,cache,crypto,file,http,https,ijkhttphook,ijkinject,ijklivehook,ijklongurl,ijksegment,ijktcphook,pipe,rtp,tcp,tls,udp,ijkurlhook,data");
+        mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "protocol_whitelist", "ijkio,ffio,async,cache,crypto,file,http,https,ijkhttphook,ijkinject,ijklivehook,ijklongurl,ijksegment,ijktcphook,pipe,rtp,tcp,tls,udp,ijkurlhook,data,concat,subfile,ffconcat");
+        //mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_PLAYER, "packet-buffering", 0L);
+//        try {
+//            path = encodeSpaceChinese(path);//会导致本地文件无法播放，故注释掉
+//        } catch (Exception ignored) {
+//
+//        }
+        super.setDataSource(path, headers);
     }
 
     private String encodeSpaceChinese(String str) throws UnsupportedEncodingException {
@@ -205,12 +122,12 @@ public class IjkmPlayer extends IjkPlayer {
             mPlayerEventListener.onError(-1, PlayerHelper.getRootCauseMessage(e));
         }
     }
-
     private void setDataSourceHeader(Map<String, String> headers) {
         if (headers != null && !headers.isEmpty()) {
             String userAgent = headers.get("User-Agent");
             if (!TextUtils.isEmpty(userAgent)) {
                 mMediaPlayer.setOption(IjkMediaPlayer.OPT_CATEGORY_FORMAT, "user_agent", userAgent);
+                // 移除header中的User-Agent，防止重复
                 headers.remove("User-Agent");
             }
             if (headers.size() > 0) {
@@ -227,7 +144,6 @@ public class IjkmPlayer extends IjkPlayer {
             }
         }
     }
-
     public TrackInfo getTrackInfo() {
         IjkTrackInfo[] trackInfo = mMediaPlayer.getTrackInfo();
         if (trackInfo == null) return null;
@@ -236,7 +152,7 @@ public class IjkmPlayer extends IjkPlayer {
         int audioSelected = mMediaPlayer.getSelectedTrack(ITrackInfo.MEDIA_TRACK_TYPE_AUDIO);
         int index = 0;
         for (IjkTrackInfo info : trackInfo) {
-            if (info.getTrackType() == ITrackInfo.MEDIA_TRACK_TYPE_AUDIO) {
+            if (info.getTrackType() == ITrackInfo.MEDIA_TRACK_TYPE_AUDIO) {//音轨信息
                 String trackName = (data.getAudio().size() + 1) + "：" + info.getInfoInline();
                 TrackInfoBean t = new TrackInfoBean();
                 t.name = trackName;
@@ -245,7 +161,7 @@ public class IjkmPlayer extends IjkPlayer {
                 t.selected = index == audioSelected;
                 data.addAudio(t);
             }
-            if (info.getTrackType() == ITrackInfo.MEDIA_TRACK_TYPE_TIMEDTEXT) {
+            if (info.getTrackType() == ITrackInfo.MEDIA_TRACK_TYPE_TIMEDTEXT) {//内置字幕
                 String trackName = (data.getSubtitle().size() + 1) + "：" + info.getInfoInline();
                 TrackInfoBean t = new TrackInfoBean();
                 t.name = trackName;
@@ -266,4 +182,5 @@ public class IjkmPlayer extends IjkPlayer {
     public void setOnTimedTextListener(IMediaPlayer.OnTimedTextListener listener) {
         mMediaPlayer.setOnTimedTextListener(listener);
     }
+
 }
