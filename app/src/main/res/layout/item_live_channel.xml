@@ -8,6 +8,7 @@
     android:background="@drawable/shape_live_focus"
     android:layout_marginLeft="10mm"
     android:layout_marginRight="10mm"
+    android:focusable="true"    
     android:focusableInTouchMode="false">
 
     <!-- 频道编号 -->
