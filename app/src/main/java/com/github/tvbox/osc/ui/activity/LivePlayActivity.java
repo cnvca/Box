@@ -598,9 +598,9 @@ public class LivePlayActivity extends BaseActivity {
         }
 		
 		 // 确保不触发底部菜单和进度条
-    if (llSeekBar != null) {
-        llSeekBar.setVisibility(View.GONE); // 隐藏进度条
-       }
+//    if (llSeekBar != null) {
+//        llSeekBar.setVisibility(View.GONE); // 隐藏进度条
+//       }
     }
 
     //频道列表
@@ -703,9 +703,9 @@ public class LivePlayActivity extends BaseActivity {
         mHandler.postDelayed(mUpdateLayout, 255);   // Workaround Fix : SurfaceView
 		
 		// 隐藏进度条
-        if (llSeekBar != null) {
-            llSeekBar.setVisibility(View.GONE);
-       }
+//        if (llSeekBar != null) {
+//            llSeekBar.setVisibility(View.GONE);
+//       }
     }
 
     private final Runnable mHideChannelInfoRun = new Runnable() {
