@@ -808,7 +808,7 @@ public class LivePlayActivity extends BaseActivity {
         if (isSHIYI)
             return;
         if (channel_Name.getChannelName() != null) {
-  //          showChannelInfo();     //不调用避免触发底部菜单
+            showChannelInfo();     //不调用避免触发底部菜单
             String savedEpgKey = channel_Name.getChannelName() + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
             if (hsEpg.containsKey(savedEpgKey)) {
                 String[] epgInfo = EpgUtil.getEpgInfo(channel_Name.getChannelName());
@@ -1067,12 +1067,12 @@ private void playChannelInternal() {
         playChannel(currentChannelGroupIndex, currentLiveChannelIndex, true);
 		
 		// 确保底部菜单显示，但隐藏进度条
-    if (tvBottomLayout != null) {
-        tvBottomLayout.setVisibility(View.VISIBLE); // 显示底部菜单
-    }
-    if (llSeekBar != null) {
-        llSeekBar.setVisibility(View.GONE); // 隐藏进度条
-    }
+ //   if (tvBottomLayout != null) {
+ //       tvBottomLayout.setVisibility(View.VISIBLE); // 显示底部菜单
+ //   }
+ //   if (llSeekBar != null) {
+ //       llSeekBar.setVisibility(View.GONE); // 隐藏进度条
+ //   }
 }
 
     //显示设置列表
@@ -1559,11 +1559,11 @@ interface OnSpeedTestListener {
     }
 
     private void loadAllChannelsEpgForGroup(int groupIndex) {
-    if (liveChannelGroupList == null || liveChannelGroupList.isEmpty()) return;
+//   if (liveChannelGroupList == null || liveChannelGroupList.isEmpty()) return;
 
     // 获取当前频道组
     LiveChannelGroup group = liveChannelGroupList.get(groupIndex);
-    if (group.getLiveChannels() == null || group.getLiveChannels().isEmpty()) return;
+//    if (group.getLiveChannels() == null || group.getLiveChannels().isEmpty()) return;
 
     // 遍历当前频道组中的所有频道
     for (LiveChannelItem channel : group.getLiveChannels()) {
@@ -1906,7 +1906,7 @@ interface OnSpeedTestListener {
     }
 
     private void loadAllChannelsEpg() {
-    if (liveChannelGroupList == null || liveChannelGroupList.isEmpty()) return;
+ //   if (liveChannelGroupList == null || liveChannelGroupList.isEmpty()) return;
 
     // 遍历所有频道组
     for (LiveChannelGroup group : liveChannelGroupList) {
