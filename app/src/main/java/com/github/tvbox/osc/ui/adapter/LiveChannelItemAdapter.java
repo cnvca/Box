@@ -2,6 +2,7 @@ package com.github.tvbox.osc.ui.adapter;
 
 import android.graphics.Color;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.view.View;
 import android.widget.TextView;
 
@@ -24,17 +25,18 @@ public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, Ba
     private int focusedChannelIndex = -1;
     private Hashtable<String, ArrayList<Epginfo>> hsEpg;
     private LiveEpgDateAdapter epgDateAdapter;
+    private Handler mHandler; // 添加Handler声明
     
     // 新增缓存和防抖控制
     private final Map<String, String> epgCache = new HashMap<>();
     private long lastUpdateTime = 0L;
     private static final long EPG_UPDATE_THROTTLE = 500L; // 500ms防抖
 
-    public LiveChannelItemAdapter(Hashtable<String, ArrayList<Epginfo>> hsEpg, LiveEpgDateAdapter epgDateAdapter) {
+    public LiveChannelItemAdapter(Hashtable<String, ArrayList<Epginfo>> hsEpg, LiveEpgDateAdapter epgDateAdapter, Handler handler) {
         super(R.layout.item_live_channel, new ArrayList<>());
         this.hsEpg = hsEpg;
         this.epgDateAdapter = epgDateAdapter;
-        this.mHandler = handler;		
+        this.mHandler = handler; // 初始化Handler
     }
 
     @Override
@@ -68,8 +70,8 @@ public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, Ba
 
         // EPG加载优化（异步+缓存+防抖）
         loadEpgWithThrottle(holder, item);
-    }
-    // 新增焦点控制
+
+        // 焦点监听必须放在convert方法内部
         holder.itemView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(final View v, boolean hasFocus) {
@@ -93,6 +95,8 @@ public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, Ba
                 }
             }
         });
+    }
+
     private void loadEpgWithThrottle(BaseViewHolder holder, LiveChannelItem item) {
         // 防抖处理
         long currentTime = System.currentTimeMillis();
