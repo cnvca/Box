@@ -89,7 +89,7 @@
             android:background="?attr/color_theme" />
 
         <!-- EPG 信息 -->
-        <com.github.tvbox.osc.ui.tv.widget.MarqueeTextView
+        <TextView
             android:id="@+id/tv_current_program_name"
             android:layout_width="0mm"
             android:layout_height="wrap_content"
