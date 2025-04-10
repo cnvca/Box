@@ -68,7 +68,21 @@ public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, Ba
         // EPG加载优化（异步+缓存+防抖）
         loadEpgWithThrottle(holder, item);
     }
-
+    // 新增焦点控制
+    holder.itemView.setOnFocusChangeListener((v, hasFocus) -> {
+        if (hasFocus) {
+            // 延迟处理避免快速滚动冲突
+            mHandler.postDelayed(() -> {
+                if (v.isFocused()) {
+                    v.setBackgroundResource(R.drawable.live_channel_focused_bg);
+                    // 关键：消费焦点事件
+                    v.requestFocusFromTouch();
+                }
+            }, 50);
+        } else {
+            v.setBackgroundResource(0);
+        }
+    });
     private void loadEpgWithThrottle(BaseViewHolder holder, LiveChannelItem item) {
         // 防抖处理
         long currentTime = System.currentTimeMillis();
