@@ -1628,7 +1628,8 @@ interface OnSpeedTestListener {
         mChannelGridView.setLayoutManager(new V7LinearLayoutManager(this.mContext, 1, false));
 
  //       liveChannelItemAdapter = new LiveChannelItemAdapter();
-        liveChannelItemAdapter = new LiveChannelItemAdapter(hsEpg, epgDateAdapter);
+//        liveChannelItemAdapter = new LiveChannelItemAdapter(hsEpg, epgDateAdapter);
+        liveChannelItemAdapter = new LiveChannelItemAdapter(hsEpg, epgDateAdapter, mHandler);
         mChannelGridView.setAdapter(liveChannelItemAdapter);
         mChannelGridView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
