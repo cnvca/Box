@@ -34,6 +34,7 @@ public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, Ba
         super(R.layout.item_live_channel, new ArrayList<>());
         this.hsEpg = hsEpg;
         this.epgDateAdapter = epgDateAdapter;
+        this.mHandler = handler;		
     }
 
     @Override
@@ -69,20 +70,29 @@ public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, Ba
         loadEpgWithThrottle(holder, item);
     }
     // 新增焦点控制
-    holder.itemView.setOnFocusChangeListener((v, hasFocus) -> {
-        if (hasFocus) {
-            // 延迟处理避免快速滚动冲突
-            mHandler.postDelayed(() -> {
-                if (v.isFocused()) {
-                    v.setBackgroundResource(R.drawable.live_channel_focused_bg);
-                    // 关键：消费焦点事件
-                    v.requestFocusFromTouch();
+        holder.itemView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(final View v, boolean hasFocus) {
+                if (hasFocus) {
+                    mHandler.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (v.isFocused()) {
+                                v.setBackgroundResource(R.drawable.live_channel_focused_bg);
+                                v.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        v.requestFocus();
+                                    }
+                                });
+                            }
+                        }
+                    }, 50);
+                } else {
+                    v.setBackgroundResource(0);
                 }
-            }, 50);
-        } else {
-            v.setBackgroundResource(0);
-        }
-    });
+            }
+        });
     private void loadEpgWithThrottle(BaseViewHolder holder, LiveChannelItem item) {
         // 防抖处理
         long currentTime = System.currentTimeMillis();
