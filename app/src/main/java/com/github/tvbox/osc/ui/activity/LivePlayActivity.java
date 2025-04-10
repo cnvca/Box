@@ -157,6 +157,9 @@ public class LivePlayActivity extends BaseActivity {
     private LiveEpgDateAdapter epgDateAdapter;
     private LiveEpgAdapter epgListAdapter;
 
+    private final Map<String, Long> lastEpgLoadTime = new HashMap<>();
+    private static final long EPG_THROTTLE_TIME = 300; // 优化防抖时间为300ms
+
     // Misc Variables
     public String epgStringAddress = "";
     SimpleDateFormat timeFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -508,9 +511,18 @@ public class LivePlayActivity extends BaseActivity {
 
             // 显示 EPG 信息
             showBottomEpg();
+            // 添加防抖调用
+            mHandler.removeCallbacks(mEpgRunnable);
+            mHandler.postDelayed(mEpgRunnable, 100);			
         }
     }
-	
+    // 新增Runnable
+    private final Runnable mEpgRunnable = new Runnable() {
+        @Override
+        public void run() {
+            getEpg(new Date());
+        }
+    };	
     // takagen99 : Use onStopCalled to track close activity
     private boolean onStopCalled;
 
@@ -843,7 +855,11 @@ public class LivePlayActivity extends BaseActivity {
                 if (selectedIndex < 0)
                     getEpg(new Date());
                 else
-                    getEpg(epgDateAdapter.getData().get(selectedIndex).getDateParamVal());
+            // 修改为带防抖的调用
+                mHandler.postDelayed(() -> 
+                    getEpg(epgDateAdapter.getData().get(selectedIndex).getDateParamVal()), 
+                    50 // 添加50ms延迟防止快速滚动触发
+                );
             }
         }
     }
@@ -865,7 +881,19 @@ public class LivePlayActivity extends BaseActivity {
 
     public void getEpg(Date date) {
 
-        String channelName = channel_Name.getChannelName();
+        // 防抖检查（新增）
+        if (currentLiveChannelItem == null) return;
+        String channelName = currentLiveChannelItem.getChannelName();
+        long currentTime = System.currentTimeMillis();
+    
+        // 防抖逻辑：300ms内不重复请求
+        if (lastEpgLoadTime.containsKey(channelName)) {
+            if (currentTime - lastEpgLoadTime.get(channelName) < EPG_THROTTLE_TIME) {
+                return;
+            }
+        }
+        lastEpgLoadTime.put(channelName, currentTime);
+		
         SimpleDateFormat timeFormat = new SimpleDateFormat("yyyy-MM-dd");
         timeFormat.setTimeZone(TimeZone.getTimeZone("GMT+8:00"));
         String[] epgInfo = EpgUtil.getEpgInfo(channelName);
@@ -918,11 +946,13 @@ public class LivePlayActivity extends BaseActivity {
                 if (!hsEpg.contains(savedEpgKey))
                     hsEpg.put(savedEpgKey, arrayList);
                 showBottomEpg();
+                lastEpgLoadTime.put(channelName, System.currentTimeMillis()); // 更新成功时间
             }
 
             public void onFailure(int i, String str) {
                 showEpg(date, new ArrayList());
                 showBottomEpg();
+                lastEpgLoadTime.remove(channelName); // 失败时移除记录				
             }
         });
     }
