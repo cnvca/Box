@@ -78,7 +78,7 @@ public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, Ba
             return;
         }
 
-        String epgKey = item.getChannelName() + "_" + epgDateAdapter.getSelectedDate();
+        String epgKey = item.getChannelName() + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
         ArrayList<Epginfo> epgList = hsEpg.get(epgKey);
         
         if (epgList == null || epgList.isEmpty()) {
@@ -114,8 +114,9 @@ public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, Ba
             // 选中时自动滚动到可视区域
             if (getRecyclerView() != null) {
                 getRecyclerView().post(() -> {
-                    int first = getRecyclerView().getLayoutManager().findFirstVisibleItemPosition();
-                    int last = getRecyclerView().getLayoutManager().findLastVisibleItemPosition();
+                    LinearLayoutManager layoutManager = (LinearLayoutManager) getRecyclerView().getLayoutManager();
+                    int first = layoutManager.findFirstVisibleItemPosition();
+                    int last = layoutManager.findLastVisibleItemPosition();
                     if (selectedChannelIndex < first || selectedChannelIndex > last) {
                         getRecyclerView().smoothScrollToPosition(selectedChannelIndex);
                     }
