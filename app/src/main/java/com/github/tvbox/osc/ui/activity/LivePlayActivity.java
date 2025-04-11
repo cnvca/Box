@@ -159,6 +159,7 @@ public class LivePlayActivity extends BaseActivity {
 
     private final Map<String, Long> lastEpgLoadTime = new HashMap<>();
     private static final long EPG_THROTTLE_TIME = 300; // 优化防抖时间为300ms
+    private String currentEpgRequestTag = "";
 	
     // Misc Variables
     public String epgStringAddress = "";
@@ -887,7 +888,21 @@ public class LivePlayActivity extends BaseActivity {
                 .into(tv_logo);
     }
 
-		
+    public void getEpg(Date date) {
+
+        // 防抖检查（新增）
+        if (currentLiveChannelItem == null) return;
+        // 生成唯一请求标记
+        String newTag = currentLiveChannelItem.getChannelName() + "_" + date.getTime();
+        currentEpgRequestTag = newTag;
+
+        OkGo.<String>get(epgUrl).execute(new StringCallback() {
+            public void onSuccess(Response<String> response) {
+                // 检查是否为最新请求
+                if (!currentEpgRequestTag.equals(newTag)) return;
+                // ...处理数据...
+            }
+        });		
         String channelName = currentLiveChannelItem.getChannelName();
         long currentTime = System.currentTimeMillis();
     
@@ -1613,8 +1628,8 @@ interface OnSpeedTestListener {
         mChannelGridView.setLayoutManager(new V7LinearLayoutManager(this.mContext, 1, false));
 
  //       liveChannelItemAdapter = new LiveChannelItemAdapter();
-        liveChannelItemAdapter = new LiveChannelItemAdapter(hsEpg, epgDateAdapter);
-
+//        liveChannelItemAdapter = new LiveChannelItemAdapter(hsEpg, epgDateAdapter);
+        liveChannelItemAdapter = new LiveChannelItemAdapter(hsEpg, epgDateAdapter, mHandler);
         mChannelGridView.setAdapter(liveChannelItemAdapter);
         mChannelGridView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
