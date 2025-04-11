@@ -1,31 +1,25 @@
 package com.github.tvbox.osc.ui.adapter;
 
 import android.graphics.Color;
-import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
-
+import androidx.annotation.NonNull;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
 import com.github.tvbox.osc.R;
 import com.github.tvbox.osc.base.BaseActivity;
-import com.github.tvbox.osc.bean.LiveChannelItem;
 import com.github.tvbox.osc.bean.Epginfo;
-import com.github.tvbox.osc.ui.activity.LivePlayActivity;
-
+import com.github.tvbox.osc.bean.LiveChannelItem;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Hashtable;
 
-/**
- * @author pj567
- * @date :2021/1/12
- * @description:
- */
 public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, BaseViewHolder> {
     private int selectedChannelIndex = -1;
     private int focusedChannelIndex = -1;
-    private Hashtable<String, ArrayList<Epginfo>> hsEpg; // 用于存储 EPG 数据
-    private LiveEpgDateAdapter epgDateAdapter; // 用于获取当前日期
+    private int mFocusedPosition = -1;
+    private final Hashtable<String, ArrayList<Epginfo>> hsEpg;
+    private final LiveEpgDateAdapter epgDateAdapter;
 
     public LiveChannelItemAdapter(Hashtable<String, ArrayList<Epginfo>> hsEpg, LiveEpgDateAdapter epgDateAdapter) {
         super(R.layout.item_live_channel, new ArrayList<>());
@@ -34,76 +28,120 @@ public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, Ba
     }
 
     @Override
-protected void convert(BaseViewHolder holder, LiveChannelItem item) {
-    TextView tvChannelNum = holder.getView(R.id.tvChannelNum);
-    TextView tvChannel = holder.getView(R.id.tvChannelName);
-    TextView tvCurrentProgramName = holder.getView(R.id.tv_current_program_name); // 获取 EPG 信息控件
+    protected void convert(@NonNull BaseViewHolder holder, LiveChannelItem item) {
+        TextView tvChannelNum = holder.getView(R.id.tvChannelNum);
+        TextView tvChannel = holder.getView(R.id.tvChannelName);
+        TextView tvCurrentProgramName = holder.getView(R.id.tv_current_program_name);
 
-    // 设置频道编号和名称
-    tvChannelNum.setText(String.format("%s", item.getChannelNum()));
-    tvChannel.setText(item.getChannelName());
+        // 设置基础信息
+        tvChannelNum.setText(String.format("%s", item.getChannelNum()));
+        tvChannel.setText(item.getChannelName());
 
-    // 设置选中和焦点状态的颜色
-    int channelIndex = item.getChannelIndex();
-    if (channelIndex == selectedChannelIndex && channelIndex != focusedChannelIndex) {
-        // 如果频道正在播放，设置字体颜色为红色
-        tvChannelNum.setTextColor(((BaseActivity) mContext).getThemeColor());
-        tvChannel.setTextColor(((BaseActivity) mContext).getThemeColor());
-        tvCurrentProgramName.setTextColor(((BaseActivity) mContext).getThemeColor()); // EPG 字体颜色为红色
-    } else {
-        // 如果频道未播放，设置字体颜色为白色
-        tvChannelNum.setTextColor(Color.WHITE);
-        tvChannel.setTextColor(Color.WHITE);
-        tvCurrentProgramName.setTextColor(Color.WHITE); // EPG 字体颜色为白色
-    }
+        // 焦点和选中状态处理
+        int position = holder.getBindingAdapterPosition();
+        boolean isSelected = position == selectedChannelIndex;
+        boolean isFocused = position == focusedChannelIndex || position == mFocusedPosition;
 
-    // 绑定 EPG 信息
-    if (hsEpg != null && epgDateAdapter != null) {
-        String epgKey = item.getChannelName() + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
-        if (hsEpg.containsKey(epgKey)) {
-            ArrayList<Epginfo> epgList = hsEpg.get(epgKey);
-            if (epgList != null && epgList.size() > 0) {
-                Date now = new Date();
-                boolean found = false;
-                for (Epginfo epg : epgList) {
-                    if (now.after(epg.startdateTime) && now.before(epg.enddateTime)) {
-                        tvCurrentProgramName.setText(epg.title); // 设置当前节目名称
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    tvCurrentProgramName.setText("暂无节目信息");
-                }
-            } else {
-                tvCurrentProgramName.setText("暂无节目信息");
+        // 颜色状态
+        int themeColor = ((BaseActivity) mContext).getThemeColor();
+        tvChannelNum.setTextColor(isSelected ? themeColor : Color.WHITE);
+        tvChannel.setTextColor(isSelected ? themeColor : Color.WHITE);
+        tvCurrentProgramName.setTextColor(isSelected ? themeColor : Color.WHITE);
+
+        // EPG信息绑定
+        bindEpgInfo(tvCurrentProgramName, item);
+
+        // 焦点控制
+        holder.itemView.setOnFocusChangeListener((v, hasFocus) -> {
+            if (hasFocus) {
+                setFocusedPosition(position);
+                focusedChannelIndex = position;
+                notifyItemChanged(position);
+            } else if (focusedChannelIndex == position) {
+                focusedChannelIndex = -1;
             }
-        } else {
-            tvCurrentProgramName.setText("暂无节目信息");
+        });
+
+        // 自动请求焦点逻辑
+        if (isFocused) {
+            holder.itemView.postDelayed(() -> {
+                if (!holder.itemView.isFocused()) {
+                    holder.itemView.requestFocus();
+                }
+            }, 100);
         }
-    } else {
-        tvCurrentProgramName.setText("暂无节目信息");
     }
-}
+
+    private void bindEpgInfo(TextView textView, LiveChannelItem item) {
+        if (hsEpg == null || epgDateAdapter == null) {
+            textView.setText("暂无节目信息");
+            return;
+        }
+
+        String epgKey = item.getChannelName() + "_" + epgDateAdapter.getSelectedDate();
+        ArrayList<Epginfo> epgList = hsEpg.get(epgKey);
+        
+        if (epgList == null || epgList.isEmpty()) {
+            textView.setText("暂无节目信息");
+            return;
+        }
+
+        Date now = new Date();
+        for (Epginfo epg : epgList) {
+            if (now.after(epg.startdateTime) && now.before(epg.enddateTime)) {
+                textView.setText(epg.title);
+                return;
+            }
+        }
+        textView.setText("暂无节目信息");
+    }
+
+    // 新增焦点位置管理
+    public void setFocusedPosition(int position) {
+        int oldPosition = mFocusedPosition;
+        mFocusedPosition = position;
+        if (oldPosition != -1) notifyItemChanged(oldPosition);
+        if (mFocusedPosition != -1) notifyItemChanged(mFocusedPosition);
+    }
 
     public void setSelectedChannelIndex(int selectedChannelIndex) {
-        if (selectedChannelIndex == this.selectedChannelIndex) return;
-        int preSelectedChannelIndex = this.selectedChannelIndex;
+        if (this.selectedChannelIndex == selectedChannelIndex) return;
+        int prev = this.selectedChannelIndex;
         this.selectedChannelIndex = selectedChannelIndex;
-        if (preSelectedChannelIndex != -1)
-            notifyItemChanged(preSelectedChannelIndex);
-        if (this.selectedChannelIndex != -1)
-            notifyItemChanged(this.selectedChannelIndex);
+        if (prev != -1) notifyItemChanged(prev);
+        if (selectedChannelIndex != -1) {
+            notifyItemChanged(selectedChannelIndex);
+            // 选中时自动滚动到可视区域
+            if (getRecyclerView() != null) {
+                getRecyclerView().post(() -> {
+                    int first = getRecyclerView().getLayoutManager().findFirstVisibleItemPosition();
+                    int last = getRecyclerView().getLayoutManager().findLastVisibleItemPosition();
+                    if (selectedChannelIndex < first || selectedChannelIndex > last) {
+                        getRecyclerView().smoothScrollToPosition(selectedChannelIndex);
+                    }
+                });
+            }
+        }
     }
 
     public void setFocusedChannelIndex(int focusedChannelIndex) {
-        int preFocusedChannelIndex = this.focusedChannelIndex;
+        if (this.focusedChannelIndex == focusedChannelIndex) return;
+        int prev = this.focusedChannelIndex;
         this.focusedChannelIndex = focusedChannelIndex;
-        if (preFocusedChannelIndex != -1)
-            notifyItemChanged(preFocusedChannelIndex);
-        if (this.focusedChannelIndex != -1)
-            notifyItemChanged(this.focusedChannelIndex);
-        else if (this.selectedChannelIndex != -1)
-            notifyItemChanged(this.selectedChannelIndex);
+        if (prev != -1) notifyItemChanged(prev);
+        if (focusedChannelIndex != -1) notifyItemChanged(focusedChannelIndex);
+    }
+
+    // 新增：处理数据更新时的焦点保持
+    @Override
+    public void onBindViewHolder(@NonNull BaseViewHolder holder, int position) {
+        super.onBindViewHolder(holder, position);
+        if (position == mFocusedPosition) {
+            holder.itemView.post(() -> {
+                if (!holder.itemView.isFocused()) {
+                    holder.itemView.requestFocus();
+                }
+            });
+        }
     }
 }
