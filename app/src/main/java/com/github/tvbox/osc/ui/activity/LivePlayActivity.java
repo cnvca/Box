@@ -887,21 +887,7 @@ public class LivePlayActivity extends BaseActivity {
                 .into(tv_logo);
     }
 
-    public void getEpg(Date date) {
-
-        // 防抖检查（新增）
-        if (currentLiveChannelItem == null) return;
-        // 生成唯一请求标记
-        String newTag = currentLiveChannelItem.getChannelName() + "_" + date.getTime();
-        currentEpgRequestTag = newTag;
-
-        OkGo.<String>get(epgUrl).execute(new StringCallback() {
-            public void onSuccess(Response<String> response) {
-                // 检查是否为最新请求
-                if (!currentEpgRequestTag.equals(newTag)) return;
-                // ...处理数据...
-            }
-        });		
+		
         String channelName = currentLiveChannelItem.getChannelName();
         long currentTime = System.currentTimeMillis();
     
