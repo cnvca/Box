@@ -4,6 +4,7 @@ import android.graphics.Color;
 import android.view.View;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
 import com.github.tvbox.osc.R;
@@ -20,7 +21,10 @@ public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, Ba
     private int mFocusedPosition = -1;
     private final Hashtable<String, ArrayList<Epginfo>> hsEpg;
     private final LiveEpgDateAdapter epgDateAdapter;
-
+    // 添加 public 访问方法（解决 getSelectedChannelIndex 错误）
+    public int getSelectedChannelIndex() {
+        return selectedChannelIndex;
+    }
     public LiveChannelItemAdapter(Hashtable<String, ArrayList<Epginfo>> hsEpg, LiveEpgDateAdapter epgDateAdapter) {
         super(R.layout.item_live_channel, new ArrayList<>());
         this.hsEpg = hsEpg;
@@ -112,18 +116,20 @@ public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, Ba
         if (selectedChannelIndex != -1) {
             notifyItemChanged(selectedChannelIndex);
             // 选中时自动滚动到可视区域
-            if (getRecyclerView() != null) {
-                getRecyclerView().post(() -> {
-                    LinearLayoutManager layoutManager = (LinearLayoutManager) getRecyclerView().getLayoutManager();
-                    int first = layoutManager.findFirstVisibleItemPosition();
-                    int last = layoutManager.findLastVisibleItemPosition();
+        if (getRecyclerView() != null) {
+            getRecyclerView().post(() -> {
+                RecyclerView.LayoutManager layoutManager = getRecyclerView().getLayoutManager();
+                if (layoutManager instanceof LinearLayoutManager) {
+                    int first = ((LinearLayoutManager) layoutManager).findFirstVisibleItemPosition();
+                    int last = ((LinearLayoutManager) layoutManager).findLastVisibleItemPosition();
                     if (selectedChannelIndex < first || selectedChannelIndex > last) {
-                        getRecyclerView().smoothScrollToPosition(selectedChannelIndex);
+                        ((LinearLayoutManager) layoutManager).scrollToPosition(selectedChannelIndex);
                     }
-                });
-            }
+                }
+            });
         }
     }
+ }
 
     public void setFocusedChannelIndex(int focusedChannelIndex) {
         if (this.focusedChannelIndex == focusedChannelIndex) return;
