@@ -481,10 +481,10 @@ public class LivePlayActivity extends BaseActivity {
                     case KeyEvent.KEYCODE_ENTER:
                     case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
                        // 新增：检查当前焦点位置
-                        if (isFocusOnValidItem()) {
+ //                       if (isFocusOnValidItem()) {
                             showChannelList();
-                            return true; // 关键：消费事件
-                        }
+ //                           return true; // 关键：消费事件
+ //                       }
 									
                         break;
                     default:
