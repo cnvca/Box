@@ -159,7 +159,6 @@ public class LivePlayActivity extends BaseActivity {
 
     private final Map<String, Long> lastEpgLoadTime = new HashMap<>();
     private static final long EPG_THROTTLE_TIME = 300; // 优化防抖时间为300ms
-    private String currentEpgRequestTag = "";
 	
     // Misc Variables
     public String epgStringAddress = "";
@@ -1628,8 +1627,8 @@ interface OnSpeedTestListener {
         mChannelGridView.setLayoutManager(new V7LinearLayoutManager(this.mContext, 1, false));
 
  //       liveChannelItemAdapter = new LiveChannelItemAdapter();
-//        liveChannelItemAdapter = new LiveChannelItemAdapter(hsEpg, epgDateAdapter);
-        liveChannelItemAdapter = new LiveChannelItemAdapter(hsEpg, epgDateAdapter, mHandler);
+        liveChannelItemAdapter = new LiveChannelItemAdapter(hsEpg, epgDateAdapter);
+
         mChannelGridView.setAdapter(liveChannelItemAdapter);
         mChannelGridView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
