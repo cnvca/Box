@@ -1698,33 +1698,56 @@ interface OnSpeedTestListener {
         });
     }
 
-    private void clickLiveChannel(int position) {
-        liveChannelItemAdapter.setSelectedChannelIndex(position);
+private void clickLiveChannel(int position) {
+    // 设置选中位置
+    liveChannelItemAdapter.setSelectedChannelIndex(position);
 
-        mChannelGridView.post(() -> {
-            // 确保滚动完成
-            mChannelGridView.smoothScrollToPosition(position);
-        
-            // 延迟焦点请求
-            new Handler().postDelayed(() -> {
-         RecyclerView.ViewHolder viewHolder = mChannelGridView.findViewHolderForAdapterPosition(position);
-         View view = viewHolder != null ? viewHolder.itemView : null;
-                if (view != null) {
-                    view.requestFocus();
-                }
-            }, 200);
-        });
-		
-        // Set default as Today
-        epgDateAdapter.setSelectedIndex(6);
-
-        if (tvLeftChannelListLayout.getVisibility() == View.VISIBLE) {
-            mHandler.removeCallbacks(mHideChannelListRun);
-            mHandler.post(mHideChannelListRun);
-//            mHandler.postDelayed(mHideChannelListRun, 500);
+    mChannelGridView.post(() -> {
+        // 确保使用正确的 LayoutManager 类型
+        RecyclerView.LayoutManager layoutManager = mChannelGridView.getLayoutManager();
+        if (layoutManager instanceof LinearLayoutManager) {
+            // 先滚动到指定位置
+            ((LinearLayoutManager) layoutManager).scrollToPositionWithOffset(position, 0);
         }
-        playChannel(liveChannelGroupAdapter.getSelectedGroupIndex(), position, false);
+        
+        // 延迟焦点请求 (兼容Java写法)
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                // 安全获取ViewHolder
+                RecyclerView.ViewHolder viewHolder = mChannelGridView.findViewHolderForAdapterPosition(position);
+                if (viewHolder != null) {
+                    View itemView = viewHolder.itemView;
+                    if (!itemView.isFocused()) {
+                        itemView.requestFocus();
+                    }
+                } else {
+                    // 如果视图未加载，改用smoothScroll
+                    mChannelGridView.smoothScrollToPosition(position);
+                    mChannelGridView.postDelayed(this, 100); // 再次尝试
+                }
+            }
+        }, 200); // 初始延迟200ms
+    });
+
+    // 设置默认日期为今天 (需要确认epgDateAdapter是否有第6项)
+    if (epgDateAdapter != null && epgDateAdapter.getItemCount() > 6) {
+        epgDateAdapter.setSelectedIndex(6);
     }
+
+    // 隐藏频道列表
+    if (tvLeftChannelListLayout.getVisibility() == View.VISIBLE) {
+        mHandler.removeCallbacks(mHideChannelListRun);
+        mHandler.post(mHideChannelListRun);
+    }
+
+    // 播放频道 (添加安全校验)
+    int groupIndex = liveChannelGroupAdapter != null ? 
+                    liveChannelGroupAdapter.getSelectedGroupIndex() : 0;
+    if (position >= 0 && groupIndex >= 0) {
+        playChannel(groupIndex, position, false);
+    }
+}
 
     private void initSettingGroupView() {
         mSettingGroupView.setHasFixedSize(true);
