@@ -896,7 +896,7 @@ public class LivePlayActivity extends BaseActivity {
         String newTag = currentLiveChannelItem.getChannelName() + "_" + date.getTime();
         currentEpgRequestTag = newTag;
 
-        OkGo.<String>get(epgUrl).execute(new StringCallback() {
+        OkGo.<String>get(epgStringAddress).execute(new StringCallback() {
             public void onSuccess(Response<String> response) {
                 // 检查是否为最新请求
                 if (!currentEpgRequestTag.equals(newTag)) return;
@@ -1628,8 +1628,8 @@ interface OnSpeedTestListener {
         mChannelGridView.setLayoutManager(new V7LinearLayoutManager(this.mContext, 1, false));
 
  //       liveChannelItemAdapter = new LiveChannelItemAdapter();
-//        liveChannelItemAdapter = new LiveChannelItemAdapter(hsEpg, epgDateAdapter);
-        liveChannelItemAdapter = new LiveChannelItemAdapter(hsEpg, epgDateAdapter, mHandler);
+        liveChannelItemAdapter = new LiveChannelItemAdapter(hsEpg, epgDateAdapter);
+
         mChannelGridView.setAdapter(liveChannelItemAdapter);
         mChannelGridView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
