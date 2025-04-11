@@ -23,6 +23,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import android.content.SharedPreferences;
+import static android.content.Context.MODE_PRIVATE;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -1726,6 +1728,7 @@ private void clickLiveChannel(int position) {
     // 设置选中位置
         liveChannelItemAdapter.setSelectedChannelIndex(position); // 只更新播放状态
         liveChannelItemAdapter.setLastManualFocusPosition(position); // 记录手动选择位置
+        liveChannelItemAdapter.setFocusedChannelIndex(position); // 新增这行		
         // 保存当前分组的焦点位置
         int currentGroup = liveChannelGroupAdapter.getSelectedGroupIndex();
         saveFocusPosition(currentGroup, position);
@@ -1766,7 +1769,7 @@ private void clickLiveChannel(int position) {
 }
     // ==================== 新增焦点位置保存方法 ====================
     private void saveFocusPosition(int groupIndex, int position) {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit()
             .putInt(KEY_LAST_FOCUS + groupIndex, position)
             .apply();
@@ -1779,7 +1782,7 @@ private void clickLiveChannel(int position) {
             return mGroupFocusMap.get(groupIndex);
         }
         
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         int pos = prefs.getInt(KEY_LAST_FOCUS + groupIndex, 0); // 默认0
         mGroupFocusMap.put(groupIndex, pos);
         return pos;
