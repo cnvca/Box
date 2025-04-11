@@ -158,6 +158,7 @@ public class LivePlayActivity extends BaseActivity {
     private LiveEpgAdapter epgListAdapter;
 
     private final Map<String, Long> lastEpgLoadTime = new HashMap<>();
+    private long mLastEpgRequestTime = 0;	
     private static final long EPG_THROTTLE_TIME = 300; // 优化防抖时间为300ms
     private String currentEpgRequestTag = "";
 	
@@ -891,7 +892,8 @@ public class LivePlayActivity extends BaseActivity {
     public void getEpg(Date date) {
 
         // 防抖检查（新增）
-        if (currentLiveChannelItem == null) return;
+        if (System.currentTimeMillis() - mLastEpgRequestTime < EPG_DEBOUNCE) return;
+        mLastEpgRequestTime = System.currentTimeMillis();
         // 生成唯一请求标记
         String newTag = currentLiveChannelItem.getChannelName() + "_" + date.getTime();
         currentEpgRequestTag = newTag;
@@ -900,7 +902,13 @@ public class LivePlayActivity extends BaseActivity {
             public void onSuccess(Response<String> response) {
                 // 检查是否为最新请求
                 if (!currentEpgRequestTag.equals(newTag)) return;
-                // ...处理数据...
+                // 仅当数据变化时更新
+                runOnUiThread(() -> {
+                    int selectedPos = liveChannelItemAdapter.getSelectedChannelIndex();
+                    if (selectedPos != -1) {
+                        liveChannelItemAdapter.notifyItemChanged(selectedPos);
+                    }
+                });
             }
         });		
         String channelName = currentLiveChannelItem.getChannelName();
@@ -1638,7 +1646,19 @@ interface OnSpeedTestListener {
                 mHandler.removeCallbacks(mHideChannelListRun);
                 mHandler.postDelayed(mHideChannelListRun, 6000);
                 // 滚动时暂停图片加载
-               Glide.with(LivePlayActivity.this).pauseRequests();				
+               Glide.with(LivePlayActivity.this).pauseRequests();
+
+               if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                   int pos = liveChannelItemAdapter.getSelectedChannelIndex();
+                   if (pos != -1) {
+                       recyclerView.post(() -> {
+                           View view = recyclerView.findViewHolderForAdapterPosition(pos)?.itemView;
+                           if (view != null && !view.isFocused()) {
+                               view.requestFocus();
+                           }
+                       });
+                   }
+               }			   
             }
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
@@ -1680,6 +1700,19 @@ interface OnSpeedTestListener {
     private void clickLiveChannel(int position) {
         liveChannelItemAdapter.setSelectedChannelIndex(position);
 
+        mChannelGridView.post(() -> {
+            // 确保滚动完成
+            mChannelGridView.smoothScrollToPosition(position);
+        
+            // 延迟焦点请求
+            new Handler().postDelayed(() -> {
+                View view = mChannelGridView.findViewHolderForAdapterPosition(position)?.itemView;
+                if (view != null) {
+                    view.requestFocus();
+                }
+            }, 200);
+        });
+		
         // Set default as Today
         epgDateAdapter.setSelectedIndex(6);
 
@@ -1966,6 +1999,15 @@ interface OnSpeedTestListener {
     private void loadAllChannelsEpg() {
  //   if (liveChannelGroupList == null || liveChannelGroupList.isEmpty()) return;
 
+        // 后台线程预加载
+        new Thread(() -> {
+            for (LiveChannelGroup group : liveChannelGroupList) {
+                for (LiveChannelItem channel : group.getLiveChannels()) {
+                    getEpgForChannel(channel, new Date()); // 复用已有方法
+                }
+            }
+        }).start();
+		
     // 遍历所有频道组
     for (LiveChannelGroup group : liveChannelGroupList) {
         if (group.getLiveChannels() == null || group.getLiveChannels().isEmpty()) continue;
