@@ -5,6 +5,7 @@ import android.view.View;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
 import com.github.tvbox.osc.R;
@@ -116,18 +117,19 @@ public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, Ba
         if (selectedChannelIndex != -1) {
             notifyItemChanged(selectedChannelIndex);
             // 选中时自动滚动到可视区域
-        if (getRecyclerView() != null) {
-            getRecyclerView().post(() -> {
-                RecyclerView.LayoutManager layoutManager = getRecyclerView().getLayoutManager();
-                if (layoutManager instanceof LinearLayoutManager) {
-                    int first = ((LinearLayoutManager) layoutManager).findFirstVisibleItemPosition();
-                    int last = ((LinearLayoutManager) layoutManager).findLastVisibleItemPosition();
-                    if (selectedChannelIndex < first || selectedChannelIndex > last) {
-                        ((LinearLayoutManager) layoutManager).scrollToPosition(selectedChannelIndex);
-                    }
+    if (getRecyclerView() != null) {
+        getRecyclerView().post(() -> {
+            // 修改这里（添加完整包路径）
+            androidx.recyclerview.widget.RecyclerView.LayoutManager layoutManager = getRecyclerView().getLayoutManager();
+            if (layoutManager instanceof LinearLayoutManager) {
+                int first = ((LinearLayoutManager) layoutManager).findFirstVisibleItemPosition();
+                int last = ((LinearLayoutManager) layoutManager).findLastVisibleItemPosition();
+                if (selectedChannelIndex < first || selectedChannelIndex > last) {
+                    ((LinearLayoutManager) layoutManager).scrollToPosition(selectedChannelIndex);
                 }
-            });
-        }
+            }
+        });
+      }
     }
  }
 
