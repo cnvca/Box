@@ -14,7 +14,7 @@ import com.github.tvbox.osc.bean.Epginfo;
 import com.github.tvbox.osc.bean.LiveChannelItem;
 import java.util.ArrayList;
 import java.util.Hashtable;
-
+import java.util.Date;
 public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, BaseViewHolder> {
     private int selectedChannelIndex = -1;
     private int focusedChannelIndex = -1;
