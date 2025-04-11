@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import android.content.SharedPreferences;
 import static android.content.Context.MODE_PRIVATE;
+import android.content.Context;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -1618,15 +1619,12 @@ interface OnSpeedTestListener {
         liveChannelItemAdapter.smartScrollToPosition(targetPosition);
         
         // 延迟焦点设置（关键修复）
-        mChannelGridView.postDelayed(() -> {
-            RecyclerView.ViewHolder viewHolder = mChannelGridView.findViewHolderForAdapterPosition(targetPosition);
-            if (viewHolder != null) {
-                viewHolder.itemView.requestFocus();
-            } else {
-                // 容错：直接滚动到位置
-                liveChannelItemAdapter.smartScrollToPosition(targetPosition);
-            }
-        }, 300); // 300ms延迟确保布局完成			
+    mChannelGridView.postDelayed(() -> {
+        RecyclerView.ViewHolder viewHolder = mChannelGridView.findViewHolderForAdapterPosition(targetPosition);
+        if (viewHolder != null) {
+            viewHolder.itemView.requestFocus();
+        }
+    }, 300);		
         }
         if ((groupIndex > -1 && groupIndex != liveChannelGroupAdapter.getSelectedGroupIndex()) || isNeedInputPassword(groupIndex)) {
             liveChannelGroupAdapter.setSelectedGroupIndex(groupIndex);
@@ -1725,45 +1723,80 @@ interface OnSpeedTestListener {
     }
 
 private void clickLiveChannel(int position) {
-    // 设置选中位置
-        liveChannelItemAdapter.setSelectedChannelIndex(position); // 只更新播放状态
-        liveChannelItemAdapter.setLastManualFocusPosition(position); // 记录手动选择位置
-        liveChannelItemAdapter.setFocusedChannelIndex(position); // 新增这行		
-        // 保存当前分组的焦点位置
-        int currentGroup = liveChannelGroupAdapter.getSelectedGroupIndex();
-        saveFocusPosition(currentGroup, position);
+    // 安全校验：确保位置有效
+    if (position < 0 || position >= liveChannelItemAdapter.getItemCount()) return;
+
+    // ========== 状态更新部分 ==========
+    // 1. 设置播放状态（红色高亮）
+    liveChannelItemAdapter.setSelectedChannelIndex(position);
+    
+    // 2. 记录手动操作的最后焦点位置
+    liveChannelItemAdapter.setLastManualFocusPosition(position);
+    
+    // 3. 保存到分组记忆（关键修复）
+    int currentGroup = liveChannelGroupAdapter != null ? 
+            liveChannelGroupAdapter.getSelectedGroupIndex() : 0;
+    saveFocusPosition(currentGroup, position);
+
+    // ========== 视图操作部分 ==========
     mChannelGridView.post(() -> {
-        // 确保使用正确的 LayoutManager 类型
+        // 1. 获取布局管理器
         RecyclerView.LayoutManager layoutManager = mChannelGridView.getLayoutManager();
-        if (layoutManager instanceof LinearLayoutManager) {
-            // 先滚动到指定位置
-            ((LinearLayoutManager) layoutManager).scrollToPosition(position);
-        }
         
-        // 延迟焦点请求 (兼容Java写法)
-            new Handler().postDelayed(() -> {
-                RecyclerView.ViewHolder viewHolder = mChannelGridView.findViewHolderForAdapterPosition(position);
-                if (viewHolder != null) {
-                    viewHolder.itemView.requestFocus();
-                }
-            }, 200);
+        // 2. 智能滚动（修复自动跳转问题）
+        if (layoutManager instanceof LinearLayoutManager) {
+            LinearLayoutManager linearManager = (LinearLayoutManager) layoutManager;
+            
+            // 计算是否需要滚动
+            int firstVisible = linearManager.findFirstVisibleItemPosition();
+            int lastVisible = linearManager.findLastVisibleItemPosition();
+            
+            if (position < firstVisible || position > lastVisible) {
+                // 使用带偏移的精准滚动
+                linearManager.scrollToPositionWithOffset(position, 0);
+            }
+        }
+
+        // 3. 延迟焦点设置（解决焦点跳动）
+        new Handler().postDelayed(() -> {
+            // 双重保障机制
+            RecyclerView.ViewHolder viewHolder = mChannelGridView.findViewHolderForAdapterPosition(position);
+            if (viewHolder != null) {
+                // 防止自动滚动干扰
+                liveChannelItemAdapter.setAutoScroll(false);
+                viewHolder.itemView.requestFocus();
+            } else {
+                // 容错：直接调用适配器滚动方法
+                liveChannelItemAdapter.smartScrollToPosition(position);
+            }
+        }, 250); // 适当延长延迟确保布局稳定
     });
 
-    // 设置默认日期为今天 (需要确认epgDateAdapter是否有第6项)
-    if (epgDateAdapter != null && epgDateAdapter.getItemCount() > 6) {
-        epgDateAdapter.setSelectedIndex(6);
+    // ========== EPG相关操作 ==========
+    // 1. 设置默认日期为今天（带安全检查）
+    if (epgDateAdapter != null) {
+        try {
+            int todayIndex = 6; // 根据实际数据调整
+            if (epgDateAdapter.getItemCount() > todayIndex) {
+                epgDateAdapter.setSelectedIndex(todayIndex);
+            }
+        } catch (IndexOutOfBoundsException e) {
+            e.printStackTrace();
+        }
     }
 
-    // 隐藏频道列表
+    // ========== 界面控制部分 ==========
+    // 自动隐藏频道列表
     if (tvLeftChannelListLayout.getVisibility() == View.VISIBLE) {
         mHandler.removeCallbacks(mHideChannelListRun);
         mHandler.post(mHideChannelListRun);
     }
 
-    // 播放频道 (添加安全校验)
+    // ========== 核心播放逻辑 ==========
+    // 带安全检查的播放调用
     int groupIndex = liveChannelGroupAdapter != null ? 
-                    liveChannelGroupAdapter.getSelectedGroupIndex() : 0;
-    if (position >= 0 && groupIndex >= 0) {
+            liveChannelGroupAdapter.getSelectedGroupIndex() : 0;
+    if (groupIndex >= 0) {
         playChannel(groupIndex, position, false);
     }
 }
