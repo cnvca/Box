@@ -1652,7 +1652,8 @@ interface OnSpeedTestListener {
                    int pos = liveChannelItemAdapter.getSelectedChannelIndex();
                    if (pos != -1) {
                        recyclerView.post(() -> {
-                           View view = recyclerView.findViewHolderForAdapterPosition(pos)?.itemView;
+                    RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(pos);
+                    View view = viewHolder != null ? viewHolder.itemView : null;
                            if (view != null && !view.isFocused()) {
                                view.requestFocus();
                            }
@@ -1706,7 +1707,8 @@ interface OnSpeedTestListener {
         
             // 延迟焦点请求
             new Handler().postDelayed(() -> {
-                View view = mChannelGridView.findViewHolderForAdapterPosition(position)?.itemView;
+         RecyclerView.ViewHolder viewHolder = mChannelGridView.findViewHolderForAdapterPosition(position);
+         View view = viewHolder != null ? viewHolder.itemView : null;
                 if (view != null) {
                     view.requestFocus();
                 }
