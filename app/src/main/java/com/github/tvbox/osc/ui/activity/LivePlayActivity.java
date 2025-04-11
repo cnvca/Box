@@ -1805,26 +1805,22 @@ private void clickLiveChannel(int position) {
     }
 }
     // ==================== 新增焦点位置保存方法 ====================
-    private void saveFocusPosition(int groupIndex, int position) {
-        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        prefs.edit()
-            .putInt(KEY_LAST_FOCUS + groupIndex, position)
-            .apply();
-        mGroupFocusMap.put(groupIndex, position); // 内存缓存
-    }
+private void saveFocusPosition(int groupIndex, int position) {
+    SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+    SharedPreferences.Editor editor = prefs.edit();
+    editor.putInt(KEY_LAST_FOCUS + groupIndex, position);
+    editor.apply();
+}
 	
     private int getSavedFocusPosition(int groupIndex) {
-    SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-    return prefs.getInt(KEY_LAST_FOCUS + groupIndex, 0);	
+
         // 优先使用内存缓存
         if (mGroupFocusMap.containsKey(groupIndex)) {
             return mGroupFocusMap.get(groupIndex);
         }
         
-        getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        int pos = prefs.getInt(KEY_LAST_FOCUS + groupIndex, 0); // 默认0
-        mGroupFocusMap.put(groupIndex, pos);
-        return pos;
+    SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+    return prefs.getInt(KEY_LAST_FOCUS + groupIndex, 0); // 默认返回0	
     }
 	
     private void initSettingGroupView() {
