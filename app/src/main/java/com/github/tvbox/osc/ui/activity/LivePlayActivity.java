@@ -22,6 +22,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -160,6 +161,7 @@ public class LivePlayActivity extends BaseActivity {
     private final Map<String, Long> lastEpgLoadTime = new HashMap<>();
     private long mLastEpgRequestTime = 0;	
     private static final long EPG_THROTTLE_TIME = 300; // 优化防抖时间为300ms
+	private static final long EPG_DEBOUNCE = 300;
     private String currentEpgRequestTag = "";
 	
     // Misc Variables
@@ -1707,27 +1709,16 @@ private void clickLiveChannel(int position) {
         RecyclerView.LayoutManager layoutManager = mChannelGridView.getLayoutManager();
         if (layoutManager instanceof LinearLayoutManager) {
             // 先滚动到指定位置
-            ((LinearLayoutManager) layoutManager).scrollToPositionWithOffset(position, 0);
+            ((LinearLayoutManager) layoutManager).scrollToPosition(position);
         }
         
         // 延迟焦点请求 (兼容Java写法)
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                // 安全获取ViewHolder
+            new Handler().postDelayed(() -> {
                 RecyclerView.ViewHolder viewHolder = mChannelGridView.findViewHolderForAdapterPosition(position);
                 if (viewHolder != null) {
-                    View itemView = viewHolder.itemView;
-                    if (!itemView.isFocused()) {
-                        itemView.requestFocus();
-                    }
-                } else {
-                    // 如果视图未加载，改用smoothScroll
-                    mChannelGridView.smoothScrollToPosition(position);
-                    mChannelGridView.postDelayed(this, 100); // 再次尝试
+                    viewHolder.itemView.requestFocus();
                 }
-            }
-        }, 200); // 初始延迟200ms
+            }, 200);
     });
 
     // 设置默认日期为今天 (需要确认epgDateAdapter是否有第6项)
