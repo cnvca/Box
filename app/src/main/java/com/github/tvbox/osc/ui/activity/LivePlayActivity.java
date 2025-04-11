@@ -163,6 +163,10 @@ public class LivePlayActivity extends BaseActivity {
     private static final long EPG_THROTTLE_TIME = 300; // 优化防抖时间为300ms
 	private static final long EPG_DEBOUNCE = 300;
     private String currentEpgRequestTag = "";
+    private static final String PREFS_NAME = "live_focus";
+    private static final String KEY_LAST_FOCUS = "last_focus_";
+    private int mLastManualGroupIndex = -1; // 记录最后一次手动操作的组索引
+    private final HashMap<Integer, Integer> mGroupFocusMap = new HashMap<>(); // 分组焦点位置记忆
 	
     // Misc Variables
     public String epgStringAddress = "";
@@ -1599,7 +1603,28 @@ interface OnSpeedTestListener {
     private void selectChannelGroup(int groupIndex, boolean focus, int liveChannelIndex) {
         if (focus) {
             liveChannelGroupAdapter.setFocusedGroupIndex(groupIndex);
-            liveChannelItemAdapter.setFocusedChannelIndex(-1);
+            liveChannelItemAdapter.setNewData(getLiveChannels(groupIndex));
+        // 优先使用传入的频道索引，否则读取保存的位置
+        int targetPosition = liveChannelIndex != -1 ? 
+            liveChannelIndex : getSavedFocusPosition(groupIndex);
+        
+        // 安全范围检查
+        int maxPosition = getLiveChannels(groupIndex).size() - 1;
+        targetPosition = Math.min(Math.max(targetPosition, 0), maxPosition);
+        
+        // 智能滚动（新增方法）
+        liveChannelItemAdapter.smartScrollToPosition(targetPosition);
+        
+        // 延迟焦点设置（关键修复）
+        mChannelGridView.postDelayed(() -> {
+            RecyclerView.ViewHolder viewHolder = mChannelGridView.findViewHolderForAdapterPosition(targetPosition);
+            if (viewHolder != null) {
+                viewHolder.itemView.requestFocus();
+            } else {
+                // 容错：直接滚动到位置
+                liveChannelItemAdapter.smartScrollToPosition(targetPosition);
+            }
+        }, 300); // 300ms延迟确保布局完成			
         }
         if ((groupIndex > -1 && groupIndex != liveChannelGroupAdapter.getSelectedGroupIndex()) || isNeedInputPassword(groupIndex)) {
             liveChannelGroupAdapter.setSelectedGroupIndex(groupIndex);
@@ -1650,18 +1675,15 @@ interface OnSpeedTestListener {
                 // 滚动时暂停图片加载
                Glide.with(LivePlayActivity.this).pauseRequests();
 
-               if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                   int pos = liveChannelItemAdapter.getSelectedChannelIndex();
-                   if (pos != -1) {
-                       recyclerView.post(() -> {
-                    RecyclerView.ViewHolder viewHolder = recyclerView.findViewHolderForAdapterPosition(pos);
-                    View view = viewHolder != null ? viewHolder.itemView : null;
-                           if (view != null && !view.isFocused()) {
-                               view.requestFocus();
-                           }
-                       });
-                   }
-               }			   
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    int targetPos = liveChannelItemAdapter.getLastManualFocusPosition();
+                    if (targetPos != -1) {
+                        RecyclerView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(targetPos);
+                        if (holder != null) {
+                            holder.itemView.requestFocus();
+                        }
+                    }
+                }			   
             }
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
@@ -1702,8 +1724,11 @@ interface OnSpeedTestListener {
 
 private void clickLiveChannel(int position) {
     // 设置选中位置
-    liveChannelItemAdapter.setSelectedChannelIndex(position);
-
+        liveChannelItemAdapter.setSelectedChannelIndex(position); // 只更新播放状态
+        liveChannelItemAdapter.setLastManualFocusPosition(position); // 记录手动选择位置
+        // 保存当前分组的焦点位置
+        int currentGroup = liveChannelGroupAdapter.getSelectedGroupIndex();
+        saveFocusPosition(currentGroup, position);
     mChannelGridView.post(() -> {
         // 确保使用正确的 LayoutManager 类型
         RecyclerView.LayoutManager layoutManager = mChannelGridView.getLayoutManager();
@@ -1739,7 +1764,27 @@ private void clickLiveChannel(int position) {
         playChannel(groupIndex, position, false);
     }
 }
-
+    // ==================== 新增焦点位置保存方法 ====================
+    private void saveFocusPosition(int groupIndex, int position) {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        prefs.edit()
+            .putInt(KEY_LAST_FOCUS + groupIndex, position)
+            .apply();
+        mGroupFocusMap.put(groupIndex, position); // 内存缓存
+    }
+	
+    private int getSavedFocusPosition(int groupIndex) {
+        // 优先使用内存缓存
+        if (mGroupFocusMap.containsKey(groupIndex)) {
+            return mGroupFocusMap.get(groupIndex);
+        }
+        
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        int pos = prefs.getInt(KEY_LAST_FOCUS + groupIndex, 0); // 默认0
+        mGroupFocusMap.put(groupIndex, pos);
+        return pos;
+    }
+	
     private void initSettingGroupView() {
         mSettingGroupView.setHasFixedSize(true);
         mSettingGroupView.setLayoutManager(new V7LinearLayoutManager(this.mContext, 1, false));
