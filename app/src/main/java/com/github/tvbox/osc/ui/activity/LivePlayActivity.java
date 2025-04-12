@@ -1623,6 +1623,7 @@ interface OnSpeedTestListener {
         liveChannelItemAdapter.smartScrollToPosition(targetPosition);
         
         // 延迟焦点设置（关键修复）
+    final int targetPosition = calculatePosition();
     mChannelGridView.postDelayed(() -> {
         RecyclerView.ViewHolder viewHolder = mChannelGridView.findViewHolderForAdapterPosition(targetPosition);
         if (viewHolder != null) {
