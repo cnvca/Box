@@ -8,7 +8,9 @@
     android:background="@drawable/shape_live_focus"
     android:layout_marginLeft="10mm"
     android:layout_marginRight="10mm"
-    android:focusableInTouchMode="false">
+    android:focusable="true"
+    android:focusableInTouchMode="false"
+    android:orientation="horizontal">
 
     <!-- 频道编号 -->
     <TextView
@@ -40,7 +42,7 @@
     <TextView
         android:id="@+id/tvChannelName"
         android:layout_width="0mm"
-        android:layout_height="wrap_content"
+        android:layout_height="60mm"
         android:layout_marginStart="@dimen/vs_12"
         android:layout_marginLeft="@dimen/vs_12"
         android:layout_marginEnd="@dimen/vs_10"
