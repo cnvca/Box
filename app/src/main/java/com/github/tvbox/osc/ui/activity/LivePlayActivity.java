@@ -1604,10 +1604,10 @@ interface OnSpeedTestListener {
     }
 
     private void selectChannelGroup(int groupIndex, boolean focus, int liveChannelIndex) {
-    SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-    SharedPreferences.Editor editor = prefs.edit();
-    editor.putInt(KEY_LAST_FOCUS + groupIndex, position);
-    editor.apply();	
+ //   SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+//    SharedPreferences.Editor editor = prefs.edit();
+//    editor.putInt(KEY_LAST_FOCUS + groupIndex, position);
+//    editor.apply();	
         if (focus) {
             liveChannelGroupAdapter.setFocusedGroupIndex(groupIndex);
             liveChannelItemAdapter.setNewData(getLiveChannels(groupIndex));
