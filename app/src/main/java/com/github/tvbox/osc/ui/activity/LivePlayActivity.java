@@ -1623,13 +1623,18 @@ interface OnSpeedTestListener {
         liveChannelItemAdapter.smartScrollToPosition(targetPosition);
         
         // 延迟焦点设置（关键修复）
-    final int targetPosition = calculatePosition();
+    // 创建final副本供lambda使用
+    final int finalTargetPosition = targetPosition;
+
+    // 修改后的延迟回调
     mChannelGridView.postDelayed(() -> {
-        RecyclerView.ViewHolder viewHolder = mChannelGridView.findViewHolderForAdapterPosition(targetPosition);
+        RecyclerView.ViewHolder viewHolder = mChannelGridView.findViewHolderForAdapterPosition(finalTargetPosition);
         if (viewHolder != null) {
             viewHolder.itemView.requestFocus();
+        } else {
+            liveChannelItemAdapter.smartScrollToPosition(finalTargetPosition);
         }
-    }, 300);		
+    }, 300);
         }
         if ((groupIndex > -1 && groupIndex != liveChannelGroupAdapter.getSelectedGroupIndex()) || isNeedInputPassword(groupIndex)) {
             liveChannelGroupAdapter.setSelectedGroupIndex(groupIndex);
