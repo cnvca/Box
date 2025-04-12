@@ -952,17 +952,16 @@ public class LivePlayActivity extends BaseActivity {
             return true;
         }
 		
-// 新增数据同步方法
-private void updateChannelEpgFromCache() {
-    if (currentLiveChannelItem == null) return;
-    
-    String epgKey = currentLiveChannelItem.getChannelName() + "_" + epgDateAdapter.getSelectedDateKey();
-    ArrayList<Epginfo> epgList = hsEpg.get(epgKey);
-    if (epgList != null && !epgList.isEmpty()) {
-        // 同步更新底部信息（如需）
-        tv_current_program_name.setText(epgList.get(0).title); 
+    private LiveChannelItem currentChannelName;
+
+    private void updateChannelEpgFromCache() {
+        if (currentLiveChannelItem == null) return;
+        String epgKey = currentLiveChannelItem.getChannelName() + "_" + epgDateAdapter.getSelectedDateKey();
+        ArrayList<Epginfo> epgList = hsEpg.get(epgKey);
+        if (epgList != null && !epgList.isEmpty()) {
+            tv_current_program_name.setText(epgList.get(0).title);
+        }
     }
-}		
         if (mVideoView == null) return true;
         mVideoView.release();
         if (!changeSource) {
@@ -988,7 +987,8 @@ private void updateChannelEpgFromCache() {
             tv_source.setText("线路 " + (channel_Name.getSourceIndex() + 1) + "/" + channel_Name.getSourceNum());
         }
 
-        getEpg(new Date());
+        updateChannelEpgFromCache();
+//        getEpg(new Date());
         mVideoView.setUrl(currentLiveChannelItem.getUrl(), setPlayHeaders(currentLiveChannelItem.getUrl()));
         showChannelInfo();
         mVideoView.start();
