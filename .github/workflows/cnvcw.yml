@@ -1,4 +1,4 @@
-name: Build and Release (CNVC Branch)
+name: Build and Release (CNVCW Branch)
 
 on:
   workflow_dispatch:
