@@ -477,7 +477,7 @@ public class LivePlayActivity extends BaseActivity {
                         showChannelList();
 						
 						// 加载并显示 EPG 信息
-                        loadAndShowEpgInfo();
+ //                       loadAndShowEpgInfo();
 						
                         break;
                     default:
@@ -907,12 +907,12 @@ public class LivePlayActivity extends BaseActivity {
                 String savedEpgKey = channelName + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
                 if (!hsEpg.contains(savedEpgKey))
                     hsEpg.put(savedEpgKey, arrayList);
-                showBottomEpg();
+ //               showBottomEpg();
             }
 
             public void onFailure(int i, String str) {
                 showEpg(date, new ArrayList());
-                showBottomEpg();
+//                showBottomEpg();
             }
         });
     }
@@ -946,10 +946,23 @@ public class LivePlayActivity extends BaseActivity {
     private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
         if ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
                 || (changeSource && currentLiveChannelItem.getSourceNum() == 1)) {
-			getEpg(new Date());		
+//			getEpg(new Date());	
+            updateChannelEpgFromCache(); // 新增方法	
             showChannelInfo();
             return true;
         }
+		
+// 新增数据同步方法
+private void updateChannelEpgFromCache() {
+    if (currentLiveChannelItem == null) return;
+    
+    String epgKey = currentLiveChannelItem.getChannelName() + "_" + epgDateAdapter.getSelectedDateKey();
+    ArrayList<Epginfo> epgList = hsEpg.get(epgKey);
+    if (epgList != null && !epgList.isEmpty()) {
+        // 同步更新底部信息（如需）
+        tv_current_program_name.setText(epgList.get(0).title); 
+    }
+}		
         if (mVideoView == null) return true;
         mVideoView.release();
         if (!changeSource) {
@@ -1964,6 +1977,13 @@ public class LivePlayActivity extends BaseActivity {
 
         liveChannelGroupAdapter.setNewData(liveChannelGroupList);
         selectChannelGroup(lastChannelGroupIndex, false, lastLiveChannelIndex);
+		
+    mHandler.postDelayed(() -> {
+        loadAllChannelsEpg();
+        // 强制刷新适配器
+        liveChannelItemAdapter.notifyDataSetChanged();
+    }, 1000);
+	
     }
 
     private boolean isListOrSettingLayoutVisible() {
