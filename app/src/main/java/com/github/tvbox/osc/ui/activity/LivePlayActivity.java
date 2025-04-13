@@ -907,12 +907,12 @@ public class LivePlayActivity extends BaseActivity {
                 String savedEpgKey = channelName + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
                 if (!hsEpg.contains(savedEpgKey))
                     hsEpg.put(savedEpgKey, arrayList);
- //               showBottomEpg();
+                showBottomEpg();
             }
 
             public void onFailure(int i, String str) {
                 showEpg(date, new ArrayList());
-//                showBottomEpg();
+                showBottomEpg();
             }
         });
     }
@@ -946,7 +946,7 @@ public class LivePlayActivity extends BaseActivity {
     private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
         if ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
                 || (changeSource && currentLiveChannelItem.getSourceNum() == 1)) {
-//			getEpg(new Date());	
+			getEpg(new Date());	
             updateChannelEpgFromCache(); // 新增方法	
             showChannelInfo();
             return true;
