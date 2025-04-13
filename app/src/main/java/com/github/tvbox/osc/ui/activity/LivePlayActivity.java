@@ -946,7 +946,7 @@ public class LivePlayActivity extends BaseActivity {
     private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
         if ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
                 || (changeSource && currentLiveChannelItem.getSourceNum() == 1)) {
-			getEpg(new Date());	
+//			getEpg(new Date());	
             updateChannelEpgFromCache(); // 新增方法	
             showChannelInfo();
             return true;
@@ -979,7 +979,7 @@ public class LivePlayActivity extends BaseActivity {
             tv_source.setText("线路 " + (channel_Name.getSourceIndex() + 1) + "/" + channel_Name.getSourceNum());
         }
 
-        updateChannelEpgFromCache();
+//        updateChannelEpgFromCache();
         getEpg(new Date());
         mVideoView.setUrl(currentLiveChannelItem.getUrl(), setPlayHeaders(currentLiveChannelItem.getUrl()));
         showChannelInfo();
