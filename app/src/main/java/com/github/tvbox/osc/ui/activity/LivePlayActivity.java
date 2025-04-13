@@ -911,7 +911,7 @@ public class LivePlayActivity extends BaseActivity {
             }
 
             public void onFailure(int i, String str) {
-                showEpg(date, new ArrayList());
+//                showEpg(date, new ArrayList());
                 showBottomEpg();
             }
         });
