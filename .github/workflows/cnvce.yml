@@ -20,10 +20,10 @@ jobs:
       matrix:
         java_ver: [17]
     steps:
-      - name: Checkout CNVCE branch
+      - name: Checkout cnvce branch
         uses: actions/checkout@v4
         with:
-          ref: CNVCE  # 修改为 CNVCE 分支
+          ref: cnvce  # 修改为 cnvce 分支
           fetch-depth: 0
 
       - name: Set Build Time (Beijing Time)
@@ -60,7 +60,7 @@ jobs:
       - name: Generate Release Notes
         run: |
           export LESSCHARSET=utf-8
-          echo -e "Build Time: ${{ env.tag }}\nBranch: CNVCE\nCommit: $(git rev-parse --short HEAD)\nChangelog:\n\`\`\`" > apk/Release.log  # 修改分支名称
+          echo -e "Build Time: ${{ env.tag }}\nBranch: cnvce\nCommit: $(git rev-parse --short HEAD)\nChangelog:\n\`\`\`" > apk/Release.log  # 修改分支名称
           git log --pretty=format:%B -n 5 | sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' | cat -n | sort -k2,2 -k1,1n | uniq -f1 | sort -k1,1n | cut -f2- >> apk/Release.log
           echo -e '\n```' >> apk/Release.log
 
@@ -99,26 +99,26 @@ jobs:
             echo "TELEGRAM_TOKEN is not set, skipping Telegram notification."
           fi
 
-      - name: Push to CNVCE Branch
+      - name: Push to cnvce Branch
         run: |
           git config --local user.name "github-actions[bot]"
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git remote set-url --add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
           
-          # 切换到 CNVCE 分支
-          git checkout CNVCE
+          # 切换到 cnvce 分支
+          git checkout cnvce
           
           # 提交所有更改
           git add --all
-          git commit -m "Auto-commit changes before rebase (CNVCE)"
+          git commit -m "Auto-commit changes before rebase (cnvce)"
 
           # 拉取最新代码并 rebase
-          git pull --rebase origin CNVCE  # 修改为 CNVCE 分支
+          git pull --rebase origin cnvce  # 修改为 cnvce 分支
 
           # 更新 README.md
           sed -i "/Updated:/s#Updated: [a-zA-Z0-9-]*#Updated: HGTV-${{ env.tag }}#" README.md
           git add README.md
           git commit -m "HGTV-${{ env.tag }}"
 
-          # 强制推送到 CNVCE 分支
-          git push -u -f origin CNVCE  # 修改推送目标分支
+          # 强制推送到 cnvce 分支
+          git push -u -f origin cnvce  # 修改推送目标分支
