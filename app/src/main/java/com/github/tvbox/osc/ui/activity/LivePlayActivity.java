@@ -989,8 +989,9 @@ public class LivePlayActivity extends BaseActivity {
 
     private void updateChannelEpgFromCache() {
         if (currentLiveChannelItem == null) return;
-        String epgKey = currentLiveChannelItem.getChannelName() + "_" + epgDateAdapter.getSelectedDateKey();
-        ArrayList<Epginfo> epgList = hsEpg.get(epgKey);
+        String epgKey = currentLiveChannelItem.getChannelName() + "_" + 
+                   epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
+        ArrayList<Epginfo> epgList = (ArrayList<Epginfo>) hsEpg.get(epgKey);
         if (epgList != null && !epgList.isEmpty()) {
             tv_current_program_name.setText(epgList.get(0).title);
         }
