@@ -477,7 +477,7 @@ public class LivePlayActivity extends BaseActivity {
                         showChannelList();
 						
 						// 加载并显示 EPG 信息
- //                       loadAndShowEpgInfo();
+                        loadAndShowEpgInfo();
 						
                         break;
                     default:
@@ -911,7 +911,7 @@ public class LivePlayActivity extends BaseActivity {
             }
 
             public void onFailure(int i, String str) {
-//                showEpg(date, new ArrayList());
+                showEpg(date, new ArrayList());
                 showBottomEpg();
             }
         });
@@ -946,14 +946,10 @@ public class LivePlayActivity extends BaseActivity {
     private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
         if ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
                 || (changeSource && currentLiveChannelItem.getSourceNum() == 1)) {
-//			getEpg(new Date());	
-            updateChannelEpgFromCache(); // 新增方法	
+			getEpg(new Date());		
             showChannelInfo();
             return true;
         }
-		
-
-
         if (mVideoView == null) return true;
         mVideoView.release();
         if (!changeSource) {
@@ -979,7 +975,6 @@ public class LivePlayActivity extends BaseActivity {
             tv_source.setText("线路 " + (channel_Name.getSourceIndex() + 1) + "/" + channel_Name.getSourceNum());
         }
 
-//        updateChannelEpgFromCache();
         getEpg(new Date());
         mVideoView.setUrl(currentLiveChannelItem.getUrl(), setPlayHeaders(currentLiveChannelItem.getUrl()));
         showChannelInfo();
@@ -987,16 +982,6 @@ public class LivePlayActivity extends BaseActivity {
         return true;
     }
 
-    private void updateChannelEpgFromCache() {
-        if (currentLiveChannelItem == null) return;
-        String epgKey = currentLiveChannelItem.getChannelName() + "_" + 
-                   epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
-        ArrayList<Epginfo> epgList = (ArrayList<Epginfo>) hsEpg.get(epgKey);
-        if (epgList != null && !epgList.isEmpty()) {
-            tv_current_program_name.setText(epgList.get(0).title);
-        }
-    }
-	
     private void playNext() {
         if (!isCurrentLiveChannelValid()) return;
         Integer[] groupChannelIndex = getNextChannel(1);
@@ -1979,13 +1964,6 @@ public class LivePlayActivity extends BaseActivity {
 
         liveChannelGroupAdapter.setNewData(liveChannelGroupList);
         selectChannelGroup(lastChannelGroupIndex, false, lastLiveChannelIndex);
-		
-    mHandler.postDelayed(() -> {
-        loadAllChannelsEpg();
-        // 强制刷新适配器
-        liveChannelItemAdapter.notifyDataSetChanged();
-    }, 1000);
-	
     }
 
     private boolean isListOrSettingLayoutVisible() {
