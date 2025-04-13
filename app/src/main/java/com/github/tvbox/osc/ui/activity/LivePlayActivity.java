@@ -467,7 +467,7 @@ public class LivePlayActivity extends BaseActivity {
                         break;
                     case KeyEvent.KEYCODE_DPAD_RIGHT:
                         if (!isVOD) {
-						    showChannelInfo(); // 显式调用 showChannelInfo()
+//						    showChannelInfo(); // 显式调用 showChannelInfo()
                             playNextSource();
                         } else {
                             showChannelInfo();
@@ -703,9 +703,9 @@ public class LivePlayActivity extends BaseActivity {
         mHandler.postDelayed(mUpdateLayout, 255);   // Workaround Fix : SurfaceView
 		
 		// 隐藏进度条
-        if (llSeekBar != null) {
-            llSeekBar.setVisibility(View.GONE);
-       }
+//        if (llSeekBar != null) {
+//            llSeekBar.setVisibility(View.GONE);
+//       }
     }
 
     private final Runnable mHideChannelInfoRun = new Runnable() {
@@ -821,7 +821,7 @@ public class LivePlayActivity extends BaseActivity {
                         if (date.after(((Epginfo) arrayList.get(size)).startdateTime) & date.before(((Epginfo) arrayList.get(size)).enddateTime)) {
 //                            if (new Date().compareTo(((Epginfo) arrayList.get(size)).startdateTime) >= 0) {
                             tv_curr_time.setText(((Epginfo) arrayList.get(size)).start + " - " + ((Epginfo) arrayList.get(size)).end);
-                            tv_curr_name.setText(((Epginfo) arrayList.get(size)).title);
+ //                           tv_curr_name.setText(((Epginfo) arrayList.get(size)).title);
 							
                             if (size != arrayList.size() - 1) {
                                 tv_next_time.setText(((Epginfo) arrayList.get(size + 1)).start + " - " + ((Epginfo) arrayList.get(size + 1)).end);
@@ -1070,9 +1070,9 @@ private void playChannelInternal() {
     if (tvBottomLayout != null) {
         tvBottomLayout.setVisibility(View.VISIBLE); // 显示底部菜单
     }
-    if (llSeekBar != null) {
-        llSeekBar.setVisibility(View.GONE); // 隐藏进度条
-    }
+//    if (llSeekBar != null) {
+//        llSeekBar.setVisibility(View.GONE); // 隐藏进度条
+//    }
 }
 
     //显示设置列表
