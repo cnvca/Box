@@ -815,7 +815,7 @@ public class LivePlayActivity extends BaseActivity {
 							
                             if (size != arrayList.size() - 1) {
                                 tv_next_time.setText(((Epginfo) arrayList.get(size + 1)).start + " - " + ((Epginfo) arrayList.get(size + 1)).end);
- //                               tv_next_name.setText(((Epginfo) arrayList.get(size + 1)).title);
+                                tv_next_name.setText(((Epginfo) arrayList.get(size + 1)).title);
                             } else {
                                 tv_next_time.setText("00:00 - 23:59");
                                 tv_next_name.setText("No Information");
@@ -911,7 +911,7 @@ public class LivePlayActivity extends BaseActivity {
             }
 
             public void onFailure(int i, String str) {
-//                showEpg(date, new ArrayList());
+                showEpg(date, new ArrayList());
                 showBottomEpg();
             }
         });
