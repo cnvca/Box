@@ -811,11 +811,11 @@ public class LivePlayActivity extends BaseActivity {
                             tv_curr_time.setText(((Epginfo) arrayList.get(size)).start + " - " + ((Epginfo) arrayList.get(size)).end);
                             tv_curr_name.setText(((Epginfo) arrayList.get(size)).title);
 							
-							tv_current_program_name.setText(((Epginfo) arrayList.get(size)).title); // 更新当前节目名称
+//							tv_current_program_name.setText(((Epginfo) arrayList.get(size)).title); // 更新当前节目名称
 							
                             if (size != arrayList.size() - 1) {
                                 tv_next_time.setText(((Epginfo) arrayList.get(size + 1)).start + " - " + ((Epginfo) arrayList.get(size + 1)).end);
-                                tv_next_name.setText(((Epginfo) arrayList.get(size + 1)).title);
+ //                               tv_next_name.setText(((Epginfo) arrayList.get(size + 1)).title);
                             } else {
                                 tv_next_time.setText("00:00 - 23:59");
                                 tv_next_name.setText("No Information");
@@ -980,7 +980,7 @@ public class LivePlayActivity extends BaseActivity {
         }
 
         updateChannelEpgFromCache();
-//        getEpg(new Date());
+        getEpg(new Date());
         mVideoView.setUrl(currentLiveChannelItem.getUrl(), setPlayHeaders(currentLiveChannelItem.getUrl()));
         showChannelInfo();
         mVideoView.start();
