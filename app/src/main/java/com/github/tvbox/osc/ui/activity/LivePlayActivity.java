@@ -952,7 +952,6 @@ public class LivePlayActivity extends BaseActivity {
             return true;
         }
 		
-    private LiveChannelItem currentChannelName;
 
     private void updateChannelEpgFromCache() {
         if (currentLiveChannelItem == null) return;
