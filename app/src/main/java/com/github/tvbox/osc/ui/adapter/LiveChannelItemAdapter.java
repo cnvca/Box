@@ -3,7 +3,6 @@ package com.github.tvbox.osc.ui.adapter;
 import android.graphics.Color;
 import android.util.Log;
 import android.widget.TextView;
-import android.app.Activity;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
@@ -12,15 +11,10 @@ import com.github.tvbox.osc.base.BaseActivity;
 import com.github.tvbox.osc.bean.LiveChannelItem;
 import com.github.tvbox.osc.bean.Epginfo;
 import com.github.tvbox.osc.ui.activity.LivePlayActivity;
-import com.github.tvbox.osc.base.App;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Hashtable;
-import java.util.List;
-import java.lang.ref.WeakReference;
-
-
 
 /**
  * @author pj567
@@ -38,26 +32,13 @@ public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, Ba
         this.hsEpg = hsEpg;
         this.epgDateAdapter = epgDateAdapter;
     }
-	
-    // 使用弱引用防止内存泄漏
-    private WeakReference<Hashtable<String, List<Epginfo>>> weakEpgRef;
+
     @Override
-	
 protected void convert(BaseViewHolder holder, LiveChannelItem item) {
     TextView tvChannelNum = holder.getView(R.id.tvChannelNum);
     TextView tvChannel = holder.getView(R.id.tvChannelName);
     TextView tvCurrentProgramName = holder.getView(R.id.tv_current_program_name); // 获取 EPG 信息控件
 
-        // 异步加载EPG
-        App.getInstance().executorService.execute(() -> {
-            Epginfo epg = getCurrentEPG(item);
-            runOnUiThread(() -> {
-                if(epg != null){
-                    holder.setText(R.id.tvEpgInfo, epg.getTitle());
-                }
-            });
-        });
-		
     // 设置频道编号和名称
     tvChannelNum.setText(String.format("%s", item.getChannelNum()));
     tvChannel.setText(item.getChannelName());
