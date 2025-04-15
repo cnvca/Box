@@ -32,13 +32,26 @@ public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, Ba
         this.hsEpg = hsEpg;
         this.epgDateAdapter = epgDateAdapter;
     }
-
+	
+    // 使用弱引用防止内存泄漏
+    private WeakReference<Hashtable<String, List<Epginfo>>> weakEpgRef;
     @Override
+	
 protected void convert(BaseViewHolder holder, LiveChannelItem item) {
     TextView tvChannelNum = holder.getView(R.id.tvChannelNum);
     TextView tvChannel = holder.getView(R.id.tvChannelName);
     TextView tvCurrentProgramName = holder.getView(R.id.tv_current_program_name); // 获取 EPG 信息控件
 
+        // 异步加载EPG
+        App.getInstance().executorService.execute(() -> {
+            Epginfo epg = getCurrentEPG(item);
+            runOnUiThread(() -> {
+                if(epg != null){
+                    holder.setText(R.id.tvEpgInfo, epg.getTitle());
+                }
+            });
+        });
+		
     // 设置频道编号和名称
     tvChannelNum.setText(String.format("%s", item.getChannelNum()));
     tvChannel.setText(item.getChannelName());
