@@ -3,6 +3,7 @@ package com.github.tvbox.osc.ui.adapter;
 import android.graphics.Color;
 import android.util.Log;
 import android.widget.TextView;
+import android.app.Activity;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
@@ -11,10 +12,15 @@ import com.github.tvbox.osc.base.BaseActivity;
 import com.github.tvbox.osc.bean.LiveChannelItem;
 import com.github.tvbox.osc.bean.Epginfo;
 import com.github.tvbox.osc.ui.activity.LivePlayActivity;
+import com.github.tvbox.osc.base.App;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.List;
+import java.lang.ref.WeakReference;
+
+
 
 /**
  * @author pj567
