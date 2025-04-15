@@ -89,26 +89,26 @@
             android:background="?attr/color_theme" />
 
         <!-- EPG 信息 -->
-        <com.github.tvbox.osc.ui.tv.widget.MarqueeTextView
-            android:id="@+id/tv_current_program_name"
-            android:layout_width="0mm"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="2mm"
-            android:layout_marginLeft="2mm"
-            android:ellipsize="marquee"
-            android:fontFamily="sans-serif"
-            android:gravity="left"
-            android:paddingRight="@dimen/vs_20"
-            android:shadowColor="@color/color_FF000000"
-            android:shadowDx="0"
-            android:shadowDy="0"
-            android:shadowRadius="3"
-            android:singleLine="true"
-            android:text="No information"
-            android:textColor="@color/color_FFFFFF"
-            android:textSize="15mm"
-            android:textStyle="bold"
-            android:visibility="visible" />
+    <TextView
+    android:id="@+id/tv_current_program_name"
+    android:layout_width="0mm"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:layout_marginStart="2mm"
+    android:layout_marginLeft="2mm"
+    android:ellipsize="end"
+    android:fontFamily="sans-serif"
+    android:gravity="left"
+    android:paddingRight="@dimen/vs_20"
+    android:shadowColor="@color/color_FF000000"
+    android:shadowDx="0"
+    android:shadowDy="0"
+    android:shadowRadius="3"
+    android:singleLine="true"
+    android:text="No information"
+    android:textColor="@color/color_FFFFFF"
+    android:textSize="15mm"
+    android:textStyle="bold"
+    android:visibility="visible" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
