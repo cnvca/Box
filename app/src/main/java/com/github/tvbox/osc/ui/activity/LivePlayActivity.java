@@ -1262,7 +1262,7 @@ private void loadEpgAfterSourceTest() {
 }
 	
 	// 在 LivePlayActivity 类中添加以下方法
-private void testSourceSpeed(LiveChannelItem channelItem, int sourceIndex, OnSpeedTestListener listener, AtomicInteger completedTests, int totalSources) {
+private void testSourceSpeed(LiveChannelItem channelItem, int sourceIndex, OnSpeedTestListener listener) {
     // 如果已经测速过则直接返回
     if (channelItem.isHasSpeedTested()) {
         long latency = channelItem.getSourceSpeedMap().containsKey(sourceIndex) ? 
