@@ -916,8 +916,9 @@ public class LivePlayActivity extends BaseActivity {
 
                 String savedEpgKey = channelName + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
                 if (!hsEpg.contains(savedEpgKey))
-                    hsEpg.put(savedEpgKey, arrayList);
+ //                   hsEpg.put(savedEpgKey, arrayList);
                 showBottomEpg();
+                return;				
             }
 
             public void onFailure(int i, String str) {
@@ -1032,8 +1033,12 @@ private void playChannelInternal() {
     } else {
         tv_source.setText("线路 " + (channel_Name.getSourceIndex() + 1) + "/" + channel_Name.getSourceNum());
     }
+	
+    // 延迟加载EPG，确保播放优先
+    mHandler.postDelayed(() -> {
+        getEpg(new Date());
+    }, 1000); // 延迟1秒确保播放启动
 
-    getEpg(new Date());
     mVideoView.setUrl(currentLiveChannelItem.getUrl(), setPlayHeaders(currentLiveChannelItem.getUrl()));
     showChannelInfo();
     mVideoView.start();
@@ -1264,12 +1269,19 @@ private void testSourceSpeed(LiveChannelItem channelItem, int sourceIndex, OnSpe
                 // 请求成功时计算延迟
                 long latency = System.currentTimeMillis() - startTime;
                 listener.onSpeedTestResult(sourceIndex, latency);
+                // 测速完成后检查是否所有源都测速完毕
+                if (completedTests.incrementAndGet() == totalSources) {
+                    loadEpgAfterSourceTest(); // 触发EPG加载
+                }				
             }
 
             @Override
             public void onError(Response<String> response) {
                 // 请求失败时返回最大延迟值
                 listener.onSpeedTestResult(sourceIndex, Long.MAX_VALUE);
+                if (completedTests.incrementAndGet() == totalSources) {
+                    loadEpgAfterSourceTest(); // 即使有错误也触发EPG加载
+                }				
             }
 
             @Override
@@ -1960,17 +1972,27 @@ interface OnSpeedTestListener {
             // 将 EPG 数据存储到 hsEpg 中
             String savedEpgKey = channelName + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
             hsEpg.put(savedEpgKey, arrayList);
+            runOnUiThread(() -> {
+                showEpg(date, arrayList);
+                showBottomEpg();
+            });			
 
             // 通知适配器更新 UI
             if (liveChannelItemAdapter != null) {
                 liveChannelItemAdapter.notifyDataSetChanged();
             }
         }
-
-        
-        public void onFailure(int i, String str) {
-            // 处理加载失败的情况
+		
+        @Override
+        public void onError(Response<String> response) {
+            runOnUiThread(() -> {
+                showBottomEpg();
+            });
         }
+        
+//        public void onFailure(int i, String str) {
+            // 处理加载失败的情况
+//        }
     });
 }
 
