@@ -1248,6 +1248,13 @@ private void playChannelInternal() {
         mVideoView.setVideoController(controller);
         mVideoView.setProgressManager(null);
     }
+
+private void loadEpgAfterSourceTest() {
+    // 确保在主线程执行EPG加载
+    runOnUiThread(() -> {
+        getEpg(new Date());
+    });
+}
 	
 	// 在 LivePlayActivity 类中添加以下方法
 private void testSourceSpeed(LiveChannelItem channelItem, int sourceIndex, OnSpeedTestListener listener) {
