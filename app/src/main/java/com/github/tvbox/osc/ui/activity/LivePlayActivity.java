@@ -179,7 +179,12 @@ public class LivePlayActivity extends BaseActivity {
 
     private boolean isSHIYI = false;
     private static String shiyi_time;//时移时间
-
+    
+	// 在LivePlayActivity类中添加这两个成员变量
+    private AtomicInteger completedTests;
+    private int totalSources;
+	
+	
     private HashMap<String, String> setPlayHeaders(String url) {
     HashMap<String, String> header = new HashMap<>();
     try {
@@ -1257,7 +1262,7 @@ private void loadEpgAfterSourceTest() {
 }
 	
 	// 在 LivePlayActivity 类中添加以下方法
-private void testSourceSpeed(LiveChannelItem channelItem, int sourceIndex, OnSpeedTestListener listener) {
+private void testSourceSpeed(LiveChannelItem channelItem, int sourceIndex, OnSpeedTestListener listener, AtomicInteger completedTests, int totalSources) {
     // 如果已经测速过则直接返回
     if (channelItem.isHasSpeedTested()) {
         long latency = channelItem.getSourceSpeedMap().containsKey(sourceIndex) ? 
