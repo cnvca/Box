@@ -1,31 +1,124 @@
-name: Test Build
+name: Build and Release
 
 on:
-#  push:
-#    branches:
-#      - main
-#  pull_request:
   workflow_dispatch:
+    inputs:
+      rebuild:
+        description: '忽略构建记录以重新构建'
+        required: false
+        type: boolean
+      donotpublish:
+        description: '构建后不提交发布新版'
+        required: false
+        type: boolean
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java_ver: [17]  # 你可以根据需要调整 Java 版本
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Set Build Time (Beijing Time)
+        run: |
+          # 获取 UTC 时间并加上 8 小时，转换为北京时间
+          beijing_time=$(date -d "+8 hours" +'%Y%m%d-%H%M')
+          echo "tag=$beijing_time" >> $GITHUB_ENV
+
+      - name: Modify Version and About Dialog
+        run: |
+          echo '修改 VersionName 和 About Dialog'
+          # 修改 build.gradle 中的 versionName
+          sed -i "/versionName/s#[0-9a-zA-Z_\.\'\"-]\+\$#\'HGTV-${{ env.tag }}\'#" ${{ github.workspace }}/app/build.gradle
+
+          # 修改 dialog_about.xml 中的版本信息，仅替换版本号部分
+          sed -i "/android:text=\"/s#HGTV-[0-9]\{8\}-[0-9]\{4\}#HGTV-${{ env.tag }}#g" ${{ github.workspace }}/app/src/main/res/layout/dialog_about.xml
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java_ver }}
+
+      - uses: gradle/actions/setup-gradle@v4
+
       - name: Build With Gradle
         run: |
           chmod +x gradlew
           ./gradlew assemblerelease --build-cache --parallel --daemon --warning-mode all
+
       - name: Prepare App
         run: |
-          mkdir -p ${{ github.workspace }}/apk/
-          for file in `find ~ -name "*.apk" -print`; do
-            mv "$file" ${{ github.workspace }}/apk/
+          rm -rf apk/
+          mkdir -p apk/
+          for file in `find ~ -name "*release*.apk" -print`; do
+            mv "$file" apk/HGTV_${{ env.tag }}.apk
           done
+
+      - name: Generate Release Notes
+        run: |
+          export LESSCHARSET=utf-8
+          echo -e "Build Time: ${{ env.tag }}\nCredit: takagen99\nCommit: $(git rev-parse --short HEAD)\nChangelog:\n\`\`\`" > apk/Release.log
+          git log --pretty=format:%B -n 5 | sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' | cat -n | sort -k2,2 -k1,1n | uniq -f1 | sort -k1,1n | cut -f2- >> apk/Release.log
+          echo -e '\n```' >> apk/Release.log
+
       - name: Upload App To Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: com.github.tvbox.osc
-          path: ${{ github.workspace }}/apk/*
+          name: App-Release
+          path: |
+            ${{ github.workspace }}/apk/*
+
+      - name: Release and Upload Assets
+        uses: ncipollo/release-action@v1
+        with:
+          name: ${{ env.tag }}
+          tag: ${{ env.tag }}
+          bodyFile: ${{ github.workspace }}/apk/Release.log
+          allowUpdates: true
+          removeArtifacts: true
+          artifacts: |
+            ${{ github.workspace }}/apk/*.apk
+
+      - name: Post To Telegram
+        if: ${{ github.event_name == 'workflow_dispatch' }}  # 确保只在手动触发时运行
+        env:
+          CHAT_ID: -1001734684817
+          TELEGRAM_TOKEN: ${{ secrets.BOT_TOKEN }}  # 将 secrets.BOT_TOKEN 赋值给环境变量
+        run: |
+          if [ -n "$TELEGRAM_TOKEN" ]; then  # 使用环境变量 TELEGRAM_TOKEN
+            sed -i -e '1s/\[\(.*\)\].*/#\1/' -e 's#\([&"\/]\)#\\\1#g' apk/Release.log
+            mv -f apk/Release.log caption.txt
+            chmod +x telegram-bot-api-binary
+            ./telegram-bot-api-binary --api-id=21724 --api-hash=3e0cb5efcd52300aec5994fdfc5bdc16 --local 2>&1 > /dev/null &
+            mv ../.github/scripts/upload.py ./
+            python upload.py
+          else
+            echo "TELEGRAM_TOKEN is not set, skipping Telegram notification."
+          fi
+
+      - name: Push to Main Branch
+        run: |
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote set-url --add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          
+          # 提交所有更改
+          git add --all
+          git commit -m "Auto-commit changes before rebase"
+
+          # 拉取最新代码并 rebase
+          git pull --rebase
+
+          # 更新 README.md
+          sed -i "/Updated:/s#Updated: [a-zA-Z0-9]*#Updated: ${{ env.tag }}#" README.md
+          git add README.md
+          git commit -m "${{ env.tag }}"
+
+          # 推送更改
+          git push -u -f origin main
