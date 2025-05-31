@@ -3,8 +3,9 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'com.yanzhenjie.andserver'
 
+// 定义一个函数来获取当前日期（yyyyMMdd）
 def static buildTime() {
-    return new Date().format("yyyyMMdd_HHmm", TimeZone.getTimeZone("GMT+08:00"))
+    return new Date().format("yyyyMMdd", TimeZone.getTimeZone("GMT+08:00"))
 }
 
 def generateVersionCode() {
