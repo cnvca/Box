@@ -75,11 +75,7 @@ android {
             applicationId 'com.hgys.tv'
             dimension = "brand"
         }
-        normal {
-            dimension = "mode"
-            minSdkVersion 21
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
+
 
     applicationVariants.configureEach { variant ->
         variant.outputs.configureEach { output ->
