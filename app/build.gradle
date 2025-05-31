@@ -35,8 +35,9 @@ android {
         versionCode generateVersionCode() // 每次编译时调用 generateVersionCode()
         versionName "1.0.".concat(buildTime())
         multiDexEnabled true
-        
-        //设置room的Schema的位置
+
+
+        // 设置 room 的 Schema 的位置
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = ["room.schemaLocation": "$projectDir/schemas".toString()]
@@ -44,19 +45,20 @@ android {
         }
     }
 
+
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
     }
 
     buildTypes {
         release {
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             minifyEnabled true
 
         }
     }
-
-    flavorDimensions += ["abi", "brand", "mode"]
-    productFlavors {
+    flavorDimensions +=[ "abi","brand" ]
+     productFlavors {
         armeabi {
             dimension = "abi"
             ndk {
@@ -64,22 +66,15 @@ android {
             }
         }
 
-
-        generic  {
-            //通用版本
-            dimension = "brand"
-        }
-
         hisense {
             //海信的
             applicationId 'com.hgys.tv'
             dimension = "brand"
         }
-
-
+    }
     applicationVariants.configureEach { variant ->
         variant.outputs.configureEach { output ->
-            def flavorNames = variant.productFlavors.collect { it.name == "normal" ? "java" : it.name }.join('-')
+            def flavorNames = variant.productFlavors.collect { it.name }.join('-')
             // 构建自定义文件名
             def fileName = "TVBox_${variant.buildType.name}-${flavorNames}.apk"
             outputFileName = fileName
@@ -115,6 +110,7 @@ dependencies {
         }
     }
     api fileTree(dir: "libs", include: ['*.jar', '*.aar'])
+    implementation 'org.conscrypt:conscrypt-android:2.5.2'
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     // for WebDAV
     implementation('com.github.thegrizzlylabs:sardine-android:0.8') {
@@ -124,12 +120,16 @@ dependencies {
     implementation 'com.github.NanoHttpd.nanohttpd:nanohttpd:nanohttpd-websocket-2.3.1'
     implementation 'com.google.zxing:core:3.5.1'
     implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.core:core-ktx:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
     implementation 'androidx.recyclerview:recyclerview:1.3.2'
     implementation 'com.google.android.material:material:1.12.0'
+    implementation files('libs/thunder.jar')
     implementation project(path: ':quickjs')
-    pythonImplementation project(":pyramid")
+    // Dagger
+    implementation 'com.google.dagger:dagger:2.45'
+    kapt 'com.google.dagger:dagger-compiler:2.45'
     
     kapt 'androidx.room:room-compiler:2.6.1'
     implementation 'com.github.alidili:FlowLayout:v1.5'
@@ -174,7 +174,6 @@ dependencies {
     implementation 'com.github.hedzr:android-file-chooser:v1.2.0-final'
     implementation 'commons-io:commons-io:2.13.0'
     implementation 'com.googlecode.juniversalchardet:juniversalchardet:1.0.3'
-//    implementation files('libs/thunder.jar')
     implementation 'org.apache.commons:commons-text:1.10.0'
     implementation 'com.github.seven332:jcifs:1.3.19'
     implementation 'org.conscrypt:conscrypt-android:2.5.2'
