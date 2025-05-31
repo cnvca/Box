@@ -292,7 +292,7 @@ public class LivePlayActivity extends BaseActivity {
         initLiveChannelList();
         initLiveSettingGroupList();
 
-        Hawk.put(HawkConfig.PLAYER_IS_LIVE,true);
+ //       Hawk.put(HawkConfig.PLAYER_IS_LIVE,true);
 
         // takagen99 : Add SeekBar for VOD
         mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
