@@ -621,10 +621,18 @@ public class LivePlayActivity extends BaseActivity {
         public void run() {
             if (mGroupGridView.isScrolling() || mChannelGridView.isScrolling() || mGroupGridView.isComputingLayout() || mChannelGridView.isComputingLayout()) {
                 mHandler.postDelayed(this, 100);
+				return; // 增加返回避免无效状态
             } else {
+        // 确保当前频道索引有效
+        if (currentLiveChannelIndex < 0 || currentLiveChannelIndex >= getLiveChannels(currentChannelGroupIndex).size()) {
+            currentLiveChannelIndex = 0; // 默认选择第一个频道
+        }
+
                 liveChannelGroupAdapter.setSelectedGroupIndex(currentChannelGroupIndex);
                 liveChannelItemAdapter.setSelectedChannelIndex(currentLiveChannelIndex);
-                RecyclerView.ViewHolder holder = mChannelGridView.findViewHolderForAdapterPosition(currentLiveChannelIndex);
+				
+        // 增加ViewHolder非空检查
+        RecyclerView.ViewHolder holder = mChannelGridView.findViewHolderForAdapterPosition(currentLiveChannelIndex);
                 if (holder != null)
                     holder.itemView.requestFocus();
                 tvLeftChannelListLayout.setVisibility(View.VISIBLE);
@@ -941,6 +949,11 @@ public class LivePlayActivity extends BaseActivity {
 
     //节目播放
     private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
+	    // 检查频道组和索引是否有效
+        if (channelGroupIndex < 0 || channelGroupIndex >= liveChannelGroupList.size()) return false;
+        List<LiveChannelItem> channels = getLiveChannels(channelGroupIndex);
+        if (liveChannelIndex < 0 || liveChannelIndex >= channels.size()) return false;
+		
         if ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
                 || (changeSource && currentLiveChannelItem.getSourceNum() == 1)) {		
             showChannelInfo();
@@ -1509,6 +1522,10 @@ public class LivePlayActivity extends BaseActivity {
     }
 
     private void clickLiveChannel(int position) {
+        // 检查位置是否有效
+        List<LiveChannelItem> channels = getLiveChannels(liveChannelGroupAdapter.getSelectedGroupIndex());
+        if (position < 0 || position >= channels.size()) return;
+	
         liveChannelItemAdapter.setSelectedChannelIndex(position);
 
         // Set default as Today
@@ -1849,11 +1866,16 @@ public class LivePlayActivity extends BaseActivity {
             // 将 EPG 数据存储到 hsEpg 中
             String savedEpgKey = channelName + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
             hsEpg.put(savedEpgKey, arrayList);
+           
+  		    // 添加Activity存活状态检查
+            if (isFinishing() || isDestroyed()) return;
 
-            // 通知适配器更新 UI
-            if (liveChannelItemAdapter != null) {
-                liveChannelItemAdapter.notifyDataSetChanged();
-            }
+            // 更新UI前检查适配器是否存在
+            runOnUiThread(() -> {
+                if (liveChannelItemAdapter != null) {
+                    liveChannelItemAdapter.notifyDataSetChanged();
+                }
+            });
         }
 
         
@@ -2133,43 +2155,38 @@ public class LivePlayActivity extends BaseActivity {
         }
     }
 
-    private Integer[] getNextChannel(int direction) {
-        int channelGroupIndex = currentChannelGroupIndex;
-        int liveChannelIndex = currentLiveChannelIndex;
+private Integer[] getNextChannel(int direction) {
+    int channelGroupIndex = currentChannelGroupIndex;
+    int liveChannelIndex = currentLiveChannelIndex;
 
-        //跨选分组模式下跳过加密频道分组（遥控器上下键换台/超时换源）
-        if (direction > 0) {
-            liveChannelIndex++;
-            if (liveChannelIndex >= getLiveChannels(channelGroupIndex).size()) {
-                liveChannelIndex = 0;
-                if (Hawk.get(HawkConfig.LIVE_CROSS_GROUP, false)) {
-                    do {
-                        channelGroupIndex++;
-                        if (channelGroupIndex >= liveChannelGroupList.size())
-                            channelGroupIndex = 0;
-                    } while (!liveChannelGroupList.get(channelGroupIndex).getGroupPassword().isEmpty() || channelGroupIndex == currentChannelGroupIndex);
+    // 跨组模式下跳过加密频道组（增加非空密码判断）
+    if (Hawk.get(HawkConfig.LIVE_CROSS_GROUP, false)) {
+        do {
+            if (direction > 0) {
+                liveChannelIndex++;
+                if (liveChannelIndex >= getLiveChannels(channelGroupIndex).size()) {
+                    liveChannelIndex = 0;
+                    channelGroupIndex++;
+                    if (channelGroupIndex >= liveChannelGroupList.size()) channelGroupIndex = 0;
+                }
+            } else {
+                liveChannelIndex--;
+                if (liveChannelIndex < 0) {
+                    liveChannelIndex = getLiveChannels(channelGroupIndex).size() - 1;
+                    channelGroupIndex--;
+                    if (channelGroupIndex < 0) channelGroupIndex = liveChannelGroupList.size() - 1;
                 }
             }
-        } else {
-            liveChannelIndex--;
-            if (liveChannelIndex < 0) {
-                if (Hawk.get(HawkConfig.LIVE_CROSS_GROUP, false)) {
-                    do {
-                        channelGroupIndex--;
-                        if (channelGroupIndex < 0)
-                            channelGroupIndex = liveChannelGroupList.size() - 1;
-                    } while (!liveChannelGroupList.get(channelGroupIndex).getGroupPassword().isEmpty() || channelGroupIndex == currentChannelGroupIndex);
-                }
-                liveChannelIndex = getLiveChannels(channelGroupIndex).size() - 1;
-            }
-        }
-
-        Integer[] groupChannelIndex = new Integer[2];
-        groupChannelIndex[0] = channelGroupIndex;
-        groupChannelIndex[1] = liveChannelIndex;
-
-        return groupChannelIndex;
+            // 跳过有密码的频道组（非空且未确认）
+        } while (isNeedInputPassword(channelGroupIndex) && !isPasswordConfirmed(channelGroupIndex));
+    } else {
+        // 非跨组模式正常切换
+        liveChannelIndex += direction;
+        liveChannelIndex = Math.max(0, Math.min(liveChannelIndex, getLiveChannels(channelGroupIndex).size() - 1));
     }
+
+    return new Integer[]{channelGroupIndex, liveChannelIndex};
+}
 
     private int getFirstNoPasswordChannelGroup() {
         for (LiveChannelGroup liveChannelGroup : liveChannelGroupList) {
