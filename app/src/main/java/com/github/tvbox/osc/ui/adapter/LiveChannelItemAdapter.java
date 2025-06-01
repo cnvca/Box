@@ -1,6 +1,7 @@
 package com.github.tvbox.osc.ui.adapter;
 
 import android.graphics.Color;
+import android.util.Log;
 import android.widget.TextView;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
@@ -8,8 +9,12 @@ import com.chad.library.adapter.base.BaseViewHolder;
 import com.github.tvbox.osc.R;
 import com.github.tvbox.osc.base.BaseActivity;
 import com.github.tvbox.osc.bean.LiveChannelItem;
+import com.github.tvbox.osc.bean.Epginfo;
+import com.github.tvbox.osc.ui.activity.LivePlayActivity;
 
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Hashtable;
 
 /**
  * @author pj567
@@ -19,30 +24,67 @@ import java.util.ArrayList;
 public class LiveChannelItemAdapter extends BaseQuickAdapter<LiveChannelItem, BaseViewHolder> {
     private int selectedChannelIndex = -1;
     private int focusedChannelIndex = -1;
+    private Hashtable<String, ArrayList<Epginfo>> hsEpg; // 用于存储 EPG 数据
+    private LiveEpgDateAdapter epgDateAdapter; // 用于获取当前日期
 
-    public LiveChannelItemAdapter() {
+    public LiveChannelItemAdapter(Hashtable<String, ArrayList<Epginfo>> hsEpg, LiveEpgDateAdapter epgDateAdapter) {
         super(R.layout.item_live_channel, new ArrayList<>());
+        this.hsEpg = hsEpg;
+        this.epgDateAdapter = epgDateAdapter;
     }
 
     @Override
-    protected void convert(BaseViewHolder holder, LiveChannelItem item) {
-        TextView tvChannelNum = holder.getView(R.id.tvChannelNum);
-        TextView tvChannel = holder.getView(R.id.tvChannelName);
-        tvChannelNum.setText(String.format("%s", item.getChannelNum()));
-        tvChannel.setText(item.getChannelName());
-        int channelIndex = item.getChannelIndex();
-        if (channelIndex == selectedChannelIndex && channelIndex != focusedChannelIndex) {
-            // takagen99: Added Theme Color
-//            tvChannelNum.setTextColor(mContext.getResources().getColor(R.color.color_theme));
-//            tvChannel.setTextColor(mContext.getResources().getColor(R.color.color_theme));
-            tvChannelNum.setTextColor(((BaseActivity) mContext).getThemeColor());
-            tvChannel.setTextColor(((BaseActivity) mContext).getThemeColor());
-        }
-        else{
-            tvChannelNum.setTextColor(Color.WHITE);
-            tvChannel.setTextColor(Color.WHITE);
-        }
+protected void convert(BaseViewHolder holder, LiveChannelItem item) {
+    TextView tvChannelNum = holder.getView(R.id.tvChannelNum);
+    TextView tvChannel = holder.getView(R.id.tvChannelName);
+    TextView tvCurrentProgramName = holder.getView(R.id.tv_current_program_name); // 获取 EPG 信息控件
+
+    // 设置频道编号和名称
+    tvChannelNum.setText(String.format("%s", item.getChannelNum()));
+    tvChannel.setText(item.getChannelName());
+
+    // 设置选中和焦点状态的颜色
+    int channelIndex = item.getChannelIndex();
+    if (channelIndex == selectedChannelIndex && channelIndex != focusedChannelIndex) {
+        // 如果频道正在播放，设置字体颜色为红色
+        tvChannelNum.setTextColor(((BaseActivity) mContext).getThemeColor());
+        tvChannel.setTextColor(((BaseActivity) mContext).getThemeColor());
+        tvCurrentProgramName.setTextColor(((BaseActivity) mContext).getThemeColor()); // EPG 字体颜色为红色
+    } else {
+        // 如果频道未播放，设置字体颜色为白色
+        tvChannelNum.setTextColor(Color.WHITE);
+        tvChannel.setTextColor(Color.WHITE);
+        tvCurrentProgramName.setTextColor(Color.WHITE); // EPG 字体颜色为白色
     }
+
+    // 绑定 EPG 信息
+    if (hsEpg != null && epgDateAdapter != null) {
+        String epgKey = item.getChannelName() + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
+        if (hsEpg.containsKey(epgKey)) {
+            ArrayList<Epginfo> epgList = hsEpg.get(epgKey);
+            if (epgList != null && epgList.size() > 0) {
+                Date now = new Date();
+                boolean found = false;
+                for (Epginfo epg : epgList) {
+                    if (now.after(epg.startdateTime) && now.before(epg.enddateTime)) {
+                        tvCurrentProgramName.setText(epg.title); // 设置当前节目名称
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    tvCurrentProgramName.setText("暂无节目信息");
+                }
+            } else {
+                tvCurrentProgramName.setText("暂无节目信息");
+            }
+        } else {
+            tvCurrentProgramName.setText("暂无节目信息");
+        }
+    } else {
+        tvCurrentProgramName.setText("暂无节目信息");
+    }
+}
 
     public void setSelectedChannelIndex(int selectedChannelIndex) {
         if (selectedChannelIndex == this.selectedChannelIndex) return;
