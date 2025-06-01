@@ -148,7 +148,7 @@ public class LivePlayActivity extends BaseActivity {
     private TextView tv_channelname;
     private TextView tv_channelnum;
     private TextView tv_curr_name;
-	private TextView tv_current_program_name; // 当前节目名称
+    private TextView tv_current_program_name; // 当前节目名称
     private TextView tv_curr_time;
     private TextView tv_next_name;
     private TextView tv_next_time;
@@ -294,7 +294,7 @@ public class LivePlayActivity extends BaseActivity {
         initLiveChannelList();
         initLiveSettingGroupList();
 
-        Hawk.put(HawkConfig.PLAYER_IS_LIVE,true);
+//        Hawk.put(HawkConfig.PLAYER_IS_LIVE,true);
 
         // takagen99 : Add SeekBar for VOD
         mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
