@@ -1514,7 +1514,7 @@ public class LivePlayActivity extends BaseActivity {
             @Override
             public void onItemClick(TvRecyclerView parent, View itemView, int position) {
 	            // 添加：防止快速点击
-                if (FastClickCheckUtil.isFastClick()) return;		
+ //               if (FastClickCheckUtil.isFastClick()) return;		
                 clickLiveChannel(position);
             }
         });
