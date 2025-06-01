@@ -1,9 +1,12 @@
 package com.github.tvbox.osc.bean;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
+/**
+ * @author pj567
+ * @date :2021/1/12
+ * @description:
+ */
 public class LiveChannelItem {
     /**
      * channelIndex : 频道索引号
@@ -21,10 +24,6 @@ public class LiveChannelItem {
     public int sourceIndex = 0;
     public int sourceNum = 0;
     public boolean include_back = false;
-    
-    // ▼▼▼▼▼ 测速相关字段 ▼▼▼▼▼
-    private final Map<Integer, Long> sourceSpeedMap = new HashMap<>();
-    private boolean hasSpeedTested = false;
 
     public void setinclude_back(boolean include_back) {
         this.include_back = include_back;
@@ -33,6 +32,7 @@ public class LiveChannelItem {
     public boolean getinclude_back() {
         return include_back;
     }
+
 
     public void setChannelIndex(int channelIndex) {
         this.channelIndex = channelIndex;
@@ -66,12 +66,10 @@ public class LiveChannelItem {
         this.channelUrls = channelUrls;
         sourceNum = channelUrls.size();
     }
-
     public void preSource() {
         sourceIndex--;
         if (sourceIndex < 0) sourceIndex = sourceNum - 1;
     }
-
     public void nextSource() {
         sourceIndex++;
         if (sourceIndex == sourceNum) sourceIndex = 0;
@@ -103,35 +101,5 @@ public class LiveChannelItem {
 
     public String getSourceName() {
         return channelSourceNames.get(sourceIndex);
-    }
-
-    // ▼▼▼▼▼ 测速相关方法 ▼▼▼▼▼
-    public void setSourceLatency(int sourceIndex, long latency) {
-        sourceSpeedMap.put(sourceIndex, latency);
-    }
-
-    public Map<Integer, Long> getSourceSpeedMap() {
-        return sourceSpeedMap;
-    }
-
-    public int getFastestSourceIndex() {
-        if (sourceSpeedMap.isEmpty()) return 0;
-        int fastestIndex = 0;
-        long minLatency = Long.MAX_VALUE;
-        for (Map.Entry<Integer, Long> entry : sourceSpeedMap.entrySet()) {
-            if (entry.getValue() < minLatency) {
-                minLatency = entry.getValue();
-                fastestIndex = entry.getKey();
-            }
-        }
-        return fastestIndex;
-    }
-
-    public boolean isHasSpeedTested() {
-        return hasSpeedTested;
-    }
-
-    public void setHasSpeedTested(boolean hasSpeedTested) {
-        this.hasSpeedTested = hasSpeedTested;
     }
 }
