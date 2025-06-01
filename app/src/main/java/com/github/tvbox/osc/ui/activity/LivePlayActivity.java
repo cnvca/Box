@@ -474,8 +474,7 @@ public class LivePlayActivity extends BaseActivity {
                     case KeyEvent.KEYCODE_DPAD_CENTER:
                     case KeyEvent.KEYCODE_ENTER:
                     case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
-                        showChannelList();
-						
+                        showChannelList();						
 						// 加载并显示 EPG 信息
                         loadAndShowEpgInfo();
 						
@@ -594,6 +593,11 @@ public class LivePlayActivity extends BaseActivity {
             mHandler.post(mHideChannelListRun);
             mHandler.removeCallbacks(tv_sys_timeRunnable);
         }
+    }
+		 // 确保不触发底部菜单和进度条
+    if (llSeekBar != null) {
+        llSeekBar.setVisibility(View.GONE); // 隐藏进度条
+       }
     }
 
     //频道列表
@@ -809,9 +813,7 @@ public class LivePlayActivity extends BaseActivity {
                         if (date.after(((Epginfo) arrayList.get(size)).startdateTime) & date.before(((Epginfo) arrayList.get(size)).enddateTime)) {
 //                            if (new Date().compareTo(((Epginfo) arrayList.get(size)).startdateTime) >= 0) {
                             tv_curr_time.setText(((Epginfo) arrayList.get(size)).start + " - " + ((Epginfo) arrayList.get(size)).end);
-                            tv_curr_name.setText(((Epginfo) arrayList.get(size)).title);
-							
-							tv_current_program_name.setText(((Epginfo) arrayList.get(size)).title); // 更新当前节目名称
+                            tv_curr_name.setText(((Epginfo) arrayList.get(size)).title);							
 							
                             if (size != arrayList.size() - 1) {
                                 tv_next_time.setText(((Epginfo) arrayList.get(size + 1)).start + " - " + ((Epginfo) arrayList.get(size + 1)).end);
