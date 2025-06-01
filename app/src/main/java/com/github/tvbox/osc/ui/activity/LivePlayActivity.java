@@ -85,7 +85,6 @@ import java.util.Locale;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TimeZone;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -179,12 +178,7 @@ public class LivePlayActivity extends BaseActivity {
 
     private boolean isSHIYI = false;
     private static String shiyi_time;//时移时间
-    
-	// 在LivePlayActivity类中添加这两个成员变量
-    private AtomicInteger completedTests;
-    private int totalSources;
-	
-	
+
     private HashMap<String, String> setPlayHeaders(String url) {
     HashMap<String, String> header = new HashMap<>();
     try {
@@ -472,7 +466,7 @@ public class LivePlayActivity extends BaseActivity {
                         break;
                     case KeyEvent.KEYCODE_DPAD_RIGHT:
                         if (!isVOD) {
-//						    showChannelInfo(); // 显式调用 showChannelInfo()
+						    showChannelInfo(); // 显式调用 showChannelInfo()
                             playNextSource();
                         } else {
                             showChannelInfo();
@@ -708,9 +702,9 @@ public class LivePlayActivity extends BaseActivity {
         mHandler.postDelayed(mUpdateLayout, 255);   // Workaround Fix : SurfaceView
 		
 		// 隐藏进度条
-//        if (llSeekBar != null) {
-//            llSeekBar.setVisibility(View.GONE);
-//       }
+        if (llSeekBar != null) {
+            llSeekBar.setVisibility(View.GONE);
+       }
     }
 
     private final Runnable mHideChannelInfoRun = new Runnable() {
@@ -826,7 +820,7 @@ public class LivePlayActivity extends BaseActivity {
                         if (date.after(((Epginfo) arrayList.get(size)).startdateTime) & date.before(((Epginfo) arrayList.get(size)).enddateTime)) {
 //                            if (new Date().compareTo(((Epginfo) arrayList.get(size)).startdateTime) >= 0) {
                             tv_curr_time.setText(((Epginfo) arrayList.get(size)).start + " - " + ((Epginfo) arrayList.get(size)).end);
- //                           tv_curr_name.setText(((Epginfo) arrayList.get(size)).title);
+                            tv_curr_name.setText(((Epginfo) arrayList.get(size)).title);
 							
                             if (size != arrayList.size() - 1) {
                                 tv_next_time.setText(((Epginfo) arrayList.get(size + 1)).start + " - " + ((Epginfo) arrayList.get(size + 1)).end);
@@ -921,9 +915,8 @@ public class LivePlayActivity extends BaseActivity {
 
                 String savedEpgKey = channelName + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
                 if (!hsEpg.contains(savedEpgKey))
- //                   hsEpg.put(savedEpgKey, arrayList);
+                    hsEpg.put(savedEpgKey, arrayList);
                 showBottomEpg();
-                return;				
             }
 
             public void onFailure(int i, String str) {
@@ -959,52 +952,25 @@ public class LivePlayActivity extends BaseActivity {
     }
 
     //节目播放
-// 替换现有的 playChannel 方法
-private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
-    if ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
-            || (changeSource && currentLiveChannelItem.getSourceNum() == 1)) {
-        showChannelInfo();
-        return true;
-    }
-    if (mVideoView == null) return true;
-    mVideoView.release();
-    if (!changeSource) {
-        currentChannelGroupIndex = channelGroupIndex;
-        currentLiveChannelIndex = liveChannelIndex;
-        currentLiveChannelItem = getLiveChannels(currentChannelGroupIndex).get(currentLiveChannelIndex);
-        Hawk.put(HawkConfig.LIVE_CHANNEL, currentLiveChannelItem.getChannelName());
-        HawkUtils.setLastLiveChannelGroup(liveChannelGroupList.get(currentChannelGroupIndex).getGroupName());
-        livePlayerManager.getLiveChannelPlayer(mVideoView, currentLiveChannelItem.getChannelName());
-    }
-    channel_Name = currentLiveChannelItem;
-    currentLiveChannelItem.setinclude_back(currentLiveChannelItem.getUrl().indexOf("PLTV/8888") != -1);
-
-    // 测速并选择最快的源
-    if (currentLiveChannelItem.getSourceNum() > 1 && !currentLiveChannelItem.isHasSpeedTested()) {
-        final AtomicInteger completedTests = new AtomicInteger(0);
-        final int totalSources = currentLiveChannelItem.getSourceNum();
-
-        for (int i = 0; i < currentLiveChannelItem.getSourceNum(); i++) {
-            testSourceSpeed(currentLiveChannelItem, i, (sourceIndex, latency) -> {
-                currentLiveChannelItem.setSourceLatency(sourceIndex, latency);
-                completedTests.incrementAndGet();
-
-                // 当所有源测速完成时
-                if (completedTests.get() == totalSources) {
-                    currentLiveChannelItem.setHasSpeedTested(true);
-                    int fastestIndex = currentLiveChannelItem.getFastestSourceIndex();
-                    currentLiveChannelItem.setSourceIndex(fastestIndex);
-                    playChannelInternal();
-                }
-            });
+    private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
+        if ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
+                || (changeSource && currentLiveChannelItem.getSourceNum() == 1)) {
+			getEpg(new Date());		
+            showChannelInfo();
+            return true;
         }
-    } else {
-        // 已经测速过，直接使用最快源
-        if (!changeSource && currentLiveChannelItem.isHasSpeedTested()) {
-            currentLiveChannelItem.setSourceIndex(currentLiveChannelItem.getFastestSourceIndex());
+        if (mVideoView == null) return true;
+        mVideoView.release();
+        if (!changeSource) {
+            currentChannelGroupIndex = channelGroupIndex;
+            currentLiveChannelIndex = liveChannelIndex;
+            currentLiveChannelItem = getLiveChannels(currentChannelGroupIndex).get(currentLiveChannelIndex);
+            Hawk.put(HawkConfig.LIVE_CHANNEL, currentLiveChannelItem.getChannelName());
+            HawkUtils.setLastLiveChannelGroup(liveChannelGroupList.get(currentChannelGroupIndex).getGroupName());
+            livePlayerManager.getLiveChannelPlayer(mVideoView, currentLiveChannelItem.getChannelName());
         }
-        playChannelInternal();
-    }
+        channel_Name = currentLiveChannelItem;
+        currentLiveChannelItem.setinclude_back(currentLiveChannelItem.getUrl().indexOf("PLTV/8888") != -1);
 
         // takagen99 : Moved update of Channel Info here before getting EPG (no dependency on EPG)
         mHandler.post(tv_sys_timeRunnable);
@@ -1024,31 +990,6 @@ private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean
         mVideoView.start();
         return true;
     }
-
-
-    // 在 playChannel 方法之后添加以下方法
-private void playChannelInternal() {
-    mHandler.post(tv_sys_timeRunnable);
-
-    // Channel Name & No. + Source No.
-    tv_channelname.setText(channel_Name.getChannelName());
-    tv_channelnum.setText("" + channel_Name.getChannelNum());
-    if (channel_Name == null || channel_Name.getSourceNum() <= 0) {
-        tv_source.setText("1/1");
-    } else {
-        tv_source.setText("线路 " + (channel_Name.getSourceIndex() + 1) + "/" + channel_Name.getSourceNum());
-    }
-	
-    // 延迟加载EPG，确保播放优先
-    mHandler.postDelayed(() -> {
-        getEpg(new Date());
-    }, 1000); // 延迟1秒确保播放启动
-
-    mVideoView.setUrl(currentLiveChannelItem.getUrl(), setPlayHeaders(currentLiveChannelItem.getUrl()));
-    showChannelInfo();
-    mVideoView.start();
-}
-
 
     private void playNext() {
         if (!isCurrentLiveChannelValid()) return;
@@ -1080,9 +1021,9 @@ private void playChannelInternal() {
     if (tvBottomLayout != null) {
         tvBottomLayout.setVisibility(View.VISIBLE); // 显示底部菜单
     }
-//    if (llSeekBar != null) {
-//        llSeekBar.setVisibility(View.GONE); // 隐藏进度条
-//    }
+    if (llSeekBar != null) {
+        llSeekBar.setVisibility(View.GONE); // 隐藏进度条
+    }
 }
 
     //显示设置列表
@@ -1253,62 +1194,6 @@ private void playChannelInternal() {
         mVideoView.setVideoController(controller);
         mVideoView.setProgressManager(null);
     }
-
-private void loadEpgAfterSourceTest() {
-    // 确保在主线程执行EPG加载
-    runOnUiThread(() -> {
-        getEpg(new Date());
-    });
-}
-	
-	// 在 LivePlayActivity 类中添加以下方法
-private void testSourceSpeed(LiveChannelItem channelItem, int sourceIndex, OnSpeedTestListener listener) {
-    // 如果已经测速过则直接返回
-    if (channelItem.isHasSpeedTested()) {
-        long latency = channelItem.getSourceSpeedMap().containsKey(sourceIndex) ? 
-            channelItem.getSourceSpeedMap().get(sourceIndex) : Long.MAX_VALUE;
-        listener.onSpeedTestResult(sourceIndex, latency);
-        return;
-    }
-
-    String url = channelItem.getChannelUrls().get(sourceIndex);
-    long startTime = System.currentTimeMillis();
-
-    OkGo.<String>get(url)
-        .execute(new AbsCallback<String>() {
-            @Override
-            public void onSuccess(Response<String> response) {
-                // 请求成功时计算延迟
-                long latency = System.currentTimeMillis() - startTime;
-                listener.onSpeedTestResult(sourceIndex, latency);
-                // 测速完成后检查是否所有源都测速完毕
-                if (completedTests.incrementAndGet() == totalSources) {
-                    loadEpgAfterSourceTest(); // 触发EPG加载
-                }				
-            }
-
-            @Override
-            public void onError(Response<String> response) {
-                // 请求失败时返回最大延迟值
-                listener.onSpeedTestResult(sourceIndex, Long.MAX_VALUE);
-                if (completedTests.incrementAndGet() == totalSources) {
-                    loadEpgAfterSourceTest(); // 即使有错误也触发EPG加载
-                }				
-            }
-
-            @Override
-            public String convertResponse(okhttp3.Response response) throws Throwable {
-                // 将原始响应转换为字符串
-                return response.body().string();
-            }
-        });
-}
-
-// 定义测速结果回调接口
-interface OnSpeedTestListener {
-    void onSpeedTestResult(int sourceIndex, long latency);
-}
-
 
     private final Runnable mConnectTimeoutChangeSourceRun = new Runnable() {
         @Override
@@ -1984,27 +1869,17 @@ interface OnSpeedTestListener {
             // 将 EPG 数据存储到 hsEpg 中
             String savedEpgKey = channelName + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
             hsEpg.put(savedEpgKey, arrayList);
-            runOnUiThread(() -> {
-                showEpg(date, arrayList);
-                showBottomEpg();
-            });			
 
             // 通知适配器更新 UI
             if (liveChannelItemAdapter != null) {
                 liveChannelItemAdapter.notifyDataSetChanged();
             }
         }
-		
-        @Override
-        public void onError(Response<String> response) {
-            runOnUiThread(() -> {
-                showBottomEpg();
-            });
-        }
+
         
-//        public void onFailure(int i, String str) {
+        public void onFailure(int i, String str) {
             // 处理加载失败的情况
-//        }
+        }
     });
 }
 
