@@ -10,12 +10,18 @@ def static buildTime() {
 
 def generateVersionCode() {
     def versionCodeFile = file('versionCode.txt')
-    def versionCode = 1001
+    def versionCode = 1000
     if (versionCodeFile.exists()) {
         versionCode = versionCodeFile.text.toInteger() + 1
     }
     versionCodeFile.write(versionCode.toString())
     return versionCode
+}
+
+android {
+    defaultConfig {
+        versionCode generateVersionCode()
+    }
 }
 
 android {
