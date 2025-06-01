@@ -932,9 +932,9 @@ public class LivePlayActivity extends BaseActivity {
             tv_source.setText("线路 " + (channel_Name.getSourceIndex() + 1) + "/" + channel_Name.getSourceNum());
         }
 
-        getEpg(new Date());
         mVideoView.setUrl(currentLiveChannelItem.getUrl(), setPlayHeaders(currentLiveChannelItem.getUrl()));
         showChannelInfo();
+        getEpg(new Date());		
         mVideoView.start();
         return true;
     }
@@ -942,9 +942,9 @@ public class LivePlayActivity extends BaseActivity {
     //节目播放
     private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
         if ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
-                || (changeSource && currentLiveChannelItem.getSourceNum() == 1)) {
-			getEpg(new Date());		
+                || (changeSource && currentLiveChannelItem.getSourceNum() == 1)) {		
             showChannelInfo();
+			getEpg(new Date());			
             return true;
         }
         if (mVideoView == null) return true;
@@ -972,9 +972,9 @@ public class LivePlayActivity extends BaseActivity {
             tv_source.setText("线路 " + (channel_Name.getSourceIndex() + 1) + "/" + channel_Name.getSourceNum());
         }
 
-        getEpg(new Date());
         mVideoView.setUrl(currentLiveChannelItem.getUrl(), setPlayHeaders(currentLiveChannelItem.getUrl()));
         showChannelInfo();
+        getEpg(new Date());		
         mVideoView.start();
         return true;
     }
