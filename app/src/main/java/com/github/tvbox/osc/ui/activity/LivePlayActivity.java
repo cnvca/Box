@@ -496,7 +496,6 @@ public class LivePlayActivity extends BaseActivity {
     }
 
      private void loadAndShowEpgInfo() {
-	    if (currentLiveChannelItem == null) return; // 添加空指针检查
         if (currentLiveChannelItem != null) {
             // 获取当前频道名称
             String channelName = currentLiveChannelItem.getChannelName();
@@ -564,17 +563,10 @@ public class LivePlayActivity extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-	    
-		// 清除所有Handler回调
-        mHandler.removeCallbacksAndMessages(null);
-		
         if (mVideoView != null) {
             mVideoView.release();
             mVideoView = null;
         }
-		
-		// 清理EPG缓存
-        hsEpg.clear();
     }
 
     private void showChannelList() {
@@ -859,9 +851,7 @@ public class LivePlayActivity extends BaseActivity {
     }
 
     public void getEpg(Date date) {
-        // 添加：检查Activity状态
-        if (isFinishing() || isDestroyed()) return;
-		
+
         String channelName = channel_Name.getChannelName();
         SimpleDateFormat timeFormat = new SimpleDateFormat("yyyy-MM-dd");
         timeFormat.setTimeZone(TimeZone.getTimeZone("GMT+8:00"));
@@ -881,9 +871,6 @@ public class LivePlayActivity extends BaseActivity {
         }
         OkGo.<String>get(epgUrl).execute(new StringCallback() {
             public void onSuccess(Response<String> response) {
-		        // 添加：检查Activity状态
-                if (isFinishing() || isDestroyed()) return;	
-				
                 String paramString = response.body();
                 ArrayList arrayList = new ArrayList();
 
@@ -921,9 +908,6 @@ public class LivePlayActivity extends BaseActivity {
             }
 
             public void onFailure(int i, String str) {
-			    // 添加：检查Activity状态
-                if (isFinishing() || isDestroyed()) return;
-				
                 showEpg(date, new ArrayList());
                 showBottomEpg();
             }
@@ -1506,15 +1490,10 @@ public class LivePlayActivity extends BaseActivity {
                 liveChannelItemAdapter.setFocusedChannelIndex(position);
                 mHandler.removeCallbacks(mHideChannelListRun);
                 mHandler.postDelayed(mHideChannelListRun, 6000);
-				
-                // 添加：确保焦点在频道项上
-                itemView.requestFocus();				
             }
 
             @Override
             public void onItemClick(TvRecyclerView parent, View itemView, int position) {
-	            // 添加：防止快速点击
- //               if (FastClickCheckUtil.isFastClick()) return;		
                 clickLiveChannel(position);
             }
         });
