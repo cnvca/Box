@@ -476,7 +476,7 @@ public class LivePlayActivity extends BaseActivity {
                     case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
                         showChannelList();						
 						// 加载并显示 EPG 信息
-                        loadAndShowEpgInfo();
+ //                       loadAndShowEpgInfo();
 						
                         break;
                     default:
@@ -593,11 +593,6 @@ public class LivePlayActivity extends BaseActivity {
             mHandler.post(mHideChannelListRun);
             mHandler.removeCallbacks(tv_sys_timeRunnable);
         }
-
-		 // 确保不触发底部菜单和进度条
-        if (llSeekBar != null) {
-             llSeekBar.setVisibility(View.GONE); // 隐藏进度条
-       }
     }
 
     //频道列表
