@@ -7,8 +7,9 @@
     android:background="@drawable/shape_live_focus"
     android:focusable="true"
     android:focusableInTouchMode="false"
-    android:orientation="horizontal">
-
+    android:orientation="horizontal"
+    android:descendantFocusability="blocksDescendants"> <!-- 新增: 阻止子项获取焦点 -->
+    
     <TextView
         android:id="@+id/tvChannelGroupName"
         android:layout_width="0mm"
@@ -23,5 +24,7 @@
         android:singleLine="true"
         android:textColor="@android:color/white"
         android:textSize="24mm"
-        android:textStyle="bold" />
+        android:textStyle="bold" 
+        android:focusable="false" <!-- 新增 -->
+        android:focusableInTouchMode="false"/>
 </LinearLayout>
