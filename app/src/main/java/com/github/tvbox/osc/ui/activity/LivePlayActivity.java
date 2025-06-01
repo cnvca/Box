@@ -593,10 +593,10 @@ public class LivePlayActivity extends BaseActivity {
             mHandler.post(mHideChannelListRun);
             mHandler.removeCallbacks(tv_sys_timeRunnable);
         }
-    }
+
 		 // 确保不触发底部菜单和进度条
-    if (llSeekBar != null) {
-        llSeekBar.setVisibility(View.GONE); // 隐藏进度条
+        if (llSeekBar != null) {
+             llSeekBar.setVisibility(View.GONE); // 隐藏进度条
        }
     }
 
