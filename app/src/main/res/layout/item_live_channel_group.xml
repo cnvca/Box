@@ -8,7 +8,7 @@
     android:focusable="true"
     android:focusableInTouchMode="false"
     android:orientation="horizontal"
-    android:descendantFocusability="blocksDescendants"> <!-- 新增: 阻止子项获取焦点 -->
+    android:descendantFocusability="blocksDescendants"> 
     
     <TextView
         android:id="@+id/tvChannelGroupName"
@@ -25,6 +25,6 @@
         android:textColor="@android:color/white"
         android:textSize="24mm"
         android:textStyle="bold" 
-        android:focusable="false" <!-- 新增 -->
+        android:focusable="false" 
         android:focusableInTouchMode="false"/>
 </LinearLayout>
