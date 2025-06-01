@@ -148,6 +148,7 @@ public class LivePlayActivity extends BaseActivity {
     private TextView tv_channelname;
     private TextView tv_channelnum;
     private TextView tv_curr_name;
+	private TextView tv_current_program_name; // 当前节目名称
     private TextView tv_curr_time;
     private TextView tv_next_name;
     private TextView tv_next_time;
@@ -257,6 +258,7 @@ public class LivePlayActivity extends BaseActivity {
         tv_logo = findViewById(R.id.tv_logo);
         tv_curr_time = findViewById(R.id.tv_current_program_time);
         tv_curr_name = findViewById(R.id.tv_current_program_name);
+		tv_current_program_name = findViewById(R.id.tv_current_program_name);
         tv_next_time = findViewById(R.id.tv_next_program_time);
         tv_next_name = findViewById(R.id.tv_next_program_name);
 
@@ -292,7 +294,7 @@ public class LivePlayActivity extends BaseActivity {
         initLiveChannelList();
         initLiveSettingGroupList();
 
- //       Hawk.put(HawkConfig.PLAYER_IS_LIVE,true);
+        Hawk.put(HawkConfig.PLAYER_IS_LIVE,true);
 
         // takagen99 : Add SeekBar for VOD
         mSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -473,6 +475,10 @@ public class LivePlayActivity extends BaseActivity {
                     case KeyEvent.KEYCODE_ENTER:
                     case KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE:
                         showChannelList();
+						
+						// 加载并显示 EPG 信息
+                        loadAndShowEpgInfo();
+						
                         break;
                     default:
                         if (keyCode >= KeyEvent.KEYCODE_0 && keyCode <= KeyEvent.KEYCODE_9) {
@@ -490,6 +496,22 @@ public class LivePlayActivity extends BaseActivity {
         return super.dispatchKeyEvent(event);
     }
 
+     private void loadAndShowEpgInfo() {
+        if (currentLiveChannelItem != null) {
+            // 获取当前频道名称
+            String channelName = currentLiveChannelItem.getChannelName();
+
+            // 获取当前日期
+            Date currentDate = new Date();
+
+            // 加载 EPG 信息
+            getEpg(currentDate);
+
+            // 显示 EPG 信息
+            showBottomEpg();
+        }
+    }
+	
     // takagen99 : Use onStopCalled to track close activity
     private boolean onStopCalled;
 
@@ -788,6 +810,9 @@ public class LivePlayActivity extends BaseActivity {
 //                            if (new Date().compareTo(((Epginfo) arrayList.get(size)).startdateTime) >= 0) {
                             tv_curr_time.setText(((Epginfo) arrayList.get(size)).start + " - " + ((Epginfo) arrayList.get(size)).end);
                             tv_curr_name.setText(((Epginfo) arrayList.get(size)).title);
+							
+							tv_current_program_name.setText(((Epginfo) arrayList.get(size)).title); // 更新当前节目名称
+							
                             if (size != arrayList.size() - 1) {
                                 tv_next_time.setText(((Epginfo) arrayList.get(size + 1)).start + " - " + ((Epginfo) arrayList.get(size + 1)).end);
                                 tv_next_name.setText(((Epginfo) arrayList.get(size + 1)).title);
@@ -866,6 +891,17 @@ public class LivePlayActivity extends BaseActivity {
                 } catch (JSONException jSONException) {
                     jSONException.printStackTrace();
                 }
+				
+				// 绑定 EPG 信息到界面
+                if (arrayList.size() > 0) {
+                    Epginfo currentEpg = (Epginfo) arrayList.get(0); // 获取当前 EPG 信息
+                    tv_current_program_name.setText(currentEpg.getTitle()); // 更新当前节目名称
+                    
+                } else {
+                    tv_current_program_name.setText("暂无节目信息"); // 如果没有 EPG 信息，显示默认文本
+                    
+                }
+
                 showEpg(date, arrayList);
 
                 String savedEpgKey = channelName + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
@@ -910,6 +946,7 @@ public class LivePlayActivity extends BaseActivity {
     private boolean playChannel(int channelGroupIndex, int liveChannelIndex, boolean changeSource) {
         if ((channelGroupIndex == currentChannelGroupIndex && liveChannelIndex == currentLiveChannelIndex && !changeSource)
                 || (changeSource && currentLiveChannelItem.getSourceNum() == 1)) {
+			getEpg(new Date());		
             showChannelInfo();
             return true;
         }
@@ -1403,6 +1440,9 @@ public class LivePlayActivity extends BaseActivity {
                 return;
             }
             loadChannelGroupDataAndPlay(groupIndex, liveChannelIndex);
+			
+			// 新增：加载当前频道组的所有频道 EPG 信息
+        loadAllChannelsEpgForGroup(groupIndex);
         }
         if (tvLeftChannelListLayout.getVisibility() == View.VISIBLE) {
             mHandler.removeCallbacks(mHideChannelListRun);
@@ -1410,11 +1450,26 @@ public class LivePlayActivity extends BaseActivity {
         }
     }
 
+    private void loadAllChannelsEpgForGroup(int groupIndex) {
+    if (liveChannelGroupList == null || liveChannelGroupList.isEmpty()) return;
+
+    // 获取当前频道组
+    LiveChannelGroup group = liveChannelGroupList.get(groupIndex);
+    if (group.getLiveChannels() == null || group.getLiveChannels().isEmpty()) return;
+
+    // 遍历当前频道组中的所有频道
+    for (LiveChannelItem channel : group.getLiveChannels()) {
+        // 加载当前频道的 EPG 信息
+        getEpgForChannel(channel, new Date());
+    }
+}
+
     private void initLiveChannelView() {
         mChannelGridView.setHasFixedSize(true);
         mChannelGridView.setLayoutManager(new V7LinearLayoutManager(this.mContext, 1, false));
 
-        liveChannelItemAdapter = new LiveChannelItemAdapter();
+ //       liveChannelItemAdapter = new LiveChannelItemAdapter();
+        liveChannelItemAdapter = new LiveChannelItemAdapter(hsEpg, epgDateAdapter);
         mChannelGridView.setAdapter(liveChannelItemAdapter);
         mChannelGridView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -1737,8 +1792,80 @@ public class LivePlayActivity extends BaseActivity {
             liveChannelGroupList.addAll(list);
             showSuccess();
             initLiveState();
+			// 新增：加载所有频道的 EPG 信息
+            loadAllChannelsEpg();
         }
     }
+
+    private void loadAllChannelsEpg() {
+    if (liveChannelGroupList == null || liveChannelGroupList.isEmpty()) return;
+
+    // 遍历所有频道组
+    for (LiveChannelGroup group : liveChannelGroupList) {
+        if (group.getLiveChannels() == null || group.getLiveChannels().isEmpty()) continue;
+
+        // 遍历当前频道组中的所有频道
+        for (LiveChannelItem channel : group.getLiveChannels()) {
+            // 加载当前频道的 EPG 信息
+            getEpgForChannel(channel, new Date());
+        }
+    }
+}
+
+    private void getEpgForChannel(LiveChannelItem channel, Date date) {
+    String channelName = channel.getChannelName();
+    SimpleDateFormat timeFormat = new SimpleDateFormat("yyyy-MM-dd");
+    timeFormat.setTimeZone(TimeZone.getTimeZone("GMT+8:00"));
+    String[] epgInfo = EpgUtil.getEpgInfo(channelName);
+    String epgTagName = channelName;
+    if (epgInfo != null && !epgInfo[1].isEmpty()) {
+        epgTagName = epgInfo[1];
+    }
+
+    String epgUrl;
+    if (epgStringAddress.contains("{name}") && epgStringAddress.contains("{date}")) {
+        epgUrl = epgStringAddress.replace("{name}", URLEncoder.encode(epgTagName)).replace("{date}", timeFormat.format(date));
+    } else {
+        epgUrl = epgStringAddress + "?ch=" + URLEncoder.encode(epgTagName) + "&date=" + timeFormat.format(date);
+    }
+
+    OkGo.<String>get(epgUrl).execute(new StringCallback() {
+        @Override
+        public void onSuccess(Response<String> response) {
+            String paramString = response.body();
+            ArrayList<Epginfo> arrayList = new ArrayList<>();
+
+            try {
+                if (paramString.contains("epg_data")) {
+                    final JSONArray jSONArray = new JSONObject(paramString).optJSONArray("epg_data");
+                    if (jSONArray != null)
+                        for (int b = 0; b < jSONArray.length(); b++) {
+                            JSONObject jSONObject = jSONArray.getJSONObject(b);
+                            Epginfo epgbcinfo = new Epginfo(date, jSONObject.optString("title"), date, jSONObject.optString("start"), jSONObject.optString("end"), b);
+                            arrayList.add(epgbcinfo);
+                        }
+                }
+            } catch (JSONException jSONException) {
+                jSONException.printStackTrace();
+            }
+
+            // 将 EPG 数据存储到 hsEpg 中
+            String savedEpgKey = channelName + "_" + epgDateAdapter.getItem(epgDateAdapter.getSelectedIndex()).getDatePresented();
+            hsEpg.put(savedEpgKey, arrayList);
+
+            // 通知适配器更新 UI
+            if (liveChannelItemAdapter != null) {
+                liveChannelItemAdapter.notifyDataSetChanged();
+            }
+        }
+
+        
+        public void onFailure(int i, String str) {
+            // 处理加载失败的情况
+        }
+    });
+}
+
 
     //加载列表
     public void loadProxyLives(String url) {
