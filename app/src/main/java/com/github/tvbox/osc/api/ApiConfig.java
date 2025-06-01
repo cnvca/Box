@@ -22,6 +22,7 @@ import com.github.tvbox.osc.util.AdBlocker;
 import com.github.tvbox.osc.util.DefaultConfig;
 import com.github.tvbox.osc.util.HawkConfig;
 import com.github.tvbox.osc.util.M3U8;
+import com.github.tvbox.osc.util.LOG;
 import com.github.tvbox.osc.util.MD5;
 import com.github.tvbox.osc.util.VideoParseRuler;
 import com.google.gson.Gson;
@@ -40,6 +41,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+
+
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -62,6 +65,7 @@ public class ApiConfig {
     private final List<LiveChannelGroup> liveChannelGroupList;
     private final List<ParseBean> parseBeanList;
     private List<String> vipParseFlags;
+    private Map<String,String> myHosts;
     private List<IJKCode> ijkCodes;
     private String spider = null;
     public String wallpaper = "";
@@ -244,6 +248,7 @@ public class ApiConfig {
         }
 
         boolean isJarInImg = jarUrl.startsWith("img+");
+        LOG.i("echo---jar_start");
         jarUrl = jarUrl.replace("img+", "");
         OkGo.<File>get(jarUrl)
                 .headers("User-Agent", userAgent)
@@ -253,17 +258,18 @@ public class ApiConfig {
                     @Override
                     public File convertResponse(okhttp3.Response response) throws Throwable {
                         File cacheDir = cache.getParentFile();
-                        if (!cacheDir.exists())
-                            cacheDir.mkdirs();
-                        if (cache.exists())
-                            cache.delete();
-                        FileOutputStream fos = new FileOutputStream(cache);
-                        if (isJarInImg) {
-                            String respData = response.body().string();
-                            byte[] imgJar = getImgJar(respData);
-                            fos.write(imgJar);
-                        } else {
-                            fos.write(response.body().bytes());
+                       if (!cacheDir.exists())
+                           cacheDir.mkdirs();
+                       if (cache.exists())
+                           cache.delete();
+                       FileOutputStream fos = new FileOutputStream(cache);
+                       if (isJarInImg) {
+                           String respData = response.body().string();
+                           byte[] imgJar = getImgJar(respData);
+                           fos.write(imgJar);
+                       } else {
+                           fos.write(response.body().bytes());
+ 
                         }
                         fos.flush();
                         fos.close();
@@ -272,11 +278,12 @@ public class ApiConfig {
 
                     @Override
                     public void onSuccess(Response<File> response) {
-                        if (response.body().exists()) {
+                       if (response.body().exists()) {
                             if (jarLoader.load(response.body().getAbsolutePath())) {
                                 callback.success();
                             } else {
-                                callback.error("从网络上加载jar写入缓存后加载失败");
+                               callback.error("从网络上加载jar写入缓存后加载失败");
+         
                             }
                         } else {
                             callback.error("从网络上加载jar地址字节数据为空");
@@ -285,8 +292,9 @@ public class ApiConfig {
 
                     @Override
                     public void onError(Response<File> response) {
-                        super.onError(response);
-                        callback.error("从网络上加载jar失败：" + response.getException().getMessage());
+                       super.onError(response);
+                       callback.error("从网络上加载jar失败：" + response.getException().getMessage());
+
                     }
                 });
     }
@@ -302,6 +310,7 @@ public class ApiConfig {
         bReader.close();
         parseJson(apiUrl, sb.toString());
     }
+    
 
     private void parseJson(String apiUrl, String jsonStr) {
 
@@ -312,7 +321,7 @@ public class ApiConfig {
         wallpaper = DefaultConfig.safeJsonString(infoJson, "wallpaper", "");
         // 直播播放请求头
 //        livePlayHeaders = infoJson.getAsJsonArray("livePlayHeaders");
-        livePlayHeaders = infoJson.getAsJsonArray("headers"); // 修改为 "headers"        
+        livePlayHeaders = infoJson.getAsJsonArray("headers"); // 修改为 "headers"
         // 远端站点源
         SourceBean firstSite = null;
         JsonArray sites = infoJson.has("video") ? infoJson.getAsJsonObject("video").getAsJsonArray("sites") : infoJson.get("sites").getAsJsonArray();
@@ -555,6 +564,18 @@ public class ApiConfig {
             }
         }
 
+       myHosts = new HashMap<>();
+         if (infoJson.has("hosts")) {
+             JsonArray hostsArray = infoJson.getAsJsonArray("hosts");
+             for (int i = 0; i < hostsArray.size(); i++) {
+                 String entry = hostsArray.get(i).getAsString();
+                 String[] parts = entry.split("=", 2); // 只分割一次，防止 value 里有 =
+                 if (parts.length == 2) {
+                     myHosts.put(parts[0], parts[1]);
+                 }
+             }
+         }
+        
         String defaultIJKADS = "{\"ijk\":[{\"options\":[{\"name\":\"opensles\",\"category\":4,\"value\":\"0\"},{\"name\":\"overlay-format\",\"category\":4,\"value\":\"842225234\"},{\"name\":\"framedrop\",\"category\":4,\"value\":\"0\"},{\"name\":\"soundtouch\",\"category\":4,\"value\":\"1\"},{\"name\":\"start-on-prepared\",\"category\":4,\"value\":\"1\"},{\"name\":\"http-detect-rangeupport\",\"category\":1,\"value\":\"0\"},{\"name\":\"fflags\",\"category\":1,\"value\":\"fastseek\"},{\"name\":\"skip_loop_filter\",\"category\":2,\"value\":\"48\"},{\"name\":\"reconnect\",\"category\":4,\"value\":\"1\"},{\"name\":\"enable-accurate-seek\",\"category\":4,\"value\":\"0\"},{\"name\":\"mediacodec\",\"category\":4,\"value\":\"0\"},{\"name\":\"mediacodec-auto-rotate\",\"category\":4,\"value\":\"0\"},{\"name\":\"mediacodec-handle-resolution-change\",\"category\":4,\"value\":\"0\"},{\"name\":\"mediacodec-hevc\",\"category\":4,\"value\":\"0\"},{\"name\":\"dns_cache_timeout\",\"category\":1,\"value\":\"600000000\"}],\"group\":\"软解码\"},{\"options\":[{\"name\":\"opensles\",\"category\":4,\"value\":\"0\"},{\"name\":\"overlay-format\",\"category\":4,\"value\":\"842225234\"},{\"name\":\"framedrop\",\"category\":4,\"value\":\"0\"},{\"name\":\"soundtouch\",\"category\":4,\"value\":\"1\"},{\"name\":\"start-on-prepared\",\"category\":4,\"value\":\"1\"},{\"name\":\"http-detect-rangeupport\",\"category\":1,\"value\":\"0\"},{\"name\":\"fflags\",\"category\":1,\"value\":\"fastseek\"},{\"name\":\"skip_loop_filter\",\"category\":2,\"value\":\"48\"},{\"name\":\"reconnect\",\"category\":4,\"value\":\"1\"},{\"name\":\"enable-accurate-seek\",\"category\":4,\"value\":\"0\"},{\"name\":\"mediacodec\",\"category\":4,\"value\":\"1\"},{\"name\":\"mediacodec-auto-rotate\",\"category\":4,\"value\":\"1\"},{\"name\":\"mediacodec-handle-resolution-change\",\"category\":4,\"value\":\"1\"},{\"name\":\"mediacodec-hevc\",\"category\":4,\"value\":\"1\"},{\"name\":\"dns_cache_timeout\",\"category\":1,\"value\":\"600000000\"}],\"group\":\"硬解码\"}],\"ads\":[\"mimg.0c1q0l.cn\",\"www.googletagmanager.com\",\"www.google-analytics.com\",\"mc.usihnbcq.cn\",\"mg.g1mm3d.cn\",\"mscs.svaeuzh.cn\",\"cnzz.hhttm.top\",\"tp.vinuxhome.com\",\"cnzz.mmstat.com\",\"www.baihuillq.com\",\"s23.cnzz.com\",\"z3.cnzz.com\",\"c.cnzz.com\",\"stj.v1vo.top\",\"z12.cnzz.com\",\"img.mosflower.cn\",\"tips.gamevvip.com\",\"ehwe.yhdtns.com\",\"xdn.cqqc3.com\",\"www.jixunkyy.cn\",\"sp.chemacid.cn\",\"hm.baidu.com\",\"s9.cnzz.com\",\"z6.cnzz.com\",\"um.cavuc.com\",\"mav.mavuz.com\",\"wofwk.aoidf3.com\",\"z5.cnzz.com\",\"xc.hubeijieshikj.cn\",\"tj.tianwenhu.com\",\"xg.gars57.cn\",\"k.jinxiuzhilv.com\",\"cdn.bootcss.com\",\"ppl.xunzhuo123.com\",\"xomk.jiangjunmh.top\",\"img.xunzhuo123.com\",\"z1.cnzz.com\",\"s13.cnzz.com\",\"xg.huataisangao.cn\",\"z7.cnzz.com\",\"xg.huataisangao.cn\",\"z2.cnzz.com\",\"s96.cnzz.com\",\"q11.cnzz.com\",\"thy.dacedsfa.cn\",\"xg.whsbpw.cn\",\"s19.cnzz.com\",\"z8.cnzz.com\",\"s4.cnzz.com\",\"f5w.as12df.top\",\"ae01.alicdn.com\",\"www.92424.cn\",\"k.wudejia.com\",\"vivovip.mmszxc.top\",\"qiu.xixiqiu.com\",\"cdnjs.hnfenxun.com\",\"cms.qdwght.com\"]}";
         JsonObject defaultJson = new Gson().fromJson(defaultIJKADS, JsonObject.class);
         // 广告地址
@@ -804,7 +825,11 @@ public class ApiConfig {
         }
         return content;
     }
-
+    
+    public Map<String,String> getMyHost() {
+         return myHosts;
+     }
+    
     String miTV(String url) {
         if (url.startsWith("p") || url.startsWith("mitv")) {
 
