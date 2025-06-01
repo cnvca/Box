@@ -9,7 +9,7 @@
     android:layout_marginLeft="10mm"
     android:layout_marginRight="10mm"
     android:focusable="true"
-    android:focusableInTouchMode="true"> <!-- 允许频道项获取焦点 -->
+    android:focusableInTouchMode="true"> 
 
     <!-- 频道编号 -->
     <TextView
